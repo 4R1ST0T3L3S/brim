@@ -20,7 +20,11 @@ import java.time.LocalDate
 class FirstFragment : Fragment() {
 
     companion object {
-        val  FIXED_ML = listOf(250, 330, 500)
+        val FIXED_ML = listOf(10, 20, 250, 330, 500)
+        val AMOUNT_ICONS = mapOf(
+            10 to R.drawable.ic_glass_half,
+            20 to R.drawable.ic_glass_full
+        )
         const val ADD_BG = "#2196F3"
         const val ADD_FG = "#FFFFFF"
         const val REM_BG = "#E3F2FD"
@@ -31,7 +35,7 @@ class FirstFragment : Fragment() {
     private val binding get() = _binding!!
 
     private var currentMl = 0
-    private val goalMl = 2000
+    private val goalMl = 1500
     private var customQuickMl = 0
 
     private val prefs by lazy {
@@ -200,8 +204,10 @@ class FirstFragment : Fragment() {
 
         binding.containerQuickAdd.removeAllViews()
         addSortedItems().forEach { (ml, isCustom) ->
+            val iconRes = AMOUNT_ICONS[ml] ?: R.drawable.ic_water_drop
             val btn = if (isCustom && ml == 0) makeCustomSlotButton(dp)
                       else makeAmountButton("+${ml.fmt(unit)}", ADD_BG, ADD_FG, dp,
+                               iconRes = iconRes,
                                onClick = { if (isCustom) addWater(customQuickMl) else addWater(ml) },
                                onLongClick = if (isCustom) ::showCustomValueDialog else null)
             binding.containerQuickAdd.addView(btn)
@@ -209,8 +215,10 @@ class FirstFragment : Fragment() {
 
         binding.containerQuickRemove.removeAllViews()
         removeSortedItems().forEach { (ml, _) ->
+            val iconRes = AMOUNT_ICONS[ml] ?: R.drawable.ic_water_drop
             binding.containerQuickRemove.addView(
-                makeAmountButton("-${ml.fmt(unit)}", REM_BG, REM_FG, dp, onClick = { removeWater(ml) })
+                makeAmountButton("-${ml.fmt(unit)}", REM_BG, REM_FG, dp,
+                    iconRes = iconRes, onClick = { removeWater(ml) })
             )
         }
     }
@@ -236,6 +244,7 @@ class FirstFragment : Fragment() {
     /** Button for a specific ml amount — used in both add and remove rows. */
     private fun makeAmountButton(
         label: String, bgHex: String, fgHex: String, dp: Float,
+        iconRes: Int = R.drawable.ic_water_drop,
         onClick: () -> Unit, onLongClick: (() -> Unit)? = null
     ) = MaterialButton(requireContext()).apply {
         text = label
@@ -246,7 +255,7 @@ class FirstFragment : Fragment() {
         textSize = 11f
         isSingleLine = true
         setPadding((8 * dp).toInt(), 0, (8 * dp).toInt(), 0)
-        setIconResource(R.drawable.ic_water_drop)
+        setIconResource(iconRes)
         iconTint = ColorStateList.valueOf(Color.parseColor(fgHex))
         iconPadding = (2 * dp).toInt()
         iconSize = (12 * dp).toInt()
@@ -282,7 +291,7 @@ class FirstFragment : Fragment() {
     private fun showCustomValueDialog() {
         val editText = EditText(requireContext()).apply {
             inputType = InputType.TYPE_CLASS_NUMBER
-            hint = "Amount in $unit (e.g. ${750.toDisplay(unit)})"
+            hint = "Amount in $unit (e.g. ${180.toDisplay(unit)})"
             setPadding(48, 32, 48, 32)
             if (customQuickMl > 0) setText(customQuickMl.toDisplay(unit).toString())
         }

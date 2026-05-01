@@ -38,16 +38,8 @@
             android:id="@+id/fab_bell"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="9dp"
             app:fabSize="mini"
             app:srcCompat="@drawable/ic_bell" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_water"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:fabSize="mini"
-            app:srcCompat="@drawable/ic_water_drop" />
 
     </LinearLayout>
 

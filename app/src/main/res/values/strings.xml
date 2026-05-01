@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">RemindWell</string>
+    <string name="app_name">WaterReminder</string>
     <string name="action_settings">Settings</string>
     <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">RemindWell</string>
+    <string name="first_fragment_label">WaterReminder</string>
     <string name="second_fragment_label">Second Fragment</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>

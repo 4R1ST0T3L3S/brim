@@ -22,7 +22,7 @@ class AnalyticsFragment : Fragment() {
     private var _binding: FragmentAnalyticsBinding? = null
     private val binding get() = _binding!!
 
-    private val goalMl = 2000
+    private val goalMl = 1500
     private val dayFormatter = DateTimeFormatter.ofPattern("MMM d")
     private val prefs by lazy {
         requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)

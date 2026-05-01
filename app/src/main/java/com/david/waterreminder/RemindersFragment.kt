@@ -409,6 +409,9 @@ class RemindersFragment : Fragment() {
 
     private fun enableNotifications() {
         prefs.edit().putBoolean("notifications_enabled", true).apply()
+        // Reschedule all enabled reminders in case the alarm chain was broken
+        // while notifications were disabled.
+        reminders.filter { it.enabled }.forEach { scheduleOrCancel(it) }
     }
 
     private fun disableNotifications() {

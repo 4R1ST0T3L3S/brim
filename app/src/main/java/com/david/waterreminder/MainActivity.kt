@@ -44,32 +44,24 @@ class MainActivity : AppCompatActivity() {
             navController.navigate(R.id.RemindersFragment)
         }
 
-        binding.fabWater.setOnClickListener {
-            collapseFabs()
-            navController.popBackStack(R.id.FirstFragment, false)
-        }
-
-        // Collapse expanded panel and swap icon/action based on which screen is active
+        // Show FABs only on the water reminder screen
         navController.addOnDestinationChangedListener { _, destination, _ ->
             collapseFabs()
-            when (destination.id) {
-                R.id.AnalyticsFragment -> {
-                    binding.fabAnalytics.setImageResource(R.drawable.ic_water_drop)
-                    binding.fabAnalytics.setOnClickListener {
-                        navController.popBackStack(R.id.FirstFragment, false)
-                    }
-                }
-                else -> {
-                    binding.fabAnalytics.setImageResource(R.drawable.ic_chart)
-                    binding.fabAnalytics.setOnClickListener {
-                        navController.navigate(R.id.AnalyticsFragment)
-                    }
+            val onWaterScreen = destination.id == R.id.FirstFragment
+            val fabVisibility = if (onWaterScreen) View.VISIBLE else View.GONE
+            binding.fab.visibility = fabVisibility
+            binding.fabAnalytics.visibility = fabVisibility
+            if (onWaterScreen) {
+                binding.fabAnalytics.setImageResource(R.drawable.ic_chart)
+                binding.fabAnalytics.setOnClickListener {
+                    navController.navigate(R.id.AnalyticsFragment)
                 }
             }
         }
     }
 
     private fun expandFabs() {
+        if (fabExpanded) return
         fabExpanded = true
         binding.fabGroup.visibility = View.VISIBLE
         binding.fabGroup.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_in))
@@ -77,6 +69,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun collapseFabs() {
+        if (!fabExpanded) return
         fabExpanded = false
         binding.fabGroup.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out))
         binding.fabGroup.visibility = View.GONE

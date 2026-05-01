@@ -77,7 +77,7 @@ class SettingsFragment : Fragment() {
         val currentMl = prefs.getInt("personal_goal_ml", 0)
         val editText = EditText(requireContext()).apply {
             inputType = InputType.TYPE_CLASS_NUMBER
-            hint = "Your personal goal in $unit (e.g. ${2000.toDisplay(unit)})"
+            hint = "Your personal goal in $unit (e.g. ${1500.toDisplay(unit)})"
             setPadding(48, 32, 48, 32)
             if (currentMl > 0) { setText(currentMl.toDisplay(unit).toString()); selectAll() }
         }
