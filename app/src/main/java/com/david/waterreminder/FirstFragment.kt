@@ -11,8 +11,11 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import com.david.waterreminder.databinding.FragmentWaterBinding
+import com.getkeepsafe.taptargetview.TapTarget
+import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
 import java.time.LocalDate
@@ -29,6 +32,7 @@ class FirstFragment : Fragment() {
         const val ADD_FG = "#FFFFFF"
         const val REM_BG = "#E3F2FD"
         const val REM_FG = "#2196F3"
+        const val TAG_CUSTOM_SLOT = "custom_slot"
     }
 
     private var _binding: FragmentWaterBinding? = null
@@ -54,6 +58,7 @@ class FirstFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         customQuickMl = prefs.getInt("custom_quick_ml", 0)
         rebuildQuickButtons()
+        view.post { maybeShowGuideTour() }
     }
 
     override fun onResume() {
@@ -210,6 +215,7 @@ class FirstFragment : Fragment() {
                                iconRes = iconRes,
                                onClick = { if (isCustom) addWater(customQuickMl) else addWater(ml) },
                                onLongClick = if (isCustom) ::showCustomValueDialog else null)
+            btn.tag = if (isCustom && ml == 0) TAG_CUSTOM_SLOT else ml
             binding.containerQuickAdd.addView(btn)
         }
 
@@ -318,6 +324,96 @@ class FirstFragment : Fragment() {
     fun onUnitChanged() {
         updateIntakeUI()
         rebuildQuickButtons()
+    }
+
+    // ─── First-launch guide tour ──────────────────────────────────
+
+    private fun maybeShowGuideTour() {
+        if (prefs.getBoolean("tour_done", false)) return
+        if (_binding == null) return
+
+        val activity = activity ?: return
+        val targets = mutableListOf<TapTarget>()
+
+        // Common style: no inner highlight circle, and a tap anywhere advances.
+        fun TapTarget.style(radius: Int = 40) = this
+            .transparentTarget(true)
+            .targetRadius(radius)
+            .cancelable(true)
+
+        // Find a quick-add child by its tag (set in rebuildQuickButtons).
+        fun findQuickAdd(tag: Any): View? = (0 until binding.containerQuickAdd.childCount)
+            .map { binding.containerQuickAdd.getChildAt(it) }
+            .firstOrNull { it.tag == tag }
+
+        targets += TapTarget.forView(
+            binding.containerBottles,
+            "Daily progress",
+            "Each bottle fills as you reach a quarter of your $goalMl ml goal."
+        ).style(radius = 110)
+
+        findQuickAdd(20)?.let {
+            targets += TapTarget.forView(
+                it,
+                "Small sips",
+                "Glass icons are small amounts: 10 ml (half) and 20 ml (full). Tap to log instantly."
+            ).style()
+        }
+
+        findQuickAdd(250)?.let {
+            targets += TapTarget.forView(
+                it,
+                "Bigger drinks",
+                "Drop icons are larger amounts (250–500 ml)."
+            ).style()
+        }
+
+        findQuickAdd(TAG_CUSTOM_SLOT)?.let {
+            targets += TapTarget.forView(
+                it,
+                "Your own amount",
+                "Long-press the + button to set a custom quick-add value."
+            ).style()
+        }
+
+        binding.containerQuickRemove.getChildAt(0)?.let {
+            targets += TapTarget.forView(
+                it,
+                "Made a mistake?",
+                "Use Quick remove to subtract water you logged by accident."
+            ).style()
+        }
+
+        activity.findViewById<View>(R.id.fab_analytics)?.let {
+            targets += TapTarget.forView(
+                it,
+                "Your history",
+                "Open the chart to see your daily intake and streaks over time."
+            ).style().tintTarget(false)
+        }
+
+        activity.findViewById<View>(R.id.fab)?.let {
+            targets += TapTarget.forView(
+                it,
+                "Reminders",
+                "Tap here, then the bell, to set up reminder times."
+            ).style().tintTarget(false)
+        }
+
+        if (targets.isEmpty()) return
+
+        val markDone = { prefs.edit().putBoolean("tour_done", true).apply(); Unit }
+
+        TapTargetSequence(activity)
+            .targets(targets)
+            .considerOuterCircleCanceled(true)
+            .continueOnCancel(true)
+            .listener(object : TapTargetSequence.Listener {
+                override fun onSequenceFinish() = markDone()
+                override fun onSequenceStep(lastTarget: TapTarget?, targetClicked: Boolean) {}
+                override fun onSequenceCanceled(lastTarget: TapTarget?) = markDone()
+            })
+            .start()
     }
 
     override fun onDestroyView() {

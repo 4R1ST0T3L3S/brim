@@ -10,6 +10,7 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 
 class SettingsFragment : Fragment() {
 
@@ -47,6 +48,11 @@ class SettingsFragment : Fragment() {
 
         view.findViewById<View>(R.id.row_set_personal_goal).setOnClickListener {
             showPersonalGoalDialog(view)
+        }
+
+        view.findViewById<View>(R.id.row_replay_tour).setOnClickListener {
+            prefs.edit().putBoolean("tour_done", false).apply()
+            findNavController().popBackStack(R.id.FirstFragment, false)
         }
     }
 
