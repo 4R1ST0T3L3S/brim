@@ -10,14 +10,15 @@ import java.util.Calendar
 object ReminderScheduler {
 
     fun schedule(context: Context, reminder: Reminder) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-        // On Android 12+ check if exact alarms are allowed
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-            return // Permission not granted — handled in UI
+        if (reminder.type == "hourly") {
+            scheduleHourly(context, reminder)
+            return
         }
 
-        val pendingIntent = buildPendingIntent(context, reminder)
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+            return
+        }
 
         val calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, reminder.hour)
@@ -30,7 +31,7 @@ object ReminderScheduler {
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             calendar.timeInMillis,
-            pendingIntent
+            buildPendingIntent(context, reminder)
         )
     }
 
@@ -49,10 +50,77 @@ object ReminderScheduler {
         schedule(context, reminder)
     }
 
+    fun scheduleHourly(context: Context, reminder: Reminder) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
+
+        val startHour = reminder.hour
+        val endHour = reminder.endHour
+        val now = Calendar.getInstance()
+
+        // Next top-of-hour from now
+        val candidate = Calendar.getInstance().apply {
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            add(Calendar.HOUR_OF_DAY, 1)
+        }
+        val candidateHour = candidate.get(Calendar.HOUR_OF_DAY)
+
+        val fireCal = if (candidateHour in startHour..endHour) {
+            candidate
+        } else {
+            // Outside window — use startHour today (or tomorrow if already past)
+            Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, startHour)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+                if (!after(now)) add(Calendar.DAY_OF_MONTH, 1)
+            }
+        }
+
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            fireCal.timeInMillis,
+            buildPendingIntent(context, reminder)
+        )
+    }
+
+    fun rescheduleHourly(context: Context, reminderTime: String, startHour: Int, endHour: Int, type: String) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
+
+        val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+
+        val fireCal = Calendar.getInstance().apply {
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            if (currentHour < endHour) {
+                set(Calendar.HOUR_OF_DAY, currentHour + 1)
+            } else {
+                add(Calendar.DAY_OF_MONTH, 1)
+                set(Calendar.HOUR_OF_DAY, startHour)
+            }
+        }
+
+        val reminder = Reminder(reminderTime, startHour, 0, type, true, endHour)
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            fireCal.timeInMillis,
+            buildPendingIntent(context, reminder)
+        )
+    }
+
     private fun buildPendingIntent(context: Context, reminder: Reminder): PendingIntent {
         val intent = Intent(context, ReminderReceiver::class.java).apply {
             putExtra("reminder_time", reminder.time)
             putExtra("reminder_type", reminder.type)
+            if (reminder.type == "hourly") {
+                putExtra("reminder_start_hour", reminder.hour)
+                putExtra("reminder_end_hour", reminder.endHour)
+            }
         }
         return PendingIntent.getBroadcast(
             context,

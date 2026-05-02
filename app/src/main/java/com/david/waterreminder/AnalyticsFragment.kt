@@ -151,11 +151,11 @@ class AnalyticsFragment : Fragment() {
 
         binding.textAvg.text = "Avg daily intake:  ${avg.fmt(unit)}"
         binding.textBest.text = "Best day:  ${best.fmt(unit)}"
-        binding.textGoalDays.text = "Goal reached:  $goalDays / 7 days"
+        binding.textGoalDays.text = "Goal reached:  $goalDays days"
 
         if (personalGoal > 0) {
             val personalDays = history.count { it.second >= personalGoal }
-            binding.textPersonalGoalDays.text = "Personal goal reached:  $personalDays / 7 days"
+            binding.textPersonalGoalDays.text = "Personal goal reached:  $personalDays days"
             binding.textPersonalGoalDays.visibility = View.VISIBLE
         } else {
             binding.textPersonalGoalDays.visibility = View.GONE

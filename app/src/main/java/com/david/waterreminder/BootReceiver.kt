@@ -9,7 +9,7 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
 
         val prefs = context.getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
-        val saved = prefs.getStringSet("reminders_v2", emptySet()) ?: return
+        val saved = prefs.getStringSet("reminders_v3", emptySet()) ?: return
 
         saved.mapNotNull { Reminder.fromPrefsString(it) }
             .filter { it.enabled }

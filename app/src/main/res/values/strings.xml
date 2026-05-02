@@ -3,44 +3,68 @@
     <string name="action_settings">Settings</string>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">WaterReminder</string>
-    <string name="second_fragment_label">Second Fragment</string>
+    <string name="second_fragment_label">Privacy Policy</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>
 
-    <string name="lorem_ipsum">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris
-        volutpat, dolor id interdum ullamcorper, risus dolor egestas lectus, sit amet mattis purus
-        dui nec risus. Maecenas non sodales nisi, vel dictum dolor. Class aptent taciti sociosqu ad
-        litora torquent per conubia nostra, per inceptos himenaeos. Suspendisse blandit eleifend
-        diam, vel rutrum tellus vulputate quis. Aliquam eget libero aliquet, imperdiet nisl a,
-        ornare ex. Sed rhoncus est ut libero porta lobortis. Fusce in dictum tellus.\n\n
-        Suspendisse interdum ornare ante. Aliquam nec cursus lorem. Morbi id magna felis. Vivamus
-        egestas, est a condimentum egestas, turpis nisl iaculis ipsum, in dictum tellus dolor sed
-        neque. Morbi tellus erat, dapibus ut sem a, iaculis tincidunt dui. Interdum et malesuada
-        fames ac ante ipsum primis in faucibus. Curabitur et eros porttitor, ultricies urna vitae,
-        molestie nibh. Phasellus at commodo eros, non aliquet metus. Sed maximus nisl nec dolor
-        bibendum, vel congue leo egestas.\n\n
-        Sed interdum tortor nibh, in sagittis risus mollis quis. Curabitur mi odio, condimentum sit
-        amet auctor at, mollis non turpis. Nullam pretium libero vestibulum, finibus orci vel,
-        molestie quam. Fusce blandit tincidunt nulla, quis sollicitudin libero facilisis et. Integer
-        interdum nunc ligula, et fermentum metus hendrerit id. Vestibulum lectus felis, dictum at
-        lacinia sit amet, tristique id quam. Cras eu consequat dui. Suspendisse sodales nunc ligula,
-        in lobortis sem porta sed. Integer id ultrices magna, in luctus elit. Sed a pellentesque
-        est.\n\n
-        Aenean nunc velit, lacinia sed dolor sed, ultrices viverra nulla. Etiam a venenatis nibh.
-        Morbi laoreet, tortor sed facilisis varius, nibh orci rhoncus nulla, id elementum leo dui
-        non lorem. Nam mollis ipsum quis auctor varius. Quisque elementum eu libero sed commodo. In
-        eros nisl, imperdiet vel imperdiet et, scelerisque a mauris. Pellentesque varius ex nunc,
-        quis imperdiet eros placerat ac. Duis finibus orci et est auctor tincidunt. Sed non viverra
-        ipsum. Nunc quis augue egestas, cursus lorem at, molestie sem. Morbi a consectetur ipsum, a
-        placerat diam. Etiam vulputate dignissim convallis. Integer faucibus mauris sit amet finibus
-        convallis.\n\n
-        Phasellus in aliquet mi. Pellentesque habitant morbi tristique senectus et netus et
-        malesuada fames ac turpis egestas. In volutpat arcu ut felis sagittis, in finibus massa
-        gravida. Pellentesque id tellus orci. Integer dictum, lorem sed efficitur ullamcorper,
-        libero justo consectetur ipsum, in mollis nisl ex sed nisl. Donec maximus ullamcorper
-        sodales. Praesent bibendum rhoncus tellus nec feugiat. In a ornare nulla. Donec rhoncus
-        libero vel nunc consequat, quis tincidunt nisl eleifend. Cras bibendum enim a justo luctus
-        vestibulum. Fusce dictum libero quis erat maximus, vitae volutpat diam dignissim.
+    <string name="privacy_policy_text">
+1. Overview\n\n
+WaterReminder is a free, offline hydration-tracking application for Android. This Privacy Policy explains what information the App collects, how it is used, and your rights as a user.\n\n
+The App collects no personal data and sends nothing outside your device.\n\n
+──────────────────────────────\n\n
+2. Information We Collect\n\n
+2.1 Data stored locally on your device\n\n
+The App stores the following information exclusively in your device\'s private app storage (Android SharedPreferences). This data never leaves your device:\n\n
+• Daily water intake — track progress toward the daily goal\n
+• Historical daily intake — display the 7-day analytics chart\n
+• Daily goal and unit preference — personalise the experience\n
+• Reminder schedule configuration — trigger notifications at chosen times\n
+• Streak counter — show consecutive days the goal was met\n
+• Custom quick-add button value — remember your personalised shortcut\n
+• Notification on/off flag — respect your notification preference\n
+• Tutorial completion flag — avoid showing the intro more than once\n\n
+2.2 Data we do NOT collect\n\n
+• No name, email address, or personally identifiable information\n
+• No location data\n
+• No device identifiers (IMEI, advertising ID, etc.)\n
+• No usage analytics or event telemetry\n
+• No crash or error reports\n
+• No camera, microphone, or contacts access\n
+• No data shared with third parties\n\n
+──────────────────────────────\n\n
+3. Internet and Network Access\n\n
+The App does not request Internet or network permissions. It is entirely offline by design. No data is ever transmitted to any server, cloud service, or third party.\n\n
+──────────────────────────────\n\n
+4. Third-Party Libraries\n\n
+The App uses open-source libraries that operate strictly on-device:\n\n
+• MPAndroidChart — renders the 7-day intake bar chart\n
+• TapTargetView — displays the interactive first-launch tutorial\n
+• AndroidX / Material Components — standard UI components\n\n
+None of these libraries collect, transmit, or process personal data.\n\n
+──────────────────────────────\n\n
+5. Notifications\n\n
+Reminders are delivered as local notifications generated entirely on your device using Android\'s AlarmManager. No notification content or delivery data is sent to any external service. You can disable notifications at any time from the Reminders screen or your device notification settings.\n\n
+──────────────────────────────\n\n
+6. Permissions\n\n
+• POST_NOTIFICATIONS — display hydration reminder notifications (Android 13+)\n
+• RECEIVE_BOOT_COMPLETED — reschedule reminders after a device reboot\n
+• SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM — deliver reminders at the exact times you configured (Android 12+)\n\n
+No other permissions are requested or used.\n\n
+──────────────────────────────\n\n
+7. Data Retention and Deletion\n\n
+All data is stored locally in your device\'s private storage and accessible only to the App. To delete all data:\n\n
+• Clear app data: Device Settings → Apps → WaterReminder → Storage → Clear Data\n
+• Or simply uninstall the App.\n\n
+There is no remote backup to delete because no data is ever uploaded.\n\n
+──────────────────────────────\n\n
+8. Children\'s Privacy\n\n
+The App does not collect any personal information from anyone, including children under the age of 13. It is safe for use by all ages.\n\n
+──────────────────────────────\n\n
+9. Changes to This Policy\n\n
+If a future version of the App introduces features that change these data practices, this policy will be updated and the date at the top will change.\n\n
+──────────────────────────────\n\n
+10. Contact\n\n
+Questions or concerns about this Privacy Policy?\n\n
+David Ricardo\n
     </string>
 </resources>

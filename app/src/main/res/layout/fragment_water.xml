@@ -25,18 +25,6 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
-            android:id="@+id/text_streak"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="🔥 0 day streak"
-            android:textColor="#FF6F00"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/title_water_reminder" />
-
-        <TextView
             android:id="@+id/text_intake_label"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -46,7 +34,7 @@
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/text_streak" />
+            app:layout_constraintTop_toBottomOf="@id/title_water_reminder" />
 
         <!-- 4 dynamic bottles — filled based on current intake -->
         <LinearLayout

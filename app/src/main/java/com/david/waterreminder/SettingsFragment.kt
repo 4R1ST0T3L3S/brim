@@ -54,6 +54,10 @@ class SettingsFragment : Fragment() {
             prefs.edit().putBoolean("tour_done", false).apply()
             findNavController().popBackStack(R.id.FirstFragment, false)
         }
+
+        view.findViewById<View>(R.id.row_privacy_policy).setOnClickListener {
+            findNavController().navigate(R.id.action_SettingsFragment_to_SecondFragment)
+        }
     }
 
     override fun onResume() {
@@ -82,22 +86,20 @@ class SettingsFragment : Fragment() {
     private fun showPersonalGoalDialog(view: View) {
         val currentMl = prefs.getInt("personal_goal_ml", 0)
         val editText = EditText(requireContext()).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
+            inputType = InputType.TYPE_CLASS_NUMBER or
+                if (unit == UNIT_CL) InputType.TYPE_NUMBER_FLAG_DECIMAL else 0
             hint = "Your personal goal in $unit (e.g. ${1500.toDisplay(unit)})"
             setPadding(48, 32, 48, 32)
-            if (currentMl > 0) { setText(currentMl.toDisplay(unit).toString()); selectAll() }
+            if (currentMl > 0) { setText(currentMl.toDisplay(unit)); selectAll() }
         }
         AlertDialog.Builder(requireContext())
             .setTitle("Personal goal")
             .setView(editText)
             .setPositiveButton("Save") { _, _ ->
-                val input = editText.text.toString().toIntOrNull()
-                if (input != null && input > 0) {
-                    val storedMl = input.toMl(unit)
-                    if (storedMl in 100..10_000) {
-                        prefs.edit().putInt("personal_goal_ml", storedMl).apply()
-                        refreshRows(view)
-                    }
+                val storedMl = editText.text.toString().toMl(unit)
+                if (storedMl != null && storedMl in 100..10_000) {
+                    prefs.edit().putInt("personal_goal_ml", storedMl).apply()
+                    refreshRows(view)
                 }
             }
             .apply {
