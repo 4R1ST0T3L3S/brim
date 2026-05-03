@@ -26,7 +26,7 @@ The App stores the following information exclusively in your device\'s private a
 2.2 Data we do NOT collect\n\n
 • No name, email address, or personally identifiable information\n
 • No location data\n
-• No device identifiers (IMEI, advertising ID, etc.)\n
+• No device identifiers\n
 • No usage analytics or event telemetry\n
 • No crash or error reports\n
 • No camera, microphone, or contacts access\n
@@ -46,9 +46,9 @@ None of these libraries collect, transmit, or process personal data.\n\n
 Reminders are delivered as local notifications generated entirely on your device using Android\'s AlarmManager. No notification content or delivery data is sent to any external service. You can disable notifications at any time from the Reminders screen or your device notification settings.\n\n
 ──────────────────────────────\n\n
 6. Permissions\n\n
-• POST_NOTIFICATIONS — display hydration reminder notifications (Android 13+)\n
-• RECEIVE_BOOT_COMPLETED — reschedule reminders after a device reboot\n
-• SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM — deliver reminders at the exact times you configured (Android 12+)\n\n
+• Display hydration reminder notifications (Android 13+)\n
+• Reschedule reminders after a device reboot\n
+• Deliver reminders at the exact times you configured (Android 12+)\n\n
 No other permissions are requested or used.\n\n
 ──────────────────────────────\n\n
 7. Data Retention and Deletion\n\n
@@ -58,13 +58,11 @@ All data is stored locally in your device\'s private storage and accessible only
 There is no remote backup to delete because no data is ever uploaded.\n\n
 ──────────────────────────────\n\n
 8. Children\'s Privacy\n\n
-The App does not collect any personal information from anyone, including children under the age of 13. It is safe for use by all ages.\n\n
+The App does not collect any personal information from anyone. It is safe for use by all ages.\n\n
 ──────────────────────────────\n\n
 9. Changes to This Policy\n\n
-If a future version of the App introduces features that change these data practices, this policy will be updated and the date at the top will change.\n\n
+If a future version of the App introduces features that change these data practices, this policy will be updated and the user will be notified.\n\n
 ──────────────────────────────\n\n
-10. Contact\n\n
-Questions or concerns about this Privacy Policy?\n\n
 David Ricardo\n
     </string>
 </resources>
