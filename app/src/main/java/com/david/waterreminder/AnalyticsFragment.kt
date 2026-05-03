@@ -16,6 +16,7 @@ import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.ValueFormatter
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class AnalyticsFragment : Fragment() {
 
@@ -23,7 +24,7 @@ class AnalyticsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val goalMl = 1500
-    private val dayFormatter = DateTimeFormatter.ofPattern("MMM d")
+    private val dayFormatter = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH)
     private val prefs by lazy {
         requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
     }

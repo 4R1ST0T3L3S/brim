@@ -181,11 +181,12 @@
                 android:padding="16dp">
 
                 <ImageView
+                    android:id="@+id/imageView"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_bottle_full"
-                    android:tint="#2196F3" />
+                    android:tint="#FF6F00"
+                    app:srcCompat="@drawable/ic_bottle_full" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -240,7 +241,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:src="@drawable/ic_bottle_full"
-                    android:tint="#FF6F00" />
+                    android:tint="#2196F3" />
 
                 <LinearLayout
                     android:layout_width="0dp"

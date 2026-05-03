@@ -5,15 +5,11 @@
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <!-- Exclude tour flag so reinstalling always shows the guide tour again -->
+        <exclude domain="sharedpref" path="tour_prefs.xml"/>
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <!-- Exclude tour flag so reinstalling always shows the guide tour again -->
+        <exclude domain="sharedpref" path="tour_prefs.xml"/>
     </device-transfer>
-    -->
 </data-extraction-rules>

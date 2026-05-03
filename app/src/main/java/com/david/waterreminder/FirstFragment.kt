@@ -45,6 +45,10 @@ class FirstFragment : Fragment() {
     private val prefs by lazy {
         requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
     }
+    // Separate prefs file excluded from backup so the tour always runs after a reinstall.
+    private val tourPrefs by lazy {
+        requireContext().getSharedPreferences("tour_prefs", Context.MODE_PRIVATE)
+    }
     private val unit get() = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
 
     override fun onCreateView(
@@ -60,7 +64,7 @@ class FirstFragment : Fragment() {
         rebuildQuickButtons()
         // Run the guide tour only on the very first launch.
         // doOnPreDraw waits until layout is finished so all targets have positions.
-        if (!prefs.getBoolean("tour_done", false)) {
+        if (!tourPrefs.getBoolean("tour_done", false)) {
             view.doOnPreDraw { maybeShowGuideTour() }
         }
     }
@@ -333,91 +337,95 @@ class FirstFragment : Fragment() {
         if (_binding == null) return
         val activity = activity ?: return
 
-        // Common style: no inner highlight circle, tap-anywhere advances, optional view tint.
-        fun TapTarget.style(radius: Int = 40, tint: Boolean = true) = this
-            .transparentTarget(true)
-            .targetRadius(radius)
-            .cancelable(true)
-            .tintTarget(tint)
+        // Mark done first — before any TapTargetView code runs — so a crash during
+        // target creation can never lock the app in an infinite crash-on-launch loop.
+        tourPrefs.edit().putBoolean("tour_done", true).apply()
 
-        // Find a quick-add child by its tag (set in rebuildQuickButtons).
-        fun findQuickAdd(tag: Any): View? =
-            (0 until binding.containerQuickAdd.childCount)
-                .map(binding.containerQuickAdd::getChildAt)
-                .firstOrNull { it.tag == tag }
+        try {
+            // Common style: no inner highlight circle, tap-anywhere advances, optional view tint.
+            fun TapTarget.style(radius: Int = 40, tint: Boolean = true) = this
+                .transparentTarget(true)
+                .targetRadius(radius)
+                .cancelable(true)
+                .tintTarget(tint)
 
-        // Each lambda returns the next target — or null if its view is missing,
-        // in which case the step is skipped (mapNotNull below).
-        val steps: List<() -> TapTarget?> = listOf(
-            {
-                TapTarget.forView(
-                    binding.containerBottles,
-                    "Daily progress",
-                    "Each bottle fills as you reach a quarter of your $goalMl ml goal."
-                ).style(radius = 110)
-            },
-            {
-                findQuickAdd(20)?.let {
-                    TapTarget.forView(
-                        it, "Small sips",
-                        "Glass icons are small amounts: 10 ml (half) and 20 ml (full). Tap to log instantly."
-                    ).style()
-                }
-            },
-            {
-                findQuickAdd(250)?.let {
-                    TapTarget.forView(
-                        it, "Bigger drinks",
-                        "Drop icons are larger amounts (250–500 ml)."
-                    ).style()
-                }
-            },
-            {
-                findQuickAdd(TAG_CUSTOM_SLOT)?.let {
-                    TapTarget.forView(
-                        it, "Your own amount",
-                        "Long-press the + button to set a custom quick-add value."
-                    ).style()
-                }
-            },
-            {
-                binding.containerQuickRemove.getChildAt(0)?.let {
-                    TapTarget.forView(
-                        it, "Made a mistake?",
-                        "Use Quick remove to subtract water you logged by accident."
-                    ).style()
-                }
-            },
-            {
-                activity.findViewById<View>(R.id.fab_analytics)?.let {
-                    TapTarget.forView(
-                        it, "Your history",
-                        "Open the chart to see your daily intake and streaks over time."
-                    ).style(tint = false)
-                }
-            },
-            {
-                activity.findViewById<View>(R.id.fab)?.let {
-                    TapTarget.forView(
-                        it, "Reminders",
-                        "Tap here, then the bell, to set up reminder times."
-                    ).style(tint = false)
-                }
-            },
-        )
+            // Find a quick-add child by its tag (set in rebuildQuickButtons).
+            fun findQuickAdd(tag: Any): View? =
+                (0 until binding.containerQuickAdd.childCount)
+                    .map(binding.containerQuickAdd::getChildAt)
+                    .firstOrNull { it.tag == tag }
 
-        val targets = steps.mapNotNull { it() }
-        if (targets.isEmpty()) return
+            val steps: List<() -> TapTarget?> = listOf(
+                {
+                    TapTarget.forView(
+                        binding.containerBottles,
+                        "Daily progress",
+                        "Each bottle fills as you reach a quarter of your $goalMl ml goal."
+                    ).style(radius = 110)
+                },
+                {
+                    findQuickAdd(20)?.let {
+                        TapTarget.forView(
+                            it, "Small sips",
+                            "Glass icons are small amounts: 10 ml (half) and 20 ml (full). Tap to log instantly."
+                        ).style()
+                    }
+                },
+                {
+                    findQuickAdd(250)?.let {
+                        TapTarget.forView(
+                            it, "Bigger drinks",
+                            "Drop icons are larger amounts (250–500 ml)."
+                        ).style()
+                    }
+                },
+                {
+                    findQuickAdd(TAG_CUSTOM_SLOT)?.let {
+                        TapTarget.forView(
+                            it, "Your own amount",
+                            "Long-press the + button to set a custom quick-add value."
+                        ).style()
+                    }
+                },
+                {
+                    binding.containerQuickRemove.getChildAt(0)?.let {
+                        TapTarget.forView(
+                            it, "Made a mistake?",
+                            "Use Quick remove to subtract water you logged by accident."
+                        ).style()
+                    }
+                },
+                {
+                    activity.findViewById<View>(R.id.fab_analytics)?.let {
+                        TapTarget.forView(
+                            it, "Your history",
+                            "Open the chart to see your daily intake and streaks over time."
+                        ).style(tint = false)
+                    }
+                },
+                {
+                    activity.findViewById<View>(R.id.fab)?.let {
+                        TapTarget.forView(
+                            it, "Reminders",
+                            "Tap here, then the bell, to set up reminder times."
+                        ).style(tint = false)
+                    }
+                },
+            )
 
-        // Mark done immediately on start so the tour can never repeat unprompted —
-        // even if the app is killed mid-tour. Replay via Settings → Replay guide tour.
-        prefs.edit().putBoolean("tour_done", true).apply()
+            val targets = steps.mapNotNull { it() }
+            if (targets.isEmpty()) return
 
-        TapTargetSequence(activity)
-            .targets(targets)
-            .considerOuterCircleCanceled(true)
-            .continueOnCancel(true)
-            .start()
+            TapTargetSequence(activity)
+                .targets(targets)
+                .considerOuterCircleCanceled(true)
+                .continueOnCancel(true)
+                .start()
+
+        } catch (e: Exception) {
+            // TapTargetView can fail on certain device/theme/API combinations.
+            // The tour is silently skipped — the user can replay it via Settings.
+        }
     }
 
     override fun onDestroyView() {

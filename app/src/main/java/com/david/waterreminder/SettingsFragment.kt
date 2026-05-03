@@ -17,6 +17,9 @@ class SettingsFragment : Fragment() {
     private val prefs by lazy {
         requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
     }
+    private val tourPrefs by lazy {
+        requireContext().getSharedPreferences("tour_prefs", Context.MODE_PRIVATE)
+    }
     private val unit get() = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
 
     override fun onCreateView(
@@ -51,7 +54,7 @@ class SettingsFragment : Fragment() {
         }
 
         view.findViewById<View>(R.id.row_replay_tour).setOnClickListener {
-            prefs.edit().putBoolean("tour_done", false).apply()
+            tourPrefs.edit().putBoolean("tour_done", false).apply()
             findNavController().popBackStack(R.id.FirstFragment, false)
         }
 
@@ -88,7 +91,7 @@ class SettingsFragment : Fragment() {
         val editText = EditText(requireContext()).apply {
             inputType = InputType.TYPE_CLASS_NUMBER or
                 if (unit == UNIT_CL) InputType.TYPE_NUMBER_FLAG_DECIMAL else 0
-            hint = "Your personal goal in $unit (e.g. ${1500.toDisplay(unit)})"
+            hint = "e.g. ${1000.toDisplay(unit)} $unit"
             setPadding(48, 32, 48, 32)
             if (currentMl > 0) { setText(currentMl.toDisplay(unit)); selectAll() }
         }
