@@ -23,7 +23,7 @@ import java.time.LocalDate
 class FirstFragment : Fragment() {
 
     companion object {
-        val FIXED_ML = listOf(10, 20, 250, 330, 500)
+        val FIXED_ML = listOf(100, 200, 250, 330, 500)
         val AMOUNT_ICONS = mapOf(
             10 to R.drawable.ic_glass_half,
             20 to R.drawable.ic_glass_full
