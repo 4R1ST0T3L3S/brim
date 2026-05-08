@@ -25,8 +25,8 @@ class FirstFragment : Fragment() {
     companion object {
         val FIXED_ML = listOf(100, 200, 250, 330, 500)
         val AMOUNT_ICONS = mapOf(
-            10 to R.drawable.ic_glass_half,
-            20 to R.drawable.ic_glass_full
+            100 to R.drawable.ic_glass_half,
+            200 to R.drawable.ic_glass_full
         )
         const val ADD_BG = "#2196F3"
         const val ADD_FG = "#FFFFFF"
@@ -364,10 +364,10 @@ class FirstFragment : Fragment() {
                     ).style(radius = 110)
                 },
                 {
-                    findQuickAdd(20)?.let {
+                    findQuickAdd(200)?.let {
                         TapTarget.forView(
                             it, "Small sips",
-                            "Glass icons are small amounts: 10 ml (half) and 20 ml (full). Tap to log instantly."
+                            "Glass icons are small amounts: 100 ml (half) and 200 ml (full). Tap to log instantly."
                         ).style()
                     }
                 },
