@@ -61,6 +61,11 @@ class SettingsFragment : Fragment() {
         view.findViewById<View>(R.id.row_privacy_policy).setOnClickListener {
             findNavController().navigate(R.id.action_SettingsFragment_to_SecondFragment)
         }
+
+        val versionName = requireContext().packageManager
+            .getPackageInfo(requireContext().packageName, 0).versionName
+        view.findViewById<TextView>(R.id.text_app_version).text =
+            getString(R.string.settings_version, versionName)
     }
 
     override fun onResume() {
