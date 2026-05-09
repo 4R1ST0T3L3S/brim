@@ -36,7 +36,18 @@
         android:id="@+id/AnalyticsFragment"
         android:name="com.david.waterreminder.AnalyticsFragment"
         android:label="History"
-        tools:layout="@layout/fragment_analytics" />
+        tools:layout="@layout/fragment_analytics">
+
+        <action
+            android:id="@+id/action_AnalyticsFragment_to_AllHistoryFragment"
+            app:destination="@id/AllHistoryFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/AllHistoryFragment"
+        android:name="com.david.waterreminder.AllHistoryFragment"
+        android:label="All History"
+        tools:layout="@layout/fragment_all_history" />
 
     <fragment
         android:id="@+id/SettingsFragment"
