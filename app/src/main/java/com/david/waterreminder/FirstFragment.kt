@@ -162,6 +162,7 @@ class FirstFragment : Fragment() {
 
     private fun saveIntake() {
         prefs.edit().putInt("intake_ml", currentMl).apply()
+        android.app.backup.BackupManager(requireContext()).dataChanged()
     }
 
     private fun updateIntakeUI() {
@@ -190,8 +191,9 @@ class FirstFragment : Fragment() {
             val icon = when {
                 pct == 0f    -> R.drawable.ic_bottle_empty
                 pct <= 0.25f -> R.drawable.ic_bottle_quarter
-                pct <= 0.75f -> R.drawable.ic_bottle_half
-                pct < 1f     -> R.drawable.ic_bottle_three_quarters
+                pct <= 0.50f -> R.drawable.ic_bottle_half
+                pct <= 0.75f  -> R.drawable.ic_bottle_three_quarters
+                pct < 1f     -> R.drawable.ic_bottle_full
                 else         -> R.drawable.ic_bottle_full
             }
             imageView.setImageResource(icon)

@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.david.waterreminder.databinding.FragmentAnalyticsBinding
 import com.github.mikephil.charting.components.LimitLine
 import com.github.mikephil.charting.components.XAxis
@@ -42,6 +43,10 @@ class AnalyticsFragment : Fragment() {
         val personalGoal = prefs.getInt("personal_goal_ml", 0)
         setupChart(history, personalGoal)
         setupStats(history, personalGoal)
+
+        binding.textViewAllHistory.setOnClickListener {
+            findNavController().navigate(R.id.action_AnalyticsFragment_to_AllHistoryFragment)
+        }
     }
 
     // ─── Data ─────────────────────────────────────────────────────
