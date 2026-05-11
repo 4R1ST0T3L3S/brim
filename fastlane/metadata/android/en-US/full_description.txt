@@ -1,0 +1,9 @@
+Water Reminder helps you build a healthy hydration habit by tracking your daily water intake and sending you timely reminders throughout the day.
+
+Features:
+• Log your water intake with a single tap
+• Set customizable reminders to drink water
+• View your daily and weekly hydration history with charts
+• Reminders survive device reboots
+• No ads, no tracking, no internet required
+• Fully open source (AGPL-3.0)
