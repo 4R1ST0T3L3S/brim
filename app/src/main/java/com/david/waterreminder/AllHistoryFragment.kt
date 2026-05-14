@@ -103,8 +103,7 @@ class AllHistoryFragment : Fragment() {
             circleHoleRadius = if (history.size > 60) 0f else 2f
             lineWidth = 2.5f
             valueTextSize = 0f
-            mode = LineDataSet.Mode.CUBIC_BEZIER
-            cubicIntensity = 0.2f
+            mode = LineDataSet.Mode.LINEAR
             setDrawFilled(true)
             fillDrawable = fillGradient
             highLightColor = Color.parseColor("#2196F3")
