@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="@color/page_background"
     tools:context=".FirstFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -17,7 +17,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="Water Reminder 💧"
-            android:textColor="#000000"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="28sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:text="Today's intake"
-            android:textColor="#888888"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -54,7 +54,7 @@
                 android:layout_height="36dp"
                 android:layout_marginEnd="12dp"
                 android:src="@drawable/ic_bottle_empty"
-                android:tint="#2196F3" />
+                android:tint="@color/brand_blue" />
 
             <ImageView
                 android:id="@+id/bottle_2"
@@ -62,7 +62,7 @@
                 android:layout_height="36dp"
                 android:layout_marginEnd="12dp"
                 android:src="@drawable/ic_bottle_empty"
-                android:tint="#2196F3" />
+                android:tint="@color/brand_blue" />
 
             <ImageView
                 android:id="@+id/bottle_3"
@@ -70,14 +70,14 @@
                 android:layout_height="36dp"
                 android:layout_marginEnd="12dp"
                 android:src="@drawable/ic_bottle_empty"
-                android:tint="#2196F3" />
+                android:tint="@color/brand_blue" />
 
             <ImageView
                 android:id="@+id/bottle_4"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:src="@drawable/ic_bottle_empty"
-                android:tint="#2196F3" />
+                android:tint="@color/brand_blue" />
 
         </LinearLayout>
 
@@ -89,8 +89,8 @@
             android:layout_marginTop="12dp"
             android:max="100"
             android:progress="0"
-            android:progressBackgroundTint="#E0E0E0"
-            android:progressTint="#2196F3"
+            android:progressBackgroundTint="?attr/colorSurfaceVariant"
+            android:progressTint="@color/brand_blue"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/container_bottles" />
@@ -102,7 +102,7 @@
             android:layout_marginTop="8dp"
             android:gravity="end"
             android:text="0 ml / 1500 ml"
-            android:textColor="#555555"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -115,7 +115,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:text="Quick add"
-            android:textColor="#888888"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -147,7 +147,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="Quick remove"
-            android:textColor="#888888"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -180,7 +180,7 @@
             android:gravity="center"
             android:lineSpacingMultiplier="1.4"
             android:text="🎉 Congratulations!\nYou reached your daily goal!"
-            android:textColor="#2196F3"
+            android:textColor="@color/brand_blue"
             android:textSize="16sp"
             android:textStyle="bold"
             android:visibility="gone"

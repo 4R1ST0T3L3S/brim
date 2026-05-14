@@ -2,4 +2,22 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Toolbar -->
+    <color name="toolbar_background">#1976D2</color>
+
+    <!-- Page backgrounds -->
+    <color name="page_background">#FFFFFF</color>
+
+    <!-- Brand / accent -->
+    <color name="brand_blue">#2196F3</color>
+    <color name="brand_orange">#FF6F00</color>
+    <color name="brand_red">#F44336</color>
+    <color name="brand_blue_light">#90CAF9</color>
+
+    <!-- Swipe-action backgrounds -->
+    <color name="swipe_edit_bg">#888888</color>
+
+    <!-- Chart marker -->
+    <color name="marker_value_text">#90CAF9</color>
 </resources>

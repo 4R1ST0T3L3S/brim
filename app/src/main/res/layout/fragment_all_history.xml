@@ -4,14 +4,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#FFFFFF">
+    android:background="@color/page_background">
 
     <LinearLayout
         android:id="@+id/layout_summary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#F5F5F5"
+        android:background="?attr/colorSurfaceVariant"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="16dp"
@@ -22,7 +22,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="15sp"
-            android:textColor="#000000"
+            android:textColor="?attr/colorOnSurface"
             android:text="Days tracked: —" />
 
         <TextView
@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textSize="15sp"
-            android:textColor="#000000"
+            android:textColor="?attr/colorOnSurface"
             android:text="Overall average: —" />
 
     </LinearLayout>
@@ -39,7 +39,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#E0E0E0" />
+        android:background="?attr/colorOutlineVariant" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"

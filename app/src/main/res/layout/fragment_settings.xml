@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="@color/page_background">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -11,13 +11,13 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Section: Custom Quick Button -->
+        <!-- Section: Appearance -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:text="Quick buttons"
-            android:textColor="#888888"
+            android:text="Appearance"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="12sp"
             android:textAllCaps="true"
             android:letterSpacing="0.08" />
@@ -27,8 +27,77 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#F5F5F5">
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:id="@+id/row_set_theme"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@android:drawable/ic_menu_manage"
+                    android:tint="@color/brand_blue" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Theme"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:id="@+id/text_theme_current"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="System default"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@android:drawable/ic_menu_edit"
+                    android:tint="?attr/colorOnSurfaceVariant" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Section: Custom Quick Button -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Quick buttons"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="12sp"
+            android:textAllCaps="true"
+            android:letterSpacing="0.08" />
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:id="@+id/row_reset_custom"
@@ -46,7 +115,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:src="@drawable/ic_water_drop"
-                    android:tint="#2196F3" />
+                    android:tint="@color/brand_blue" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -58,7 +127,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Reset custom quick button"
-                        android:textColor="#000000"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="15sp" />
 
                     <TextView
@@ -67,7 +136,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="No custom value set"
-                        android:textColor="#888888"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="12sp" />
 
                 </LinearLayout>
@@ -76,7 +145,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@android:drawable/ic_menu_delete"
-                    android:tint="#BBBBBB" />
+                    android:tint="?attr/colorOnSurfaceVariant" />
 
             </LinearLayout>
 
@@ -88,7 +157,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:text="Units"
-            android:textColor="#888888"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="12sp"
             android:textAllCaps="true"
             android:letterSpacing="0.08" />
@@ -98,8 +167,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#F5F5F5">
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:id="@+id/row_set_unit"
@@ -117,7 +185,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:src="@drawable/ic_water_drop"
-                    android:tint="#2196F3" />
+                    android:tint="@color/brand_blue" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -129,7 +197,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Measure unit"
-                        android:textColor="#000000"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="15sp" />
 
                     <TextView
@@ -138,7 +206,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="Millilitres (ml)"
-                        android:textColor="#888888"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="12sp" />
 
                 </LinearLayout>
@@ -147,7 +215,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@android:drawable/ic_menu_edit"
-                    android:tint="#BBBBBB" />
+                    android:tint="?attr/colorOnSurfaceVariant" />
 
             </LinearLayout>
 
@@ -159,7 +227,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:text="Goal"
-            android:textColor="#888888"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="12sp"
             android:textAllCaps="true"
             android:letterSpacing="0.08" />
@@ -169,8 +237,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="2dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#F5F5F5">
+            app:cardElevation="0dp">
 
             <!-- Daily goal — static, not editable -->
             <LinearLayout
@@ -185,7 +252,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
-                    android:tint="#FF6F00"
+                    android:tint="@color/brand_orange"
                     app:srcCompat="@drawable/ic_bottle_full" />
 
                 <LinearLayout
@@ -198,7 +265,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Daily goal"
-                        android:textColor="#000000"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="15sp" />
 
                     <TextView
@@ -206,7 +273,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="1500 ml per day"
-                        android:textColor="#888888"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="12sp" />
 
                 </LinearLayout>
@@ -221,8 +288,7 @@
             android:layout_marginTop="2dp"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#F5F5F5">
+            app:cardElevation="0dp">
 
             <!-- Personal Goal — editable -->
             <LinearLayout
@@ -241,7 +307,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:src="@drawable/ic_bottle_full"
-                    android:tint="#2196F3" />
+                    android:tint="@color/brand_blue" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -253,7 +319,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Personal goal"
-                        android:textColor="#000000"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="15sp" />
 
                     <TextView
@@ -262,7 +328,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="Not set"
-                        android:textColor="#888888"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="12sp" />
 
                 </LinearLayout>
@@ -271,7 +337,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@android:drawable/ic_menu_edit"
-                    android:tint="#BBBBBB" />
+                    android:tint="?attr/colorOnSurfaceVariant" />
 
             </LinearLayout>
 
@@ -283,7 +349,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:text="Help"
-            android:textColor="#888888"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="12sp"
             android:textAllCaps="true"
             android:letterSpacing="0.08" />
@@ -293,8 +359,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="2dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#F5F5F5">
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:id="@+id/row_replay_tour"
@@ -312,7 +377,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:src="@drawable/ic_water_drop"
-                    android:tint="#2196F3" />
+                    android:tint="@color/brand_blue" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -324,7 +389,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Replay guide tour"
-                        android:textColor="#000000"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="15sp" />
 
                     <TextView
@@ -332,7 +397,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="See the intro again"
-                        android:textColor="#888888"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="12sp" />
 
                 </LinearLayout>
@@ -341,7 +406,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@android:drawable/ic_menu_help"
-                    android:tint="#BBBBBB" />
+                    android:tint="?attr/colorOnSurfaceVariant" />
 
             </LinearLayout>
 
@@ -353,8 +418,7 @@
             android:layout_marginTop="2dp"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#F5F5F5">
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:id="@+id/row_privacy_policy"
@@ -372,7 +436,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:src="@android:drawable/ic_menu_info_details"
-                    android:tint="#2196F3" />
+                    android:tint="@color/brand_blue" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -384,7 +448,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Privacy Policy"
-                        android:textColor="#000000"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="15sp" />
 
                     <TextView
@@ -392,7 +456,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="How your data is handled"
-                        android:textColor="#888888"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="12sp" />
 
                 </LinearLayout>
@@ -401,7 +465,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@android:drawable/ic_media_next"
-                    android:tint="#BBBBBB" />
+                    android:tint="?attr/colorOnSurfaceVariant" />
 
             </LinearLayout>
 
@@ -412,7 +476,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:textColor="#BBBBBB"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="12sp" />
 
     </LinearLayout>

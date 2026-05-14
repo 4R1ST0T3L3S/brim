@@ -6,4 +6,6 @@
     </style>
 
     <style name="Theme.WaterReminder" parent="Base.Theme.WaterReminder" />
+
+    <style name="PopupTheme" parent="ThemeOverlay.AppCompat.Light" />
 </resources>

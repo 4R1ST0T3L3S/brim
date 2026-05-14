@@ -1,11 +1,13 @@
 package com.david.waterreminder
 
+import android.content.Context
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.animation.AnimationUtils
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -21,6 +23,10 @@ class MainActivity : AppCompatActivity() {
     private var fabExpanded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val prefs = getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        AppCompatDelegate.setDefaultNightMode(
+            prefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_NO)
+        )
         super.onCreate(savedInstanceState)
 
         binding = ActivityMainBinding.inflate(layoutInflater)

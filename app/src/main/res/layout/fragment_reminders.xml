@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="@color/page_background">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -17,7 +17,7 @@
             android:text="Reminders"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#000000"
+            android:textColor="?attr/colorOnSurface"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -30,7 +30,7 @@
             android:layout_marginTop="32dp"
             android:text="Enable notifications"
             android:textSize="16sp"
-            android:textColor="#000000"
+            android:textColor="?attr/colorOnSurface"
             app:layout_constraintBottom_toBottomOf="@id/switch_notifications"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/title_reminders" />
@@ -48,7 +48,7 @@
             android:layout_width="0dp"
             android:layout_height="1dp"
             android:layout_marginTop="16dp"
-            android:background="#E0E0E0"
+            android:background="?attr/colorOutlineVariant"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/switch_notifications" />
@@ -61,7 +61,7 @@
             android:layout_marginTop="16dp"
             android:text="My reminders"
             android:textSize="14sp"
-            android:textColor="#888888"
+            android:textColor="?attr/colorOnSurfaceVariant"
             app:layout_constraintEnd_toStartOf="@id/button_reset_reminders"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/divider"
@@ -76,8 +76,8 @@
             android:textSize="12sp"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             app:cornerRadius="24dp"
-            app:strokeColor="#CCCCCC"
-            android:textColor="#888888"
+            app:strokeColor="?attr/colorOutline"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:insetTop="0dp"
@@ -91,7 +91,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="28dp"
             android:text="+ Add reminder"
-            app:backgroundTint="#2196F3"
+            app:backgroundTint="@color/brand_blue"
             app:cornerRadius="24dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -114,7 +114,7 @@
             android:layout_marginTop="16dp"
             android:gravity="center"
             android:text="No custom reminders yet.\nTap '+ Add reminder' to get started."
-            android:textColor="#AAAAAA"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             android:lineSpacingMultiplier="1.4"
             app:layout_constraintEnd_toEndOf="parent"

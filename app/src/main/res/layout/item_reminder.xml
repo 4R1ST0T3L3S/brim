@@ -8,7 +8,7 @@
         android:id="@+id/edit_background"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#888888"
+        android:background="@color/swipe_edit_bg"
         android:gravity="center_vertical|start"
         android:paddingStart="24dp"
         android:orientation="horizontal"
@@ -19,14 +19,14 @@
             android:layout_height="20dp"
             android:layout_marginEnd="6dp"
             android:src="@android:drawable/ic_menu_edit"
-            android:tint="#FFFFFF"
+            android:tint="@color/white"
             android:contentDescription="Edit" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Edit"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/white"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -37,7 +37,7 @@
         android:id="@+id/delete_background"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#F44336"
+        android:background="@color/brand_red"
         android:gravity="center_vertical|end"
         android:paddingEnd="24dp"
         android:orientation="horizontal"
@@ -48,14 +48,14 @@
             android:layout_height="20dp"
             android:layout_marginEnd="6dp"
             android:src="@android:drawable/ic_menu_delete"
-            android:tint="#FFFFFF"
+            android:tint="@color/white"
             android:contentDescription="Delete" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Delete"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/white"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -67,7 +67,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#FFFFFF">
+        android:background="@color/page_background">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -83,7 +83,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:textSize="17sp"
-                android:textColor="#000000"
+                android:textColor="?attr/colorOnSurface"
                 android:text="🔔  10:00" />
 
             <TextView
@@ -97,7 +97,7 @@
                 android:paddingBottom="6dp"
                 android:text="Daily"
                 android:textSize="12sp"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/white"
                 android:background="@drawable/bg_type_chip"
                 android:clickable="true"
                 android:focusable="true" />
@@ -112,7 +112,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#F0F0F0" />
+            android:background="?attr/colorOutlineVariant" />
 
     </LinearLayout>
 

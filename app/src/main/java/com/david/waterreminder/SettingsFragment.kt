@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.david.waterreminder.BuildConfig
@@ -30,6 +31,10 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         refreshRows(view)
+
+        view.findViewById<View>(R.id.row_set_theme).setOnClickListener {
+            showThemeDialog(view)
+        }
 
         view.findViewById<View>(R.id.row_reset_custom).setOnClickListener {
             val current = prefs.getInt("custom_quick_ml", 0)
@@ -73,6 +78,27 @@ class SettingsFragment : Fragment() {
     }
 
     // ─── Dialogs ──────────────────────────────────────────────────
+
+    private fun showThemeDialog(view: View) {
+        val options = arrayOf("System default", "Light", "Dark")
+        val modes = intArrayOf(
+            AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
+            AppCompatDelegate.MODE_NIGHT_NO,
+            AppCompatDelegate.MODE_NIGHT_YES
+        )
+        val current = prefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        val currentIndex = modes.indexOfFirst { it == current }.coerceAtLeast(0)
+        AlertDialog.Builder(requireContext())
+            .setTitle("Theme")
+            .setSingleChoiceItems(options, currentIndex) { dialog, which ->
+                prefs.edit().putInt("theme_mode", modes[which]).apply()
+                AppCompatDelegate.setDefaultNightMode(modes[which])
+                refreshRows(view)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
 
     private fun showUnitDialog(view: View) {
         val options = arrayOf("Millilitres (ml)", "Centilitres (cl)")
@@ -125,6 +151,13 @@ class SettingsFragment : Fragment() {
     // ─── UI refresh ───────────────────────────────────────────────
 
     private fun refreshRows(view: View) {
+        val themeLabel = when (prefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_NO)) {
+            AppCompatDelegate.MODE_NIGHT_NO -> "Light"
+            AppCompatDelegate.MODE_NIGHT_YES -> "Dark"
+            else -> "System default"
+        }
+        view.findViewById<TextView>(R.id.text_theme_current).text = themeLabel
+
         val customMl = prefs.getInt("custom_quick_ml", 0)
         view.findViewById<TextView>(R.id.text_custom_current).text =
             if (customMl > 0) "Currently set to ${customMl.fmt(unit)}" else "No custom value set"
