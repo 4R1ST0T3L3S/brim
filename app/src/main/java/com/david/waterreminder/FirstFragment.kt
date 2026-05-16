@@ -182,18 +182,18 @@ class FirstFragment : Fragment() {
     }
 
     private fun updateBottlesUI() {
-        val mlPerBottle = goalMl / 4
+        val mlPerBottle = 500
         val bottles = listOf(binding.bottle1, binding.bottle2, binding.bottle3, binding.bottle4)
         bottles.forEachIndexed { index, imageView ->
             val bottleMin = index * mlPerBottle
             val fill = (currentMl - bottleMin).coerceIn(0, mlPerBottle)
-            val pct = fill.toFloat() / mlPerBottle
-            val icon = when {
-                pct == 0f     -> R.drawable.ic_bottle_empty
-                pct <= 0.375f -> R.drawable.ic_bottle_quarter
-                pct <= 0.625f -> R.drawable.ic_bottle_half
-                pct <= 0.875f -> R.drawable.ic_bottle_three_quarters
-                else          -> R.drawable.ic_bottle_full
+            val icon = when ((fill / 100).coerceIn(0, 5)) {
+                0    -> R.drawable.ic_bottle_empty
+                1    -> R.drawable.ic_bottle_quarter
+                2    -> R.drawable.ic_bottle_half
+                3    -> R.drawable.ic_bottle_three_quarters
+                4    -> R.drawable.ic_bottle_almost_full
+                else -> R.drawable.ic_bottle_full
             }
             imageView.setImageResource(icon)
         }
