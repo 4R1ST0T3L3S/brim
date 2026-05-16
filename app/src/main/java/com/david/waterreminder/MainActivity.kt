@@ -1,6 +1,8 @@
 package com.david.waterreminder
 
+import android.app.backup.BackupManager
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -21,6 +23,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
     private var fabExpanded = false
+
+    private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+        BackupManager(this).dataChanged()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val prefs = getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
@@ -100,6 +106,18 @@ class MainActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+            .registerOnSharedPreferenceChangeListener(prefsListener)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+            .unregisterOnSharedPreferenceChangeListener(prefsListener)
     }
 
     override fun onSupportNavigateUp(): Boolean {

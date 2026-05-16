@@ -11,6 +11,16 @@
     <string name="next">Next</string>
     <string name="previous">Previous</string>
 
+    <string name="settings_section_data">Data</string>
+    <string name="settings_export_data">Export Data</string>
+    <string name="settings_export_data_subtitle">Save a backup file</string>
+    <string name="settings_import_data">Import Data</string>
+    <string name="settings_import_data_subtitle">Restore from a backup file</string>
+    <string name="export_success">Data exported successfully</string>
+    <string name="export_failed">Export failed</string>
+    <string name="import_success">Data imported — restart the app to see all changes</string>
+    <string name="import_failed">Import failed — invalid backup file</string>
+
     <string name="changelog_label">Change Log</string>
     <string name="changelog_row_subtitle">What\'s new in each version</string>
     <string name="changelog_version_header">Version %s</string>

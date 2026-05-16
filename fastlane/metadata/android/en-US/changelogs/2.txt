@@ -2,4 +2,5 @@
 • Added Share feature
 • Added Change Logs menu
 • Added FullHistory View menu
+• Added Export and Import buttons for Testers
 • Bug fixes and improvements
