@@ -1,0 +1,4 @@
+Initial release.
+
+• Water Reminder - added notifications to remind you to drink water.
+• Water Tracker - to keep noted about how much water you are drinking over time.

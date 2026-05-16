@@ -8,6 +8,12 @@
     <string name="next">Next</string>
     <string name="previous">Previous</string>
 
+    <string name="changelog_label">Change Log</string>
+    <string name="changelog_row_subtitle">What\'s new in each version</string>
+    <string name="changelog_version_header">Version %s</string>
+    <string name="changelog_separator">──────────────────────────────</string>
+    <string name="changelog_no_entries">No changelog available.</string>
+
     <string name="privacy_policy_text">
 1. Overview\n\n
 WaterReminder is a free, offline hydration-tracking application for Android. This Privacy Policy explains what information the App collects, how it is used, and your rights as a user.\n\n

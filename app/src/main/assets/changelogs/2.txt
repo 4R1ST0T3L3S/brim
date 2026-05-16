@@ -1,0 +1,4 @@
+• Added Dark Mode support
+• Added Change Logs menu
+• Added FullHistory View menu
+• Bug fixes and improvements

@@ -68,6 +68,10 @@ class SettingsFragment : Fragment() {
             findNavController().navigate(R.id.action_SettingsFragment_to_SecondFragment)
         }
 
+        view.findViewById<View>(R.id.row_changelog).setOnClickListener {
+            findNavController().navigate(R.id.action_SettingsFragment_to_ChangelogFragment)
+        }
+
         view.findViewById<TextView>(R.id.text_app_version).text =
             getString(R.string.settings_version, BuildConfig.VERSION_NAME)
     }

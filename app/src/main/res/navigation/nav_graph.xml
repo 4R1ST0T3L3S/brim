@@ -58,5 +58,15 @@
         <action
             android:id="@+id/action_SettingsFragment_to_SecondFragment"
             app:destination="@id/SecondFragment" />
+
+        <action
+            android:id="@+id/action_SettingsFragment_to_ChangelogFragment"
+            app:destination="@id/ChangelogFragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/ChangelogFragment"
+        android:name="com.david.waterreminder.ChangelogFragment"
+        android:label="@string/changelog_label"
+        tools:layout="@layout/fragment_changelog" />
 </navigation>
