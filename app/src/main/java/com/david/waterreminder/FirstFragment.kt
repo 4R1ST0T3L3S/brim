@@ -161,7 +161,11 @@ class FirstFragment : Fragment() {
     }
 
     private fun saveIntake() {
-        prefs.edit().putInt("intake_ml", currentMl).apply()
+        val today = LocalDate.now().toString()
+        prefs.edit()
+            .putInt("intake_ml", currentMl)
+            .putInt("history_$today", currentMl)   // always persist under dated key so data
+            .apply()                                 // survives reinstalls and backup/restore
         android.app.backup.BackupManager(requireContext()).dataChanged()
     }
 
