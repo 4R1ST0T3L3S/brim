@@ -12,9 +12,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:paddingStart="16dp"
-        android:paddingEnd="8dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="8dp"
+        android:padding="16dp"
         android:gravity="center_vertical">
 
         <TextView
@@ -33,7 +31,10 @@
             android:src="@drawable/ic_share_nodes"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Share"
-            android:tint="?attr/colorOnSurface" />
+            android:tint="?attr/colorOnSurface"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="@+id/title_analytics" />
 
     </LinearLayout>
 

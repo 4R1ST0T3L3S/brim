@@ -1,4 +1,5 @@
 • Added Dark Mode support
+• Added Share feature
 • Added Change Logs menu
 • Added FullHistory View menu
 • Bug fixes and improvements
