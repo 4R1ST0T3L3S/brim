@@ -15,7 +15,7 @@ The App collects no personal data and sends nothing outside your device.\n\n
 ──────────────────────────────\n\n
 2. Information We Collect\n\n
 2.1 Data stored locally on your device\n\n
-The App stores the following information exclusively in your device\'s private app storage (Android SharedPreferences). This data never leaves your device:\n\n
+The App stores the following information exclusively in your device. This data never leaves your device:\n\n
 • Daily water intake — track progress toward the daily goal\n
 • Historical daily intake — display the 7-day analytics chart\n
 • Daily goal and unit preference — personalise the experience\n
