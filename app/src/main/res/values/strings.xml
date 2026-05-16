@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">WaterReminder</string>
+    <string name="share_weekly_progress_text">💧 My weekly hydration progress! #WaterReminder #StayHydrated</string>
+    <string name="share_all_history_text">💧 My full hydration history! #WaterReminder #StayHydrated</string>
+    <string name="share_chooser_title">Share your progress</string>
     <string name="action_settings">Settings</string>
     <string name="settings_version">v%s</string>
     <!-- Strings used for fragments for navigation -->

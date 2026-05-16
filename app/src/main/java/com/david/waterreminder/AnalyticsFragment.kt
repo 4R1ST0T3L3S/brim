@@ -1,13 +1,19 @@
 package com.david.waterreminder
 
 import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import java.io.File
+import java.io.FileOutputStream
 import com.david.waterreminder.databinding.FragmentAnalyticsBinding
 import com.github.mikephil.charting.components.LimitLine
 import com.github.mikephil.charting.components.XAxis
@@ -47,6 +53,35 @@ class AnalyticsFragment : Fragment() {
         binding.textViewAllHistory.setOnClickListener {
             findNavController().navigate(R.id.action_AnalyticsFragment_to_AllHistoryFragment)
         }
+
+        binding.btnShare.setOnClickListener { shareWeeklyCard() }
+    }
+
+    private fun shareWeeklyCard() {
+        val view = binding.analyticsContent
+        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(requireContext().getColor(R.color.page_background))
+        view.draw(canvas)
+
+        val shareDir = File(requireContext().cacheDir, "share")
+        shareDir.mkdirs()
+        val file = File(shareDir, "weekly_history.png")
+        FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
+
+        val uri = FileProvider.getUriForFile(
+            requireContext(),
+            "com.david.waterreminder.fileprovider",
+            file
+        )
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_TEXT, getString(R.string.share_weekly_progress_text))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(intent, getString(R.string.share_chooser_title)))
     }
 
     // ─── Data ─────────────────────────────────────────────────────

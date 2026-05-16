@@ -1,6 +1,9 @@
 package com.david.waterreminder
 
 import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -8,7 +11,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
+import java.io.File
+import java.io.FileOutputStream
 import com.david.waterreminder.databinding.FragmentAllHistoryBinding
 import com.github.mikephil.charting.components.LimitLine
 import com.github.mikephil.charting.components.MarkerView
@@ -59,6 +65,35 @@ class AllHistoryFragment : Fragment() {
         binding.textOverallAvg.text = "Overall average: ${avg.fmt(unit)}"
 
         setupChart(history)
+
+        binding.btnShare.setOnClickListener { shareHistoryCard() }
+    }
+
+    private fun shareHistoryCard() {
+        val view = binding.allHistoryContent
+        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(requireContext().getColor(R.color.page_background))
+        view.draw(canvas)
+
+        val shareDir = File(requireContext().cacheDir, "share")
+        shareDir.mkdirs()
+        val file = File(shareDir, "all_history.png")
+        FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
+
+        val uri = FileProvider.getUriForFile(
+            requireContext(),
+            "com.david.waterreminder.fileprovider",
+            file
+        )
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_TEXT, getString(R.string.share_all_history_text))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(intent, getString(R.string.share_chooser_title)))
     }
 
     private fun loadAllHistory(): List<Pair<LocalDate, Int>> {
