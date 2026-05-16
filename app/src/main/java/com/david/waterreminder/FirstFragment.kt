@@ -189,12 +189,11 @@ class FirstFragment : Fragment() {
             val fill = (currentMl - bottleMin).coerceIn(0, mlPerBottle)
             val pct = fill.toFloat() / mlPerBottle
             val icon = when {
-                pct == 0f    -> R.drawable.ic_bottle_empty
-                pct <= 0.25f -> R.drawable.ic_bottle_quarter
-                pct <= 0.50f -> R.drawable.ic_bottle_half
-                pct <= 0.75f  -> R.drawable.ic_bottle_three_quarters
-                pct < 1f     -> R.drawable.ic_bottle_full
-                else         -> R.drawable.ic_bottle_full
+                pct == 0f     -> R.drawable.ic_bottle_empty
+                pct <= 0.375f -> R.drawable.ic_bottle_quarter
+                pct <= 0.625f -> R.drawable.ic_bottle_half
+                pct <= 0.875f -> R.drawable.ic_bottle_three_quarters
+                else          -> R.drawable.ic_bottle_full
             }
             imageView.setImageResource(icon)
         }
