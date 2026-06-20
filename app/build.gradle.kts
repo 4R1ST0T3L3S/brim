@@ -58,6 +58,13 @@ android {
         viewBinding = true
         buildConfig = true
     }
+
+    // Prevents AGP from embedding dependency metadata in the APK signing block.
+    // F-Droid's scanner rejects APKs with extra signing blocks.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
 dependencies {
