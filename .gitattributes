@@ -1,0 +1,25 @@
+# Normalize line endings to LF for all text files
+* text=auto eol=lf
+
+# Force LF for asset text files bundled in the APK
+*.txt text eol=lf
+*.xml text eol=lf
+*.kt text eol=lf
+*.kts text eol=lf
+*.gradle text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.properties text eol=lf
+
+# Binaries - no line ending conversion
+*.jks binary
+*.keystore binary
+*.apk binary
+*.aab binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
