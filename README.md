@@ -23,6 +23,10 @@ WaterReminder helps you build a healthy hydration habit by tracking your daily w
 <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/GoalStreak.png" alt="Goal streak" height="400">
 <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/History.png" alt="7-day chart" height="400">
 
+## Contributors
+
+Water Reminder is improved by community contributions. See [CONTRIBUTORS.md](CONTRIBUTORS.md) for acknowledgements.
+
 ## Installation
 <!--👨‍💻 Currenty under development.-->
 [<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="50">](https://f-droid.org/pt/packages/com.david.waterreminder/)
