@@ -21,6 +21,16 @@ fun String.toMl(unit: String): Int? {
     return ml.toInt()
 }
 
+const val CUSTOM_MAX_ML = 5_000
+const val GOAL_MIN_ML   = 100
+const val GOAL_MAX_ML   = 10_000
+
+fun String.toValidCustomMl(unit: String): Int? =
+    toMl(unit)?.takeIf { it in 1..CUSTOM_MAX_ML }
+
+fun String.toValidGoalMl(unit: String): Int? =
+    toMl(unit)?.takeIf { it in GOAL_MIN_ML..GOAL_MAX_ML }
+
 private fun formatCl(ml: Int): String {
     val cl = ml / 10.0
     return if (cl == cl.toInt().toDouble()) cl.toInt().toString()

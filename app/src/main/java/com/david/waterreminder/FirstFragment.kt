@@ -311,15 +311,10 @@ class FirstFragment : Fragment() {
             setPadding(48, 32, 48, 32)
             if (customQuickMl > 0) setText(customQuickMl.toDisplay(unit))
         }
-        AlertDialog.Builder(requireContext())
+        val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Custom amount")
             .setView(editText)
-            .setPositiveButton("Save") { _, _ ->
-                val ml = editText.text.toString().toMl(unit)
-                if (ml != null && ml > 0) {
-                    applyCustomQuickMl(ml)
-                }
-            }
+            .setPositiveButton("Save", null)
             .apply {
                 if (customQuickMl > 0) {
                     setNeutralButton("Clear") { _, _ -> applyCustomQuickMl(0) }
@@ -327,6 +322,15 @@ class FirstFragment : Fragment() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val ml = editText.text.toString().toValidCustomMl(unit)
+            if (ml != null) {
+                applyCustomQuickMl(ml)
+                dialog.dismiss()
+            } else {
+                editText.error = "Enter a value between 1 and ${CUSTOM_MAX_ML.fmt(unit)}"
+            }
+        }
         editText.requestFocus()
     }
 
