@@ -1,6 +1,5 @@
 # WaterReminder
 
-Water Reminder App
 [<img src="./fastlane/metadata/android/en-US/images/icon.png" alt="WaterReminder logo" height="80">](./fastlane/metadata/android/en-US/images/icon.png)
 
 Track your daily water intake and stay hydrated with reminders,
