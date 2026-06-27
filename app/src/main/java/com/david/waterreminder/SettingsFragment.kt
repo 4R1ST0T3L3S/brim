@@ -232,16 +232,10 @@ class SettingsFragment : Fragment() {
             setPadding(48, 32, 48, 32)
             if (currentMl > 0) { setText(currentMl.toDisplay(unit)); selectAll() }
         }
-        AlertDialog.Builder(requireContext())
+        val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Personal goal")
             .setView(editText)
-            .setPositiveButton("Save") { _, _ ->
-                val storedMl = editText.text.toString().toMl(unit)
-                if (storedMl != null && storedMl in 100..10_000) {
-                    prefs.edit().putInt("personal_goal_ml", storedMl).apply()
-                    refreshRows(view)
-                }
-            }
+            .setPositiveButton("Save", null)
             .apply {
                 if (currentMl > 0) {
                     setNeutralButton("Clear") { _, _ ->
@@ -252,6 +246,16 @@ class SettingsFragment : Fragment() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val storedMl = editText.text.toString().toValidGoalMl(unit)
+            if (storedMl != null) {
+                prefs.edit().putInt("personal_goal_ml", storedMl).apply()
+                refreshRows(view)
+                dialog.dismiss()
+            } else {
+                editText.error = "Enter a value between ${GOAL_MIN_ML.fmt(unit)} and ${GOAL_MAX_ML.fmt(unit)}"
+            }
+        }
         editText.requestFocus()
     }
 
