@@ -15,6 +15,7 @@ import androidx.navigation.fragment.findNavController
 import java.io.File
 import java.io.FileOutputStream
 import com.david.waterreminder.databinding.FragmentAnalyticsBinding
+import com.google.android.material.color.MaterialColors
 import com.github.mikephil.charting.components.LimitLine
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
@@ -106,6 +107,9 @@ class AnalyticsFragment : Fragment() {
     // ─── Chart ────────────────────────────────────────────────────
 
     private fun setupChart(history: List<Pair<LocalDate, Int>>, personalGoal: Int) {
+        val onSurface = MaterialColors.getColor(requireView(), com.google.android.material.R.attr.colorOnSurface)
+        val chartGridColor = MaterialColors.getColor(requireView(), com.google.android.material.R.attr.colorOutlineVariant)
+
         val entries = history.mapIndexed { index, (_, ml) ->
             BarEntry(index.toFloat(), ml.toFloat())
         }
@@ -115,6 +119,7 @@ class AnalyticsFragment : Fragment() {
                 if (ml >= goalMl) Color.parseColor("#2196F3") else Color.parseColor("#90CAF9")
             }
             valueTextSize = 10f
+            valueTextColor = onSurface
             valueFormatter = object : ValueFormatter() {
                 override fun getFormattedValue(value: Float) =
                     if (value > 0f) value.toInt().fmt(unit) else ""
@@ -156,7 +161,7 @@ class AnalyticsFragment : Fragment() {
                 personalGoalLine?.let { addLimitLine(it) }
                 axisMinimum = 0f
                 axisMaximum = axisMax
-                gridColor = Color.parseColor("#F0F0F0")
+                gridColor = chartGridColor
                 textColor = Color.parseColor("#888888")
                 valueFormatter = object : ValueFormatter() {
                     override fun getFormattedValue(value: Float) = value.toInt().fmt(unit)
