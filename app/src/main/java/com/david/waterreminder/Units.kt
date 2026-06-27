@@ -13,10 +13,12 @@ fun Int.toDisplay(unit: String): String =
 /** ml → display string with unit suffix (e.g. "0.5 cl", "250 ml"). */
 fun Int.fmt(unit: String): String = "${toDisplay(unit)} $unit"
 
-/** User-entered display string → ml. Accepts "0.5" / "0,5" for cl. Null if invalid. */
+/** User-entered display string → ml. Accepts "0.5" / "0,5" for cl. Null if invalid or out of range. */
 fun String.toMl(unit: String): Int? {
     val v = trim().replace(',', '.').toDoubleOrNull() ?: return null
-    return if (unit == UNIT_CL) (v * 10).toInt() else v.toInt()
+    val ml = if (unit == UNIT_CL) v * 10 else v
+    if (ml < 0 || ml > Int.MAX_VALUE.toDouble()) return null
+    return ml.toInt()
 }
 
 private fun formatCl(ml: Int): String {
