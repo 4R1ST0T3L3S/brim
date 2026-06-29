@@ -262,7 +262,7 @@ class SettingsFragment : Fragment() {
     // ─── UI refresh ───────────────────────────────────────────────
 
     private fun refreshRows(view: View) {
-        val themeLabel = when (prefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_NO)) {
+        val themeLabel = when (prefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)) {
             AppCompatDelegate.MODE_NIGHT_NO -> "Light"
             AppCompatDelegate.MODE_NIGHT_YES -> "Dark"
             else -> "System default"
