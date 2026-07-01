@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val prefs = getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
         AppCompatDelegate.setDefaultNightMode(
-            prefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+            prefs.getInt(PREF_THEME_MODE, DEFAULT_THEME_MODE)
         )
         super.onCreate(savedInstanceState)
 

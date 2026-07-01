@@ -11,6 +11,10 @@
     <string name="next">Next</string>
     <string name="previous">Previous</string>
 
+    <string name="theme_system_default">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+
     <string name="settings_section_data">Data</string>
     <string name="settings_export_data">Export Data</string>
     <string name="settings_export_data_subtitle">Save a backup file</string>
