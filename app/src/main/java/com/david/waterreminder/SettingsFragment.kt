@@ -187,19 +187,14 @@ class SettingsFragment : Fragment() {
     // ─── Dialogs ──────────────────────────────────────────────────
 
     private fun showThemeDialog(view: View) {
-        val options = arrayOf("System default", "Light", "Dark")
-        val modes = intArrayOf(
-            AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
-            AppCompatDelegate.MODE_NIGHT_NO,
-            AppCompatDelegate.MODE_NIGHT_YES
-        )
-        val current = prefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-        val currentIndex = modes.indexOfFirst { it == current }.coerceAtLeast(0)
+        val options = THEME_MODES.map { getString(themeModeLabelRes(it)) }.toTypedArray()
+        val current = prefs.getInt(PREF_THEME_MODE, DEFAULT_THEME_MODE)
+        val currentIndex = themeModeDialogIndex(current)
         AlertDialog.Builder(requireContext())
             .setTitle("Theme")
             .setSingleChoiceItems(options, currentIndex) { dialog, which ->
-                prefs.edit().putInt("theme_mode", modes[which]).apply()
-                AppCompatDelegate.setDefaultNightMode(modes[which])
+                prefs.edit().putInt(PREF_THEME_MODE, THEME_MODES[which]).apply()
+                AppCompatDelegate.setDefaultNightMode(THEME_MODES[which])
                 refreshRows(view)
                 dialog.dismiss()
             }
@@ -262,11 +257,7 @@ class SettingsFragment : Fragment() {
     // ─── UI refresh ───────────────────────────────────────────────
 
     private fun refreshRows(view: View) {
-        val themeLabel = when (prefs.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_NO)) {
-            AppCompatDelegate.MODE_NIGHT_NO -> "Light"
-            AppCompatDelegate.MODE_NIGHT_YES -> "Dark"
-            else -> "System default"
-        }
+        val themeLabel = getString(themeModeLabelRes(prefs.getInt(PREF_THEME_MODE, DEFAULT_THEME_MODE)))
         view.findViewById<TextView>(R.id.text_theme_current).text = themeLabel
 
         val customMl = prefs.getInt("custom_quick_ml", 0)

@@ -1,10 +1,29 @@
 package com.david.waterreminder
 
+import androidx.appcompat.app.AppCompatDelegate
 import java.util.Locale
 
 const val PREF_UNIT = "unit"
 const val UNIT_ML   = "ml"
 const val UNIT_CL   = "cl"
+
+const val PREF_THEME_MODE = "theme_mode"
+val DEFAULT_THEME_MODE = AppCompatDelegate.MODE_NIGHT_NO
+
+val THEME_MODES = intArrayOf(
+    AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
+    AppCompatDelegate.MODE_NIGHT_NO,
+    AppCompatDelegate.MODE_NIGHT_YES
+)
+
+fun themeModeDialogIndex(mode: Int): Int =
+    THEME_MODES.indexOfFirst { it == mode }.coerceAtLeast(0)
+
+fun themeModeLabelRes(mode: Int): Int = when (mode) {
+    AppCompatDelegate.MODE_NIGHT_NO -> R.string.theme_light
+    AppCompatDelegate.MODE_NIGHT_YES -> R.string.theme_dark
+    else -> R.string.theme_system_default
+}
 
 /** ml → display string in the active unit (no unit suffix; suitable for EditText). */
 fun Int.toDisplay(unit: String): String =
