@@ -233,7 +233,7 @@ class SettingsFragment : Fragment() {
             .setPositiveButton("Save", null)
             .apply {
                 if (currentMl > 0) {
-                    setNeutralButton("Clear") { _, _ ->
+                    setNeutralButton("Reset to Default") { _, _ ->
                         prefs.edit().putInt("personal_goal_ml", 0).apply()
                         refreshRows(view)
                     }

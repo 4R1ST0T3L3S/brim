@@ -30,7 +30,15 @@
     <string name="home_intake_amount">0 ml / 1500 ml</string>
     <string name="home_quick_add_label">Quick add</string>
     <string name="home_quick_remove_label">Quick remove</string>
-    <string name="home_goal_reached">🎉 Congratulations!\nYou reached your daily goal!</string>
+    <string name="home_goal_reached">🎉 Congratulations!\nYour body thanks you — keep going!</string>
+
+    <string name="settings_recommended_minimum">Recommended minimum</string>
+    <string name="dialog_minimum_reached_title">🎉 Minimum reached!</string>
+    <string name="dialog_minimum_reached_message">You\'ve hit your recommended minimum of %s!</string>
+    <string name="dialog_minimum_reached_button">Thanks! 💧</string>
+    <string name="dialog_personal_goal_reached_title">⭐ Personal goal reached!</string>
+    <string name="dialog_personal_goal_reached_message">Amazing! You\'ve hit your personal goal of %s today!</string>
+    <string name="dialog_personal_goal_reached_button">Let\'s go! 💪</string>
 
     <string name="changelog_label">Change Log</string>
     <string name="changelog_row_subtitle">What\'s new in each version</string>

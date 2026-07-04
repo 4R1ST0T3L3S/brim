@@ -167,7 +167,7 @@ class AllHistoryFragment : Fragment() {
 
             axisLeft.apply {
                 removeAllLimitLines()
-                addLimitLine(LimitLine(GOAL_ML.toFloat(), "Goal").apply {
+                addLimitLine(LimitLine(GOAL_ML.toFloat(), "Recommended Minimum").apply {
                     lineColor = Color.parseColor("#F44336")
                     lineWidth = 1.5f
                     textColor = Color.parseColor("#F44336")

@@ -132,17 +132,17 @@ class FirstFragment : Fragment() {
     private fun showGoalReachedPopup(streak: Int) {
         val streakLine = if (streak > 1) "\n🔥 $streak day streak — keep it up!" else ""
         AlertDialog.Builder(requireContext())
-            .setTitle("🎉 Goal reached!")
-            .setMessage("You've hit your daily goal of ${goalMl.fmt(unit)}!$streakLine")
-            .setPositiveButton("Thanks! 💧", null)
+            .setTitle(getString(R.string.dialog_minimum_reached_title))
+            .setMessage(getString(R.string.dialog_minimum_reached_message, goalMl.fmt(unit)) + streakLine)
+            .setPositiveButton(getString(R.string.dialog_minimum_reached_button), null)
             .show()
     }
 
     private fun showPersonalGoalReachedPopup(personalGoal: Int) {
         AlertDialog.Builder(requireContext())
-            .setTitle("⭐ Personal goal reached!")
-            .setMessage("Amazing! You've hit your personal goal of ${personalGoal.fmt(unit)} today!")
-            .setPositiveButton("Let's go! 💪", null)
+            .setTitle(getString(R.string.dialog_personal_goal_reached_title))
+            .setMessage(getString(R.string.dialog_personal_goal_reached_message, personalGoal.fmt(unit)))
+            .setPositiveButton(getString(R.string.dialog_personal_goal_reached_button), null)
             .show()
     }
 
@@ -369,7 +369,7 @@ class FirstFragment : Fragment() {
                     TapTarget.forView(
                         binding.containerBottles,
                         "Daily progress",
-                        "Each bottle fills as you reach a quarter of your $goalMl ml goal."
+                        "Each bottle represents 500 ml. Watch them fill up as you log your intake throughout the day."
                     ).style(radius = 110)
                 },
                 {
