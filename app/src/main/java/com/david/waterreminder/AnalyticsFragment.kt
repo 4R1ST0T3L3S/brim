@@ -135,7 +135,7 @@ class AnalyticsFragment : Fragment() {
             setNoDataText("No data yet")
 
             // Daily goal line (red)
-            val goalLine = LimitLine(goalMl.toFloat(), "Goal").apply {
+            val goalLine = LimitLine(goalMl.toFloat(), "Recommended Minimum").apply {
                 lineColor = Color.parseColor("#F44336")
                 lineWidth = 1.5f
                 textColor = Color.parseColor("#F44336")
