@@ -16,7 +16,7 @@
             android:id="@+id/title_water_reminder"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Water Reminder 💧"
+            android:text="@string/home_title"
             android:textColor="?attr/colorOnSurface"
             android:textSize="28sp"
             android:textStyle="bold"
@@ -29,7 +29,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Today's intake"
+            android:text="@string/home_intake_label"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -54,7 +54,8 @@
                 android:layout_height="36dp"
                 android:layout_marginEnd="12dp"
                 android:src="@drawable/ic_bottle_empty"
-                android:tint="@color/brand_blue" />
+                android:importantForAccessibility="no"
+                app:tint="@color/brand_blue" />
 
             <ImageView
                 android:id="@+id/bottle_2"
@@ -62,7 +63,8 @@
                 android:layout_height="36dp"
                 android:layout_marginEnd="12dp"
                 android:src="@drawable/ic_bottle_empty"
-                android:tint="@color/brand_blue" />
+                android:importantForAccessibility="no"
+                app:tint="@color/brand_blue" />
 
             <ImageView
                 android:id="@+id/bottle_3"
@@ -70,14 +72,16 @@
                 android:layout_height="36dp"
                 android:layout_marginEnd="12dp"
                 android:src="@drawable/ic_bottle_empty"
-                android:tint="@color/brand_blue" />
+                android:importantForAccessibility="no"
+                app:tint="@color/brand_blue" />
 
             <ImageView
                 android:id="@+id/bottle_4"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:src="@drawable/ic_bottle_empty"
-                android:tint="@color/brand_blue" />
+                android:importantForAccessibility="no"
+                app:tint="@color/brand_blue" />
 
         </LinearLayout>
 
@@ -101,7 +105,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="end"
-            android:text="0 ml / 1500 ml"
+            android:text="@string/home_intake_amount"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -113,8 +117,8 @@
             android:id="@+id/text_quick_add_label"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Quick add"
+            android:layout_marginTop="12dp"
+            android:text="@string/home_quick_add_label"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -122,71 +126,53 @@
             app:layout_constraintTop_toBottomOf="@id/text_intake_amount" />
 
         <!-- Quick Add buttons (built dynamically, sorted by value) -->
-        <HorizontalScrollView
-            android:id="@+id/scroll_quick_add"
+        <com.david.waterreminder.FlowLayout
+            android:id="@+id/container_quick_add"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:scrollbars="none"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/text_quick_add_label">
-
-            <LinearLayout
-                android:id="@+id/container_quick_add"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" />
-
-        </HorizontalScrollView>
+            app:layout_constraintTop_toBottomOf="@id/text_quick_add_label" />
 
         <!-- Quick Remove label -->
         <TextView
             android:id="@+id/text_quick_remove_label"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Quick remove"
+            android:layout_marginTop="12dp"
+            android:text="@string/home_quick_remove_label"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/scroll_quick_add" />
+            app:layout_constraintTop_toBottomOf="@id/container_quick_add" />
 
         <!-- Quick Remove buttons (built dynamically, sorted by value) -->
-        <HorizontalScrollView
-            android:id="@+id/scroll_quick_remove"
+        <com.david.waterreminder.FlowLayout
+            android:id="@+id/container_quick_remove"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:scrollbars="none"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/text_quick_remove_label">
-
-            <LinearLayout
-                android:id="@+id/container_quick_remove"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" />
-
-        </HorizontalScrollView>
+            app:layout_constraintTop_toBottomOf="@id/text_quick_remove_label" />
 
         <TextView
             android:id="@+id/text_goal_reached"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="16dp"
             android:gravity="center"
             android:lineSpacingMultiplier="1.4"
-            android:text="🎉 Congratulations!\nYou reached your daily goal!"
+            android:text="@string/home_goal_reached"
             android:textColor="@color/brand_blue"
             android:textSize="16sp"
             android:textStyle="bold"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/scroll_quick_remove"
+            app:layout_constraintTop_toBottomOf="@id/container_quick_remove"
             tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

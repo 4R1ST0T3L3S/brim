@@ -278,7 +278,7 @@ class FirstFragment : Fragment() {
         layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply { marginEnd = (8 * dp).toInt() }
+        ).apply { marginEnd = (8 * dp).toInt(); bottomMargin = (8 * dp).toInt() }
         setOnClickListener { onClick() }
         onLongClick?.let { lc -> setOnLongClickListener { lc(); true } }
     }
@@ -297,7 +297,7 @@ class FirstFragment : Fragment() {
             setPadding(0, 0, 0, 0)
             iconSize = 0
             layoutParams = LinearLayout.LayoutParams(size, size)
-                .apply { marginEnd = (8 * dp).toInt() }
+                .apply { marginEnd = (8 * dp).toInt(); bottomMargin = (8 * dp).toInt() }
             setOnClickListener { showCustomValueDialog() }
             setOnLongClickListener { showCustomValueDialog(); true }
         }

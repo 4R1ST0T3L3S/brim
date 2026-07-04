@@ -25,6 +25,13 @@
     <string name="import_success">Data imported — restart the app to see all changes</string>
     <string name="import_failed">Import failed — invalid backup file</string>
 
+    <string name="home_title">Water Reminder 💧</string>
+    <string name="home_intake_label">Today\'s intake</string>
+    <string name="home_intake_amount">0 ml / 1500 ml</string>
+    <string name="home_quick_add_label">Quick add</string>
+    <string name="home_quick_remove_label">Quick remove</string>
+    <string name="home_goal_reached">🎉 Congratulations!\nYou reached your daily goal!</string>
+
     <string name="changelog_label">Change Log</string>
     <string name="changelog_row_subtitle">What\'s new in each version</string>
     <string name="changelog_version_header">Version %s</string>
