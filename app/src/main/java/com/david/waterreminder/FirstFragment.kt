@@ -242,7 +242,7 @@ class FirstFragment : Fragment() {
     private fun addSortedItems(): List<Pair<Int, Boolean>> {
         val fixed = FIXED_ML.map { it to false }
         return when {
-            customQuickMl == 0          -> listOf(0 to true) + fixed
+            customQuickMl == 0          -> fixed + listOf(0 to true)
             customQuickMl !in FIXED_ML  -> (fixed + (customQuickMl to true)).sortedBy { it.first }
             else                        -> fixed + (customQuickMl to true)
         }
