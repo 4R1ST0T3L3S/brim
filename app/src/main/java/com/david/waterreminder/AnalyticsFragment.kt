@@ -154,7 +154,8 @@ class AnalyticsFragment : Fragment() {
                 }
             } else null
 
-            val axisMax = maxOf(goalMl, personalGoal).coerceAtLeast(goalMl) * 1.4f
+            val maxIntake = history.maxOfOrNull { it.second } ?: 0
+            val axisMax = maxOf(goalMl, personalGoal, maxIntake) * 1.2f
 
             axisLeft.apply {
                 addLimitLine(goalLine)
