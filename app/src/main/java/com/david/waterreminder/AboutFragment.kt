@@ -25,8 +25,8 @@ class AboutFragment : BaseMenuFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.rowPrivacyPolicy.rowIcon.setImageResource(android.R.drawable.ic_menu_info_details)
-        binding.rowPrivacyPolicy.rowTitle.text = "Privacy Policy"
-        binding.rowPrivacyPolicy.rowSubtitle.text = "How your data is handled"
+        binding.rowPrivacyPolicy.rowTitle.text = getString(R.string.second_fragment_label)
+        binding.rowPrivacyPolicy.rowSubtitle.text = getString(R.string.about_row_privacy_subtitle)
         binding.rowPrivacyPolicy.rowContainer.setOnClickListener {
             findNavController().navigate(R.id.action_AboutFragment_to_SecondFragment)
         }
@@ -39,8 +39,8 @@ class AboutFragment : BaseMenuFragment() {
         }
 
         binding.rowSupportDev.rowIcon.setImageResource(android.R.drawable.ic_menu_agenda)
-        binding.rowSupportDev.rowTitle.text = "Support the Dev"
-        binding.rowSupportDev.rowSubtitle.text = "Buy me a coffee ☕"
+        binding.rowSupportDev.rowTitle.text = getString(R.string.about_row_support_title)
+        binding.rowSupportDev.rowSubtitle.text = getString(R.string.about_row_support_subtitle)
         binding.rowSupportDev.rowContainer.setOnClickListener {
             // TODO: add donation link
         }

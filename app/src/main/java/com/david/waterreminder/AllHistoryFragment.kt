@@ -57,7 +57,7 @@ class AllHistoryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val history = loadAllHistory()
+        val history = prefs.loadAllHistory()
         val nonZero = history.filter { it.second > 0 }
         val avg = if (nonZero.isNotEmpty()) nonZero.sumOf { it.second } / nonZero.size else 0
 
@@ -94,26 +94,6 @@ class AllHistoryFragment : Fragment() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         startActivity(Intent.createChooser(intent, getString(R.string.share_chooser_title)))
-    }
-
-    private fun loadAllHistory(): List<Pair<LocalDate, Int>> {
-        val today = LocalDate.now()
-
-        val fromHistory = prefs.all.keys
-            .filter { it.startsWith("history_") }
-            .mapNotNull { key ->
-                val dateStr = key.removePrefix("history_")
-                runCatching { LocalDate.parse(dateStr) }.getOrNull()
-                    ?.let { date -> date to prefs.getInt(key, 0) }
-            }
-            .toMap()
-
-        val merged = fromHistory.toMutableMap()
-        merged[today] = prefs.getInt("intake_ml", 0)
-
-        return merged.entries
-            .map { (date, ml) -> Pair(date, ml) }
-            .sortedBy { it.first }
     }
 
     private fun setupChart(history: List<Pair<LocalDate, Int>>) {
@@ -172,6 +152,7 @@ class AllHistoryFragment : Fragment() {
                     lineWidth = 1.5f
                     textColor = Color.parseColor("#F44336")
                     textSize = 10f
+
                     enableDashedLine(10f, 5f, 0f)
                     labelPosition = LimitLine.LimitLabelPosition.RIGHT_TOP
                 })
@@ -181,6 +162,7 @@ class AllHistoryFragment : Fragment() {
                         lineWidth = 1.5f
                         textColor = Color.parseColor("#FF6F00")
                         textSize = 10f
+    
                         enableDashedLine(6f, 4f, 0f)
                         labelPosition = LimitLine.LimitLabelPosition.RIGHT_TOP
                     })

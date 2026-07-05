@@ -33,17 +33,17 @@ class SettingsFragment : BaseMenuFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.rowSetTheme.rowIcon.setImageResource(android.R.drawable.ic_menu_manage)
-        binding.rowSetTheme.rowTitle.text = "Theme"
+        binding.rowSetTheme.rowTitle.text = getString(R.string.settings_row_theme)
 
         binding.rowResetCustom.rowIcon.setImageResource(R.drawable.ic_water_drop)
-        binding.rowResetCustom.rowTitle.text = "Reset custom quick button"
+        binding.rowResetCustom.rowTitle.text = getString(R.string.settings_row_reset_custom)
         binding.rowResetCustom.rowChevron.setImageResource(android.R.drawable.ic_menu_delete)
 
         binding.rowSetUnit.rowIcon.setImageResource(R.drawable.ic_water_drop)
-        binding.rowSetUnit.rowTitle.text = "Measure unit"
+        binding.rowSetUnit.rowTitle.text = getString(R.string.settings_row_unit)
 
         binding.rowSetPersonalGoal.rowIcon.setImageResource(R.drawable.ic_bottle_full)
-        binding.rowSetPersonalGoal.rowTitle.text = "Personal goal"
+        binding.rowSetPersonalGoal.rowTitle.text = getString(R.string.settings_row_personal_goal)
 
         refreshRows()
 
@@ -53,14 +53,14 @@ class SettingsFragment : BaseMenuFragment() {
             val current = prefs.getInt("custom_quick_ml", 0)
             if (current == 0) return@setOnClickListener
             AlertDialog.Builder(requireContext())
-                .setTitle("Reset custom button")
-                .setMessage("Remove the custom ${current.fmt(unit)} quick button?")
-                .setPositiveButton("Reset") { _, _ ->
+                .setTitle(getString(R.string.dialog_reset_custom_title))
+                .setMessage(getString(R.string.dialog_reset_custom_message, current.fmt(unit)))
+                .setPositiveButton(getString(R.string.dialog_reset)) { _, _ ->
                     prefs.edit().putInt("custom_quick_ml", 0).apply()
                     refreshRows()
                     firstFragment()?.applyCustomQuickMl(0)
                 }
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(getString(R.string.dialog_cancel), null)
                 .show()
         }
 
@@ -70,7 +70,7 @@ class SettingsFragment : BaseMenuFragment() {
 
         binding.rowData.rowIcon.setImageResource(android.R.drawable.ic_menu_save)
         binding.rowData.rowTitle.text = getString(R.string.action_data)
-        binding.rowData.rowSubtitle.text = "Export or import your data"
+        binding.rowData.rowSubtitle.text = getString(R.string.settings_row_data_subtitle)
         binding.rowData.rowContainer.setOnClickListener {
             findNavController().navigate(R.id.action_SettingsFragment_to_DataFragment)
         }
@@ -93,22 +93,22 @@ class SettingsFragment : BaseMenuFragment() {
         val current = prefs.getInt(PREF_THEME_MODE, DEFAULT_THEME_MODE)
         val currentIndex = themeModeDialogIndex(current)
         AlertDialog.Builder(requireContext())
-            .setTitle("Theme")
+            .setTitle(getString(R.string.settings_row_theme))
             .setSingleChoiceItems(options, currentIndex) { dialog, which ->
                 prefs.edit().putInt(PREF_THEME_MODE, THEME_MODES[which]).apply()
                 AppCompatDelegate.setDefaultNightMode(THEME_MODES[which])
                 refreshRows()
                 dialog.dismiss()
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(getString(R.string.dialog_cancel), null)
             .show()
     }
 
     private fun showUnitDialog() {
-        val options = arrayOf("Millilitres (ml)", "Centilitres (cl)")
+        val options = arrayOf(getString(R.string.unit_ml), getString(R.string.unit_cl))
         val currentIndex = if (unit == UNIT_CL) 1 else 0
         AlertDialog.Builder(requireContext())
-            .setTitle("Measure unit")
+            .setTitle(getString(R.string.settings_row_unit))
             .setSingleChoiceItems(options, currentIndex) { dialog, which ->
                 val chosen = if (which == 1) UNIT_CL else UNIT_ML
                 prefs.edit().putString(PREF_UNIT, chosen).apply()
@@ -116,7 +116,7 @@ class SettingsFragment : BaseMenuFragment() {
                 firstFragment()?.onUnitChanged()
                 dialog.dismiss()
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(getString(R.string.dialog_cancel), null)
             .show()
     }
 
@@ -130,18 +130,18 @@ class SettingsFragment : BaseMenuFragment() {
             if (currentMl > 0) { setText(currentMl.toDisplay(unit)); selectAll() }
         }
         val dialog = AlertDialog.Builder(requireContext())
-            .setTitle("Personal goal")
+            .setTitle(getString(R.string.settings_row_personal_goal))
             .setView(editText)
-            .setPositiveButton("Save", null)
+            .setPositiveButton(getString(R.string.dialog_save), null)
             .apply {
                 if (currentMl > 0) {
-                    setNeutralButton("Reset to Default") { _, _ ->
+                    setNeutralButton(getString(R.string.dialog_reset_to_default)) { _, _ ->
                         prefs.edit().putInt("personal_goal_ml", 0).apply()
                         refreshRows()
                     }
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(getString(R.string.dialog_cancel), null)
             .show()
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
             val storedMl = editText.text.toString().toValidGoalMl(unit)
@@ -164,14 +164,16 @@ class SettingsFragment : BaseMenuFragment() {
 
         val customMl = prefs.getInt("custom_quick_ml", 0)
         binding.rowResetCustom.rowSubtitle.text =
-            if (customMl > 0) "Currently set to ${customMl.fmt(unit)}" else "No custom value set"
+            if (customMl > 0) getString(R.string.settings_custom_value, customMl.fmt(unit))
+            else getString(R.string.settings_no_custom_value)
 
         binding.rowSetUnit.rowSubtitle.text =
-            if (unit == UNIT_CL) "Centilitres (cl)" else "Millilitres (ml)"
+            if (unit == UNIT_CL) getString(R.string.unit_cl) else getString(R.string.unit_ml)
 
         val personalMl = prefs.getInt("personal_goal_ml", 0)
         binding.rowSetPersonalGoal.rowSubtitle.text =
-            if (personalMl > 0) "${personalMl.fmt(unit)} per day" else "Not set"
+            if (personalMl > 0) getString(R.string.settings_personal_goal_value, personalMl.fmt(unit))
+            else getString(R.string.settings_not_set)
     }
 
     // ─── Helpers ─────────────────────────────────────────────────

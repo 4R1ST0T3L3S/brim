@@ -47,7 +47,7 @@ class AnalyticsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val history = loadHistory()
-        val allHistory = loadAllHistory()
+        val allHistory = prefs.loadAllHistory()
         val personalGoal = prefs.getInt("personal_goal_ml", 0)
         setupChart(history, personalGoal)
         setupStats(allHistory, personalGoal)
@@ -103,21 +103,6 @@ class AnalyticsFragment : Fragment() {
             }
             Pair(date, ml)
         }
-    }
-
-    private fun loadAllHistory(): List<Pair<LocalDate, Int>> {
-        val today = LocalDate.now()
-        val fromHistory = prefs.all.keys
-            .filter { it.startsWith("history_") }
-            .mapNotNull { key ->
-                val dateStr = key.removePrefix("history_")
-                runCatching { LocalDate.parse(dateStr) }.getOrNull()
-                    ?.let { date -> date to prefs.getInt(key, 0) }
-            }
-            .toMap()
-        val merged = fromHistory.toMutableMap()
-        merged[today] = prefs.getInt("intake_ml", 0)
-        return merged.entries.map { (date, ml) -> Pair(date, ml) }.sortedBy { it.first }
     }
 
     // ─── Chart ────────────────────────────────────────────────────

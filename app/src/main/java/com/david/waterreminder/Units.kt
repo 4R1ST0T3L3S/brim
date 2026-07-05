@@ -1,6 +1,8 @@
 package com.david.waterreminder
 
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatDelegate
+import java.time.LocalDate
 import java.util.Locale
 
 const val PREF_UNIT = "unit"
@@ -51,6 +53,21 @@ fun String.toValidCustomMl(unit: String): Int? =
 
 fun String.toValidGoalMl(unit: String): Int? =
     toMl(unit)?.takeIf { it in GOAL_MIN_ML..GOAL_MAX_ML }
+
+fun SharedPreferences.loadAllHistory(): List<Pair<LocalDate, Int>> {
+    val today = LocalDate.now()
+    val fromHistory = all.keys
+        .filter { it.startsWith("history_") }
+        .mapNotNull { key ->
+            val dateStr = key.removePrefix("history_")
+            runCatching { LocalDate.parse(dateStr) }.getOrNull()
+                ?.let { date -> date to getInt(key, 0) }
+        }
+        .toMap()
+    val merged = fromHistory.toMutableMap()
+    merged[today] = getInt("intake_ml", 0)
+    return merged.entries.map { (date, ml) -> Pair(date, ml) }.sortedBy { it.first }
+}
 
 private fun formatCl(ml: Int): String {
     val cl = ml / 10.0

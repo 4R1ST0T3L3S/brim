@@ -60,12 +60,12 @@ class DataFragment : BaseMenuFragment() {
         binding.rowImportData.rowSubtitle.text = getString(R.string.settings_import_data_subtitle)
         binding.rowImportData.rowContainer.setOnClickListener {
             androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                .setTitle("Are you sure?")
-                .setMessage("Recommended: export a backup before importing. This will overwrite all your current data.")
-                .setPositiveButton("Import") { _, _ ->
+                .setTitle(getString(R.string.dialog_import_title))
+                .setMessage(getString(R.string.dialog_import_message))
+                .setPositiveButton(getString(R.string.dialog_import_confirm)) { _, _ ->
                     importLauncher.launch(arrayOf("application/json"))
                 }
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(getString(R.string.dialog_cancel), null)
                 .show()
         }
     }

@@ -30,16 +30,16 @@ class HelpFragment : BaseMenuFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.rowReplayTour.rowIcon.setImageResource(R.drawable.ic_water_drop)
-        binding.rowReplayTour.rowTitle.text = "Replay guide tour"
-        binding.rowReplayTour.rowSubtitle.text = "See the intro again"
+        binding.rowReplayTour.rowTitle.text = getString(R.string.help_row_replay_tour_title)
+        binding.rowReplayTour.rowSubtitle.text = getString(R.string.help_row_replay_tour_subtitle)
         binding.rowReplayTour.rowContainer.setOnClickListener {
             tourPrefs.edit().putBoolean("tour_done", false).apply()
             findNavController().popBackStack(R.id.FirstFragment, false)
         }
 
         binding.rowReportProblem.rowIcon.setImageResource(android.R.drawable.ic_menu_send)
-        binding.rowReportProblem.rowTitle.text = "Report a Problem"
-        binding.rowReportProblem.rowSubtitle.text = "Submit a bug or request a feature"
+        binding.rowReportProblem.rowTitle.text = getString(R.string.help_section_report)
+        binding.rowReportProblem.rowSubtitle.text = getString(R.string.help_row_report_subtitle)
         binding.rowReportProblem.rowContainer.setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://codeberg.org/DavidCRicardo/WaterReminder/issues")))
         }
