@@ -94,14 +94,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val navOptions = androidx.navigation.navOptions {
+            launchSingleTop = true
+            popUpTo(R.id.FirstFragment) { inclusive = false }
+        }
         return when (item.itemId) {
+R.id.action_help -> {
+                findNavController(R.id.nav_host_fragment_content_main)
+                    .navigate(R.id.HelpFragment, null, navOptions)
+                true
+            }
             R.id.action_settings -> {
-                val navOptions = androidx.navigation.navOptions {
-                    launchSingleTop = true
-                    popUpTo(R.id.FirstFragment) { inclusive = false }
-                }
                 findNavController(R.id.nav_host_fragment_content_main)
                     .navigate(R.id.SettingsFragment, null, navOptions)
+                true
+            }
+            R.id.action_about -> {
+                findNavController(R.id.nav_host_fragment_content_main)
+                    .navigate(R.id.AboutFragment, null, navOptions)
                 true
             }
             else -> super.onOptionsItemSelected(item)

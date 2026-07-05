@@ -32,6 +32,8 @@ fun Int.toDisplay(unit: String): String =
 /** ml → display string with unit suffix (e.g. "0.5 cl", "250 ml"). */
 fun Int.fmt(unit: String): String = "${toDisplay(unit)} $unit"
 
+fun Int.days(): String = if (this == 1) "1 day" else "$this days"
+
 /** User-entered display string → ml. Accepts "0.5" / "0,5" for cl. Null if invalid or out of range. */
 fun String.toMl(unit: String): Int? {
     val v = trim().replace(',', '.').toDoubleOrNull() ?: return null

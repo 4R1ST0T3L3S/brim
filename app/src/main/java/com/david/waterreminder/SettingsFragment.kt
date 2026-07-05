@@ -1,61 +1,55 @@
 package com.david.waterreminder
 
 import android.content.Context
-import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.TextView
-import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.david.waterreminder.BuildConfig
-import org.json.JSONArray
-import org.json.JSONObject
+import com.david.waterreminder.databinding.FragmentSettingsBinding
 
-class SettingsFragment : Fragment() {
+class SettingsFragment : BaseMenuFragment() {
 
-    private lateinit var exportLauncher: ActivityResultLauncher<String>
-    private lateinit var importLauncher: ActivityResultLauncher<Array<String>>
+    private var _binding: FragmentSettingsBinding? = null
+    private val binding get() = _binding!!
 
     private val prefs by lazy {
         requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
     }
-    private val tourPrefs by lazy {
-        requireContext().getSharedPreferences("tour_prefs", Context.MODE_PRIVATE)
-    }
     private val unit get() = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        exportLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-            uri?.let { writeBackup(it) }
-        }
-        importLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            uri?.let { readBackup(it) }
-        }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View = inflater.inflate(R.layout.fragment_settings, container, false)
+    ): View {
+        _binding = FragmentSettingsBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        refreshRows(view)
 
-        view.findViewById<View>(R.id.row_set_theme).setOnClickListener {
-            showThemeDialog(view)
-        }
+        binding.rowSetTheme.rowIcon.setImageResource(android.R.drawable.ic_menu_manage)
+        binding.rowSetTheme.rowTitle.text = "Theme"
 
-        view.findViewById<View>(R.id.row_reset_custom).setOnClickListener {
+        binding.rowResetCustom.rowIcon.setImageResource(R.drawable.ic_water_drop)
+        binding.rowResetCustom.rowTitle.text = "Reset custom quick button"
+        binding.rowResetCustom.rowChevron.setImageResource(android.R.drawable.ic_menu_delete)
+
+        binding.rowSetUnit.rowIcon.setImageResource(R.drawable.ic_water_drop)
+        binding.rowSetUnit.rowTitle.text = "Measure unit"
+
+        binding.rowSetPersonalGoal.rowIcon.setImageResource(R.drawable.ic_bottle_full)
+        binding.rowSetPersonalGoal.rowTitle.text = "Personal goal"
+
+        refreshRows()
+
+        binding.rowSetTheme.rowContainer.setOnClickListener { showThemeDialog() }
+
+        binding.rowResetCustom.rowContainer.setOnClickListener {
             val current = prefs.getInt("custom_quick_ml", 0)
             if (current == 0) return@setOnClickListener
             AlertDialog.Builder(requireContext())
@@ -63,130 +57,38 @@ class SettingsFragment : Fragment() {
                 .setMessage("Remove the custom ${current.fmt(unit)} quick button?")
                 .setPositiveButton("Reset") { _, _ ->
                     prefs.edit().putInt("custom_quick_ml", 0).apply()
-                    refreshRows(view)
+                    refreshRows()
                     firstFragment()?.applyCustomQuickMl(0)
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
         }
 
-        view.findViewById<View>(R.id.row_set_unit).setOnClickListener {
-            showUnitDialog(view)
-        }
+        binding.rowSetUnit.rowContainer.setOnClickListener { showUnitDialog() }
 
-        view.findViewById<View>(R.id.row_set_personal_goal).setOnClickListener {
-            showPersonalGoalDialog(view)
-        }
+        binding.rowSetPersonalGoal.rowContainer.setOnClickListener { showPersonalGoalDialog() }
 
-        view.findViewById<View>(R.id.row_replay_tour).setOnClickListener {
-            tourPrefs.edit().putBoolean("tour_done", false).apply()
-            findNavController().popBackStack(R.id.FirstFragment, false)
+        binding.rowData.rowIcon.setImageResource(android.R.drawable.ic_menu_save)
+        binding.rowData.rowTitle.text = getString(R.string.action_data)
+        binding.rowData.rowSubtitle.text = "Export or import your data"
+        binding.rowData.rowContainer.setOnClickListener {
+            findNavController().navigate(R.id.action_SettingsFragment_to_DataFragment)
         }
-
-        view.findViewById<View>(R.id.row_privacy_policy).setOnClickListener {
-            findNavController().navigate(R.id.action_SettingsFragment_to_SecondFragment)
-        }
-
-        view.findViewById<View>(R.id.row_export_data).setOnClickListener {
-            exportLauncher.launch("waterreminder_backup.json")
-        }
-
-        view.findViewById<View>(R.id.row_import_data).setOnClickListener {
-            importLauncher.launch(arrayOf("application/json"))
-        }
-
-        view.findViewById<View>(R.id.row_changelog).setOnClickListener {
-            findNavController().navigate(R.id.action_SettingsFragment_to_ChangelogFragment)
-        }
-
-        view.findViewById<TextView>(R.id.text_app_version).text =
-            getString(R.string.settings_version, BuildConfig.VERSION_NAME)
     }
 
     override fun onResume() {
         super.onResume()
-        view?.let { refreshRows(it) }
+        _binding?.let { refreshRows() }
     }
 
-    // ─── Export / Import ─────────────────────────────────────────
-
-    private fun writeBackup(uri: Uri) {
-        try {
-            val strings = JSONObject()
-            val ints = JSONObject()
-            val booleans = JSONObject()
-            val sets = JSONObject()
-
-            prefs.all.forEach { (key, value) ->
-                when (value) {
-                    is String  -> strings.put(key, value)
-                    is Int     -> ints.put(key, value)
-                    is Boolean -> booleans.put(key, value)
-                    is Set<*>  -> {
-                        val arr = JSONArray()
-                        value.forEach { arr.put(it) }
-                        sets.put(key, arr)
-                    }
-                }
-            }
-
-            booleans.put("tour_done", tourPrefs.getBoolean("tour_done", false))
-
-            val json = JSONObject()
-                .put("strings", strings)
-                .put("ints", ints)
-                .put("booleans", booleans)
-                .put("sets", sets)
-
-            requireContext().contentResolver.openOutputStream(uri)?.use { stream ->
-                stream.write(json.toString(2).toByteArray())
-            }
-
-            Toast.makeText(requireContext(), getString(R.string.export_success), Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Toast.makeText(requireContext(), getString(R.string.export_failed), Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun readBackup(uri: Uri) {
-        try {
-            val content = requireContext().contentResolver.openInputStream(uri)
-                ?.bufferedReader()?.readText() ?: return
-
-            val json = JSONObject(content)
-            val editor = prefs.edit().clear()
-
-            json.getJSONObject("strings").let { obj ->
-                obj.keys().forEach { key -> editor.putString(key, obj.getString(key)) }
-            }
-            json.getJSONObject("ints").let { obj ->
-                obj.keys().forEach { key -> editor.putInt(key, obj.getInt(key)) }
-            }
-            json.getJSONObject("booleans").let { obj ->
-                obj.keys().forEach { key ->
-                    if (key == "tour_done") tourPrefs.edit().putBoolean(key, obj.getBoolean(key)).apply()
-                    else editor.putBoolean(key, obj.getBoolean(key))
-                }
-            }
-            json.getJSONObject("sets").let { obj ->
-                obj.keys().forEach { key ->
-                    val arr = obj.getJSONArray(key)
-                    val set = (0 until arr.length()).mapTo(mutableSetOf()) { arr.getString(it) }
-                    editor.putStringSet(key, set)
-                }
-            }
-
-            editor.apply()
-            view?.let { refreshRows(it) }
-            Toast.makeText(requireContext(), getString(R.string.import_success), Toast.LENGTH_LONG).show()
-        } catch (e: Exception) {
-            Toast.makeText(requireContext(), getString(R.string.import_failed), Toast.LENGTH_SHORT).show()
-        }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     // ─── Dialogs ──────────────────────────────────────────────────
 
-    private fun showThemeDialog(view: View) {
+    private fun showThemeDialog() {
         val options = THEME_MODES.map { getString(themeModeLabelRes(it)) }.toTypedArray()
         val current = prefs.getInt(PREF_THEME_MODE, DEFAULT_THEME_MODE)
         val currentIndex = themeModeDialogIndex(current)
@@ -195,14 +97,14 @@ class SettingsFragment : Fragment() {
             .setSingleChoiceItems(options, currentIndex) { dialog, which ->
                 prefs.edit().putInt(PREF_THEME_MODE, THEME_MODES[which]).apply()
                 AppCompatDelegate.setDefaultNightMode(THEME_MODES[which])
-                refreshRows(view)
+                refreshRows()
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
-    private fun showUnitDialog(view: View) {
+    private fun showUnitDialog() {
         val options = arrayOf("Millilitres (ml)", "Centilitres (cl)")
         val currentIndex = if (unit == UNIT_CL) 1 else 0
         AlertDialog.Builder(requireContext())
@@ -210,7 +112,7 @@ class SettingsFragment : Fragment() {
             .setSingleChoiceItems(options, currentIndex) { dialog, which ->
                 val chosen = if (which == 1) UNIT_CL else UNIT_ML
                 prefs.edit().putString(PREF_UNIT, chosen).apply()
-                refreshRows(view)
+                refreshRows()
                 firstFragment()?.onUnitChanged()
                 dialog.dismiss()
             }
@@ -218,7 +120,7 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
-    private fun showPersonalGoalDialog(view: View) {
+    private fun showPersonalGoalDialog() {
         val currentMl = prefs.getInt("personal_goal_ml", 0)
         val editText = EditText(requireContext()).apply {
             inputType = InputType.TYPE_CLASS_NUMBER or
@@ -235,7 +137,7 @@ class SettingsFragment : Fragment() {
                 if (currentMl > 0) {
                     setNeutralButton("Reset to Default") { _, _ ->
                         prefs.edit().putInt("personal_goal_ml", 0).apply()
-                        refreshRows(view)
+                        refreshRows()
                     }
                 }
             }
@@ -245,7 +147,7 @@ class SettingsFragment : Fragment() {
             val storedMl = editText.text.toString().toValidGoalMl(unit)
             if (storedMl != null) {
                 prefs.edit().putInt("personal_goal_ml", storedMl).apply()
-                refreshRows(view)
+                refreshRows()
                 dialog.dismiss()
             } else {
                 editText.error = "Enter a value between ${GOAL_MIN_ML.fmt(unit)} and ${GOAL_MAX_ML.fmt(unit)}"
@@ -256,19 +158,19 @@ class SettingsFragment : Fragment() {
 
     // ─── UI refresh ───────────────────────────────────────────────
 
-    private fun refreshRows(view: View) {
-        val themeLabel = getString(themeModeLabelRes(prefs.getInt(PREF_THEME_MODE, DEFAULT_THEME_MODE)))
-        view.findViewById<TextView>(R.id.text_theme_current).text = themeLabel
+    private fun refreshRows() {
+        binding.rowSetTheme.rowSubtitle.text =
+            getString(themeModeLabelRes(prefs.getInt(PREF_THEME_MODE, DEFAULT_THEME_MODE)))
 
         val customMl = prefs.getInt("custom_quick_ml", 0)
-        view.findViewById<TextView>(R.id.text_custom_current).text =
+        binding.rowResetCustom.rowSubtitle.text =
             if (customMl > 0) "Currently set to ${customMl.fmt(unit)}" else "No custom value set"
 
-        view.findViewById<TextView>(R.id.text_unit_current).text =
+        binding.rowSetUnit.rowSubtitle.text =
             if (unit == UNIT_CL) "Centilitres (cl)" else "Millilitres (ml)"
 
         val personalMl = prefs.getInt("personal_goal_ml", 0)
-        view.findViewById<TextView>(R.id.text_personal_goal_current).text =
+        binding.rowSetPersonalGoal.rowSubtitle.text =
             if (personalMl > 0) "${personalMl.fmt(unit)} per day" else "Not set"
     }
 

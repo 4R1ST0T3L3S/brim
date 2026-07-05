@@ -47,9 +47,10 @@ class AnalyticsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val history = loadHistory()
+        val allHistory = loadAllHistory()
         val personalGoal = prefs.getInt("personal_goal_ml", 0)
         setupChart(history, personalGoal)
-        setupStats(history, personalGoal)
+        setupStats(allHistory, personalGoal)
 
         binding.textViewAllHistory.setOnClickListener {
             findNavController().navigate(R.id.action_AnalyticsFragment_to_AllHistoryFragment)
@@ -102,6 +103,21 @@ class AnalyticsFragment : Fragment() {
             }
             Pair(date, ml)
         }
+    }
+
+    private fun loadAllHistory(): List<Pair<LocalDate, Int>> {
+        val today = LocalDate.now()
+        val fromHistory = prefs.all.keys
+            .filter { it.startsWith("history_") }
+            .mapNotNull { key ->
+                val dateStr = key.removePrefix("history_")
+                runCatching { LocalDate.parse(dateStr) }.getOrNull()
+                    ?.let { date -> date to prefs.getInt(key, 0) }
+            }
+            .toMap()
+        val merged = fromHistory.toMutableMap()
+        merged[today] = prefs.getInt("intake_ml", 0)
+        return merged.entries.map { (date, ml) -> Pair(date, ml) }.sortedBy { it.first }
     }
 
     // ─── Chart ────────────────────────────────────────────────────
@@ -198,11 +214,11 @@ class AnalyticsFragment : Fragment() {
 
         binding.textAvg.text = "Avg daily intake:  ${avg.fmt(unit)}"
         binding.textBest.text = "Best day:  ${best.fmt(unit)}"
-        binding.textGoalDays.text = "Goal reached:  $goalDays days"
+        binding.textGoalDays.text = "Goal reached:  ${goalDays.days()}"
 
         if (personalGoal > 0) {
             val personalDays = history.count { it.second >= personalGoal }
-            binding.textPersonalGoalDays.text = "Personal goal reached:  $personalDays days"
+            binding.textPersonalGoalDays.text = "Personal goal reached:  ${personalDays.days()}"
             binding.textPersonalGoalDays.visibility = View.VISIBLE
         } else {
             binding.textPersonalGoalDays.visibility = View.GONE

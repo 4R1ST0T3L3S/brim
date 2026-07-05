@@ -9,22 +9,13 @@
         android:id="@+id/FirstFragment"
         android:name="com.david.waterreminder.FirstFragment"
         android:label="@string/first_fragment_label"
-        tools:layout="@layout/fragment_water">
+        tools:layout="@layout/fragment_water" />
 
-        <action
-            android:id="@+id/action_FirstFragment_to_SecondFragment"
-            app:destination="@id/SecondFragment" />
-    </fragment>
     <fragment
         android:id="@+id/SecondFragment"
         android:name="com.david.waterreminder.SecondFragment"
         android:label="@string/second_fragment_label"
-        tools:layout="@layout/fragment_privacypolicy">
-
-        <action
-            android:id="@+id/action_SecondFragment_to_FirstFragment"
-            app:destination="@id/FirstFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_privacypolicy" />
 
     <fragment
         android:id="@+id/RemindersFragment"
@@ -56,12 +47,8 @@
         tools:layout="@layout/fragment_settings">
 
         <action
-            android:id="@+id/action_SettingsFragment_to_SecondFragment"
-            app:destination="@id/SecondFragment" />
-
-        <action
-            android:id="@+id/action_SettingsFragment_to_ChangelogFragment"
-            app:destination="@id/ChangelogFragment" />
+            android:id="@+id/action_SettingsFragment_to_DataFragment"
+            app:destination="@id/DataFragment" />
     </fragment>
 
     <fragment
@@ -69,4 +56,31 @@
         android:name="com.david.waterreminder.ChangelogFragment"
         android:label="@string/changelog_label"
         tools:layout="@layout/fragment_changelog" />
+
+    <fragment
+        android:id="@+id/DataFragment"
+        android:name="com.david.waterreminder.DataFragment"
+        android:label="@string/action_data"
+        tools:layout="@layout/fragment_data" />
+
+    <fragment
+        android:id="@+id/HelpFragment"
+        android:name="com.david.waterreminder.HelpFragment"
+        android:label="@string/action_help"
+        tools:layout="@layout/fragment_help" />
+
+    <fragment
+        android:id="@+id/AboutFragment"
+        android:name="com.david.waterreminder.AboutFragment"
+        android:label="@string/action_about"
+        tools:layout="@layout/fragment_about">
+
+        <action
+            android:id="@+id/action_AboutFragment_to_SecondFragment"
+            app:destination="@id/SecondFragment" />
+
+        <action
+            android:id="@+id/action_AboutFragment_to_ChangelogFragment"
+            app:destination="@id/ChangelogFragment" />
+    </fragment>
 </navigation>
