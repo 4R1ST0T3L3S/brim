@@ -173,8 +173,7 @@ class FirstFragment : Fragment() {
         // Active goal = nearest milestone not yet reached (personal goal + daily goal, sorted).
         // Falls back to the highest goal once everything is reached.
         val personalGoal = prefs.getInt("personal_goal_ml", 0)
-        val milestones = listOfNotNull(personalGoal.takeIf { it > 0 }, goalMl).sorted()
-        val activeGoal = milestones.firstOrNull { currentMl < it } ?: milestones.last()
+        val activeGoal = if (personalGoal > 0) personalGoal else goalMl
 
         binding.progressWater.progress = ((currentMl * 100) / activeGoal).coerceAtMost(100)
         binding.textIntakeAmount.text = "${currentMl.fmt(unit)} / ${activeGoal.fmt(unit)}"

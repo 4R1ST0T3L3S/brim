@@ -92,6 +92,16 @@ class RemindersFragment : Fragment() {
             updateRemindersAlpha(isChecked)
         }
 
+        binding.rowStopOnGoal.rowIcon.setImageResource(android.R.drawable.ic_lock_silent_mode_off)
+        binding.rowStopOnGoal.rowTitle.text = getString(R.string.settings_row_stop_on_goal)
+        binding.rowStopOnGoal.rowChevron.visibility = View.GONE
+        binding.rowStopOnGoal.rowContainer.setOnClickListener {
+            val current = prefs.getBoolean("stop_notifications_on_goal", false)
+            prefs.edit().putBoolean("stop_notifications_on_goal", !current).apply()
+            refreshStopOnGoalRow()
+        }
+        refreshStopOnGoalRow()
+
         binding.buttonAddReminder.setOnClickListener { showTimePickerDialog() }
 
         binding.buttonResetReminders.setOnClickListener {
@@ -466,10 +476,19 @@ class RemindersFragment : Fragment() {
         }
     }
 
+    private fun refreshStopOnGoalRow() {
+        binding.rowStopOnGoal.rowSubtitle.text =
+            if (prefs.getBoolean("stop_notifications_on_goal", false))
+                getString(R.string.settings_stop_on_goal_enabled)
+            else getString(R.string.settings_stop_on_goal_disabled)
+    }
+
     private fun updateRemindersAlpha(enabled: Boolean) {
         val alpha = if (enabled) 1f else 0.38f
         binding.containerReminders.alpha = alpha
         binding.textNoReminders.alpha = alpha
+        binding.rowStopOnGoal.root.alpha = alpha
+        binding.rowStopOnGoal.rowContainer.isEnabled = enabled
     }
 
     override fun onDestroyView() {

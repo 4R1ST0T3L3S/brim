@@ -43,6 +43,16 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/title_reminders" />
 
+        <include
+            android:id="@+id/row_stop_on_goal"
+            layout="@layout/item_settings_row"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/switch_notifications" />
+
         <View
             android:id="@+id/divider"
             android:layout_width="0dp"
@@ -51,7 +61,7 @@
             android:background="?attr/colorOutlineVariant"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/switch_notifications" />
+            app:layout_constraintTop_toBottomOf="@id/row_stop_on_goal" />
 
         <!-- Add reminder -->
         <TextView

@@ -55,6 +55,9 @@
     <string name="settings_row_reset_custom">Reset custom quick button</string>
     <string name="settings_row_unit">Measure unit</string>
     <string name="settings_row_personal_goal">Personal goal</string>
+    <string name="settings_row_stop_on_goal">Pause when goal reached</string>
+    <string name="settings_stop_on_goal_enabled">Enabled</string>
+    <string name="settings_stop_on_goal_disabled">Disabled</string>
     <string name="settings_row_data_subtitle">Export or import your data</string>
     <string name="settings_custom_value">Currently set to %s</string>
     <string name="settings_no_custom_value">No custom value set</string>

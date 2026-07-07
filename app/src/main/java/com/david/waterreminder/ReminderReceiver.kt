@@ -37,6 +37,16 @@ class ReminderReceiver : BroadcastReceiver() {
             if (currentHour !in startHour..endHour) return
         }
 
+        // Suppress notification if today's goal has already been reached
+        if (prefs.getBoolean("stop_notifications_on_goal", false)) {
+            val savedDate = prefs.getString("date", "")
+            val today = java.time.LocalDate.now().toString()
+            val intakeToday = if (savedDate == today) prefs.getInt("intake_ml", 0) else 0
+            val personalGoal = prefs.getInt("personal_goal_ml", 0)
+            val goal = if (personalGoal > 0) personalGoal else 1500
+            if (intakeToday >= goal) return
+        }
+
         // Show the notification
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
