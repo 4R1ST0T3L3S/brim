@@ -2,7 +2,6 @@ package com.david.waterreminder
 
 import android.Manifest
 import android.app.AlarmManager
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
@@ -81,8 +80,6 @@ class RemindersFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        createNotificationChannel()
 
         val notificationsEnabled = prefs.getBoolean("notifications_enabled", false)
         binding.switchNotifications.isChecked = notificationsEnabled
@@ -456,8 +453,6 @@ class RemindersFragment : Fragment() {
 
     private fun enableNotifications() {
         prefs.edit().putBoolean("notifications_enabled", true).apply()
-        // Reschedule all enabled reminders in case the alarm chain was broken
-        // while notifications were disabled.
         reminders.filter { it.enabled }.forEach { scheduleOrCancel(it) }
     }
 
@@ -465,16 +460,6 @@ class RemindersFragment : Fragment() {
         prefs.edit().putBoolean("notifications_enabled", false).apply()
     }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                "water_reminder_channel", "Water Reminders",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply { description = "Daily water intake reminders" }
-            requireContext().getSystemService(NotificationManager::class.java)
-                .createNotificationChannel(channel)
-        }
-    }
 
     private fun refreshStopOnGoalRow() {
         binding.rowStopOnGoal.rowSubtitle.text =

@@ -1,8 +1,11 @@
 package com.david.waterreminder
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.backup.BackupManager
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -34,6 +37,8 @@ class MainActivity : AppCompatActivity() {
             prefs.getInt(PREF_THEME_MODE, DEFAULT_THEME_MODE)
         )
         super.onCreate(savedInstanceState)
+
+        createNotificationChannel()
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -134,5 +139,16 @@ R.id.action_help -> {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         return navController.navigateUp(appBarConfiguration)
                 || super.onSupportNavigateUp()
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "water_reminder_channel",
+                getString(R.string.notification_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply { description = getString(R.string.notification_channel_description) }
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        }
     }
 }

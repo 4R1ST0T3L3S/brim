@@ -5,16 +5,20 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import androidx.core.app.NotificationCompat
 import java.util.Calendar
 
 class ReminderReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        val prefs = context.getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        onReceiveWithPrefs(context, intent, prefs)
+    }
+
+    fun onReceiveWithPrefs(context: Context, intent: Intent, prefs: SharedPreferences) {
         val reminderTime = intent.getStringExtra("reminder_time") ?: return
         val reminderType = intent.getStringExtra("reminder_type") ?: "daily"
-
-        val prefs = context.getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
 
         // Always reschedule first so the chain never breaks regardless of the notification toggle.
         when (reminderType) {
@@ -29,6 +33,13 @@ class ReminderReceiver : BroadcastReceiver() {
         // Respect the global notifications toggle
         if (!prefs.getBoolean("notifications_enabled", false)) return
 
+        // Piggyback: refresh all other enabled reminders so a dropped alarm is recovered
+        // within the next hourly firing cycle rather than waiting for a reboot.
+        val allReminders = prefs.getStringSet("reminders_v3", emptySet()) ?: emptySet()
+        allReminders.mapNotNull { Reminder.fromPrefsString(it) }
+            .filter { it.enabled }
+            .forEach { ReminderScheduler.schedule(context, it) }
+
         // For hourly: only notify within the window
         if (reminderType == "hourly") {
             val startHour = intent.getIntExtra("reminder_start_hour", 8)
@@ -37,14 +48,17 @@ class ReminderReceiver : BroadcastReceiver() {
             if (currentHour !in startHour..endHour) return
         }
 
+        // Read today's intake and goal (shared by suppression check + progress bar)
+        val savedDate = prefs.getString("date", "")
+        val today = java.time.LocalDate.now().toString()
+        val intakeToday = if (savedDate == today) prefs.getInt("intake_ml", 0) else 0
+        val personalGoal = prefs.getInt("personal_goal_ml", 0)
+        val goal = if (personalGoal > 0) personalGoal else prefs.getInt("goal_ml", 1500)
+        val unit = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
+
         // Suppress notification if today's goal has already been reached
         if (prefs.getBoolean("stop_notifications_on_goal", false)) {
-            val savedDate = prefs.getString("date", "")
-            val today = java.time.LocalDate.now().toString()
-            val intakeToday = if (savedDate == today) prefs.getInt("intake_ml", 0) else 0
-            val personalGoal = prefs.getInt("personal_goal_ml", 0)
-            val goal = if (personalGoal > 0) personalGoal else 1500
-            if (intakeToday >= goal) return
+            if (goal > 0 && intakeToday >= goal) return
         }
 
         // Show the notification
@@ -59,14 +73,28 @@ class ReminderReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(context, "water_reminder_channel")
+        val goalReached = goal > 0 && intakeToday >= goal
+        val builder = NotificationCompat.Builder(context, "water_reminder_channel")
             .setSmallIcon(R.drawable.ic_water_drop)
-            .setContentTitle("Time to drink water! 💧")
-            .setContentText("Stay hydrated — log your intake in WaterReminder.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(contentIntent)
             .setAutoCancel(true)
-            .build()
+
+        if (goalReached) {
+            builder
+                .setContentTitle(context.getString(R.string.notification_title))
+                .setContentText(context.getString(R.string.notification_body_goal_reached))
+        } else {
+            val intakeFmt = intakeToday.fmt(unit)
+            val goalFmt = goal.fmt(unit)
+            val title = context.resources.getStringArray(R.array.notification_titles).random()
+            builder
+                .setContentTitle(title)
+                .setSubText("$intakeFmt / $goalFmt")
+                .setProgress(goal, intakeToday.coerceAtMost(goal), false)
+        }
+
+        val notification = builder.build()
 
         notificationManager.notify(reminderTime.hashCode(), notification)
 

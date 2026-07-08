@@ -58,6 +58,16 @@
     <string name="settings_row_stop_on_goal">Pause when goal reached</string>
     <string name="settings_stop_on_goal_enabled">Enabled</string>
     <string name="settings_stop_on_goal_disabled">Disabled</string>
+    <string name="notification_channel_name">Water Reminders</string>
+    <string name="notification_channel_description">Daily water intake reminders</string>
+    <string name="notification_title">Time to drink water! 💧</string>
+    <string-array name="notification_titles">
+        <item>Time to drink water! 💧</item>
+        <item>Hydration check! 💧</item>
+        <item>Water break! 💧</item>
+        <item>Don\'t forget to hydrate! 💧</item>
+    </string-array>
+    <string name="notification_body_goal_reached">Don\'t forget to stay hydrated!</string>
     <string name="settings_row_data_subtitle">Export or import your data</string>
     <string name="settings_custom_value">Currently set to %s</string>
     <string name="settings_no_custom_value">No custom value set</string>
