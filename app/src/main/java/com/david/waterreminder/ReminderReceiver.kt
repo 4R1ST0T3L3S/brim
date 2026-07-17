@@ -88,8 +88,10 @@ class ReminderReceiver : BroadcastReceiver() {
             val intakeFmt = intakeToday.fmt(unit)
             val goalFmt = goal.fmt(unit)
             val title = context.resources.getStringArray(R.array.notification_titles).random()
+            val body = context.resources.getStringArray(R.array.notification_bodies).random()
             builder
                 .setContentTitle(title)
+                .setContentText(body)
                 .setSubText("$intakeFmt / $goalFmt")
                 .setProgress(goal, intakeToday.coerceAtMost(goal), false)
         }

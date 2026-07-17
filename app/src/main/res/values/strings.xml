@@ -61,6 +61,11 @@
     <string name="notification_channel_name">Water Reminders</string>
     <string name="notification_channel_description">Daily water intake reminders</string>
     <string name="notification_title">Time to drink water! 💧</string>
+    <string-array name="notification_bodies">
+        <item>Stay hydrated!</item>
+        <item>Keep it up!</item>
+        <item>You\'re doing great!</item>
+    </string-array>
     <string-array name="notification_titles">
         <item>Time to drink water! 💧</item>
         <item>Hydration check! 💧</item>
