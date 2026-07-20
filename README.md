@@ -33,5 +33,6 @@ Water Reminder is improved by community contributions. See [CONTRIBUTORS.md](CON
 
 ## Donations
 [<img src="https://www.paypal.com/paypalme/davidcricardo" border="0" alt="Donate using Paypal">](https://www.paypal.com/paypalme/davidcricardo)
+
 [<img src="https://buy.stripe.com/14AfZbf8WdRjdxXfWxbjW00" border="0" alt="Donate using Stripe">](https://buy.stripe.com/14AfZbf8WdRjdxXfWxbjW00)
 
