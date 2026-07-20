@@ -1,8 +1,8 @@
 • Added About screen — Privacy Policy, Changelog, and Support the Dev
 • Added Help screen — Report a Problem section
-• Improved notifications — progress bar, motivational messages, and goal-reached notification
 • Added Option to pause notifications when the daily goal is reached
+• Improved notifications — progress bar, motivational messages, and goal-reached notification
 • Improved Data export and import — backup and restore your data
-• Updated Privacy Policy — see About → Privacy Policy for details
 • Improved Quick buttons display
+• Updated Privacy Policy
 • Bug fixes
