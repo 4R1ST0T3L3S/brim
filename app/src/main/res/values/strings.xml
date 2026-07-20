@@ -92,6 +92,7 @@
     <string name="dialog_import_message">Recommended: export a backup before importing. This will overwrite all your current data.</string>
     <string name="dialog_import_confirm">Import</string>
 
+
     <!-- Help rows -->
     <string name="help_row_replay_tour_title">Replay guide tour</string>
     <string name="help_row_replay_tour_subtitle">See the intro again</string>
@@ -119,7 +120,9 @@ The App stores the following information exclusively in your device. This data n
 • Daily water intake — track progress toward the daily goal\n
 • Historical daily intake — display the 7-day analytics chart\n
 • Daily goal and unit preference — personalise the experience\n
+• Personal goal — optional daily target set by the user\n
 • Reminder schedule configuration — trigger notifications at chosen times\n
+• Notification preferences — including whether to pause reminders upon reaching the goal\n
 • Streak counter — show consecutive days the goal was met\n
 • Custom quick-add button value — remember your personalised shortcut\n
 • Notification on/off flag — respect your notification preference\n
@@ -146,22 +149,26 @@ None of these libraries collect, transmit, or process personal data.\n\n
 5. Notifications\n\n
 Reminders are delivered as local notifications generated entirely on your device using Android\'s AlarmManager. No notification content or delivery data is sent to any external service. You can disable notifications at any time from the Reminders screen or your device notification settings.\n\n
 ──────────────────────────────\n\n
-6. Permissions\n\n
+6. Data Export and Import\n\n
+The App allows you to export all locally stored data to a backup file at a location you choose on your device. You can also restore your data by importing a previously exported backup file. The exported file is saved wherever you select (such as your Downloads folder). The App never uploads or transmits this file to any server or third party.\n\n
+──────────────────────────────\n\n
+7. Permissions\n\n
 • Display hydration reminder notifications (Android 13+)\n
 • Reschedule reminders after a device reboot\n
-• Deliver reminders at the exact times you configured (Android 12+)\n\n
+• Deliver reminders at the exact times you configured (Android 12+)\n
+• Reschedule reminders when the device exits airplane mode\n\n
 No other permissions are requested or used.\n\n
 ──────────────────────────────\n\n
-7. Data Retention and Deletion\n\n
+8. Data Retention and Deletion\n\n
 All data is stored locally in your device\'s private storage and accessible only to the App. To delete all data:\n\n
 • Clear app data: Device Settings → Apps → WaterReminder → Storage → Clear Data\n
 • Or simply uninstall the App.\n\n
 There is no remote backup to delete because no data is ever uploaded.\n\n
 ──────────────────────────────\n\n
-8. Children\'s Privacy\n\n
+9. Children\'s Privacy\n\n
 The App does not collect any personal information from anyone. It is safe for use by all ages.\n\n
 ──────────────────────────────\n\n
-9. Changes to This Policy\n\n
+10. Changes to This Policy\n\n
 If a future version of the App introduces features that change these data practices, this policy will be updated and the user will be notified.\n\n
 ──────────────────────────────\n\n
 David Ricardo\n

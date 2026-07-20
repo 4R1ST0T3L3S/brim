@@ -22,7 +22,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Last updated: May 2, 2026"
+            android:text="Last updated: July 20, 2026"
             android:textSize="12sp"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:layout_marginBottom="20dp" />

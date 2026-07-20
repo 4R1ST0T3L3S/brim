@@ -42,7 +42,7 @@ class AboutFragment : BaseMenuFragment() {
         binding.rowSupportDev.rowTitle.text = getString(R.string.about_row_support_title)
         binding.rowSupportDev.rowSubtitle.text = getString(R.string.about_row_support_subtitle)
         binding.rowSupportDev.rowContainer.setOnClickListener {
-            // TODO: add donation link
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://buy.stripe.com/14AfZbf8WdRjdxXfWxbjW00")))
         }
     }
 
