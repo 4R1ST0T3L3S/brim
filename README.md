@@ -1,6 +1,3 @@
-# 📢 Announcement
-## ⚠️ Active development is paused for vacations. We'll be back in August!
-
 # WaterReminder
 ![Platforms](https://img.shields.io/badge/platforms-Android-2ea44f)
 [![Latest release](https://img.shields.io/gitea/v/release/DavidCRicardo/WaterReminder?gitea_url=https://codeberg.org)](https://codeberg.org/DavidCRicardo/WaterReminder/releases/latest)
