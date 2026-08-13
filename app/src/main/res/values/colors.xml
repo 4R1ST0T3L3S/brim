@@ -14,6 +14,7 @@
     <color name="brand_orange">#FF6F00</color>
     <color name="brand_red">#F44336</color>
     <color name="brand_blue_light">#90CAF9</color>
+    <color name="icon_backdrop_blue">#E3F2FD</color>
 
     <!-- Swipe-action backgrounds -->
     <color name="swipe_edit_bg">#888888</color>

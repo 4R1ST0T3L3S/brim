@@ -45,6 +45,14 @@
                 android:layout_marginBottom="2dp" />
 
             <include
+                android:id="@+id/row_goal_formula"
+                layout="@layout/item_settings_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="2dp" />
+
+            <include
                 android:id="@+id/row_support_dev"
                 layout="@layout/item_settings_row"
                 android:layout_width="match_parent"

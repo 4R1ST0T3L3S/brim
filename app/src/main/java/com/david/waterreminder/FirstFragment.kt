@@ -39,7 +39,7 @@ class FirstFragment : Fragment() {
     private val binding get() = _binding!!
 
     private var currentMl = 0
-    private val goalMl = 1500
+    private val goalMl = DEFAULT_DAILY_GOAL_ML
     private var customQuickMl = 0
 
     private val prefs by lazy {
@@ -305,7 +305,7 @@ class FirstFragment : Fragment() {
     private fun showCustomValueDialog() {
         val editText = EditText(requireContext()).apply {
             inputType = InputType.TYPE_CLASS_NUMBER or
-                if (unit == UNIT_CL) InputType.TYPE_NUMBER_FLAG_DECIMAL else 0
+                if (isDecimalUnit(unit)) InputType.TYPE_NUMBER_FLAG_DECIMAL else 0
             hint = "Amount in $unit (e.g. ${180.toDisplay(unit)})"
             setPadding(48, 32, 48, 32)
             if (customQuickMl > 0) setText(customQuickMl.toDisplay(unit))

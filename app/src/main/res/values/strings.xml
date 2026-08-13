@@ -54,6 +54,8 @@
     <string name="settings_row_theme">Theme</string>
     <string name="settings_row_reset_custom">Reset custom quick button</string>
     <string name="settings_row_unit">Measure unit</string>
+    <string name="settings_row_profile">Age &amp; Weight</string>
+    <string name="settings_profile_value">Age %1$d · %2$s</string>
     <string name="settings_row_personal_goal">Personal goal</string>
     <string name="settings_row_stop_on_goal">Pause when goal reached</string>
     <string name="settings_stop_on_goal_enabled">Enabled</string>
@@ -80,12 +82,14 @@
     <string name="settings_not_set">Not set</string>
     <string name="unit_ml">Millilitres (ml)</string>
     <string name="unit_cl">Centilitres (cl)</string>
+    <string name="unit_oz">Fluid ounces (oz)</string>
 
     <!-- Dialogs -->
     <string name="dialog_save">Save</string>
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_reset">Reset</string>
     <string name="dialog_reset_to_default">Reset to Default</string>
+    <string name="dialog_clear">Clear</string>
     <string name="dialog_reset_custom_title">Reset custom button</string>
     <string name="dialog_reset_custom_message">Remove the custom %s quick button?</string>
     <string name="dialog_import_title">Are you sure?</string>
@@ -96,10 +100,15 @@
     <!-- Help rows -->
     <string name="help_row_replay_tour_title">Replay guide tour</string>
     <string name="help_row_replay_tour_subtitle">See the intro again</string>
+    <string name="help_row_replay_onboarding_title">Replay welcome setup</string>
+    <string name="help_row_replay_onboarding_subtitle">See the welcome &amp; reminder setup again</string>
     <string name="help_row_report_subtitle">Submit a bug or request a feature</string>
 
     <!-- About rows -->
     <string name="about_row_privacy_subtitle">How your data is handled</string>
+    <string name="about_row_goal_formula_title">How your goal is calculated</string>
+    <string name="about_row_goal_formula_subtitle">The math behind your recommended daily goal</string>
+    <string name="dialog_goal_formula_message">Your recommended daily goal is based on your weight: about 35 ml per kilogram of body weight for total water needs (drinks + food combined).\n\nSince roughly 20% of that typically comes from food, we set your drinking-water goal at about 80% of the total — around 28 ml per kilogram.\n\nThis is a general estimate, not medical advice. You can always set your own goal manually in Settings → Personal goal.</string>
     <string name="about_row_support_title">Support the Dev</string>
     <string name="about_row_support_subtitle">Buy me a coffee ☕</string>
 
@@ -108,6 +117,51 @@
     <string name="changelog_version_header">Version %s</string>
     <string name="changelog_separator">──────────────────────────────</string>
     <string name="changelog_no_entries">No changelog available.</string>
+
+    <!-- First-run profile setup -->
+    <string name="profile_setup_title">Welcome</string>
+    <string name="profile_setup_subtitle">Let\'s get your hydration goal set up.</string>
+    <string name="profile_setup_units_label">Preferred units</string>
+    <string name="units_metric">Metric (ml, kg)</string>
+    <string name="units_imperial">Imperial (oz, lb)</string>
+    <string name="profile_setup_choose_experience">Choose your experience</string>
+    <string name="profile_setup_basic_title">Basic</string>
+    <string name="profile_setup_basic_subtitle">Start with the recommended minimum (%s/day)</string>
+    <string name="profile_setup_customized_title">Customized</string>
+    <string name="profile_setup_customized_subtitle">Get a personal goal calculated from your age and weight</string>
+    <string name="profile_setup_privacy_note">🔒 Your data stays on this device.</string>
+    <string name="profile_setup_why_needed_action">Why do I need this?</string>
+    <string name="dialog_why_needed_title">Why we ask</string>
+    <string name="dialog_why_needed_message">Your age and weight are used to calculate a personalized recommended daily water goal. This happens entirely on your device — it\'s never sent anywhere.</string>
+    <string name="profile_setup_age_hint">Age</string>
+    <string name="profile_setup_weight_hint">Weight (%s)</string>
+    <string name="profile_setup_done_action">Continue</string>
+    <string name="profile_error_age">You must input your age</string>
+    <string name="profile_error_weight">You must input your weight</string>
+    <string name="profile_error_age_range">Enter an age between %1$d and %2$d</string>
+    <string name="profile_error_weight_range">Enter a weight between %1$s and %2$s %3$s</string>
+    <string name="dialog_recommended_goal_title">⭐ Your recommended goal</string>
+    <string name="dialog_recommended_goal_message">Based on your age and weight, we recommend a daily goal of %s. This is a general estimate, not medical advice — you can change it anytime in Settings.</string>
+    <string name="dialog_recommended_goal_button">Get started 💧</string>
+    <string name="dialog_update_goal_message">Based on your updated age and weight, we recommend a daily goal of %s. Update your personal goal to match?</string>
+    <string name="dialog_update_goal_button">Update goal</string>
+    <string name="dialog_keep_current_goal">Keep current</string>
+
+    <!-- Reminder setup (onboarding step 2) -->
+    <string name="reminder_setup_title">Stay on track</string>
+    <string name="reminder_setup_subtitle">We\'ll send friendly reminders to drink water throughout the day.</string>
+    <string name="reminder_setup_choose_schedule">Choose a schedule</string>
+    <string name="reminder_setup_hourly_title">Hourly reminders</string>
+    <string name="reminder_setup_hourly_subtitle">Every hour from 08:00 to 20:00 (recommended)</string>
+    <string name="reminder_setup_custom_title">Custom schedule</string>
+    <string name="reminder_setup_custom_subtitle">Set your own wake-up and bedtime hours</string>
+    <string name="reminder_setup_day_begins">My day begins at %s</string>
+    <string name="reminder_setup_off_to_bed">I\'m off to bed at %s</string>
+    <string name="reminder_setup_error_window_title">Check your times</string>
+    <string name="reminder_setup_error_window">Bedtime must be after the time your day begins.</string>
+    <string name="reminder_setup_change_later_note">💡 You can always change this later from the Reminders screen.</string>
+    <string name="reminder_setup_back_action">Back</string>
+    <string name="reminder_setup_done_action">Finish setup</string>
 
     <string name="privacy_policy_text">
 1. Overview\n\n

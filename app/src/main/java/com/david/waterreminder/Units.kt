@@ -8,9 +8,47 @@ import java.util.Locale
 const val PREF_UNIT = "unit"
 const val UNIT_ML   = "ml"
 const val UNIT_CL   = "cl"
+const val UNIT_OZ   = "oz"
+
+const val ML_PER_FL_OZ = 29.5735
+const val KG_PER_LB = 0.45359237
+
+/** oz (imperial volume) is currently the only unit that implies the imperial system — weight follows it (lb). */
+fun isImperial(unit: String): Boolean = unit == UNIT_OZ
+
+/** True for units whose typical values aren't whole numbers, so input fields should allow a decimal point. */
+fun isDecimalUnit(unit: String): Boolean = unit == UNIT_CL || unit == UNIT_OZ
 
 const val PREF_THEME_MODE = "theme_mode"
 val DEFAULT_THEME_MODE = AppCompatDelegate.MODE_NIGHT_NO
+
+const val PREF_PROFILE_SETUP_DONE = "profile_setup_done"
+const val PREF_PROFILE_AGE = "profile_age"
+const val PREF_PROFILE_WEIGHT_KG = "profile_weight_kg"
+
+const val PROFILE_AGE_MIN = 1
+const val PROFILE_AGE_MAX = 120
+const val PROFILE_WEIGHT_KG_MIN = 1.0
+const val PROFILE_WEIGHT_KG_MAX = 300.0
+
+/** Total water (drinks + food moisture) estimate, ml per kg of body weight — the rate commonly attributed to EFSA (2010). */
+const val TOTAL_WATER_ML_PER_KG = 35.0
+
+/** Share of total water intake that should come from drinking; the rest is assumed to come from food moisture. */
+const val DRINKING_WATER_SHARE = 0.8
+
+/**
+ * General hydration estimate (not medical advice). Under 18, EFSA's child/teen water AI
+ * bands are age- and sex-driven rather than weight-driven — rather than approximate that with
+ * a weight-based number (which can overshoot or undershoot depending on the band, and can even
+ * exceed adult figures once averaged across sexes), we use the app's own flat recommended
+ * minimum instead. 18 and up: weight × 35 ml/kg for total water, scaled down to the ~80% that
+ * should come from drinking rather than food.
+ */
+fun recommendedGoalMl(ageYears: Int, weightKg: Double): Int {
+    if (ageYears < 18) return DEFAULT_DAILY_GOAL_ML
+    return (weightKg * TOTAL_WATER_ML_PER_KG * DRINKING_WATER_SHARE).toInt().coerceIn(GOAL_MIN_ML, GOAL_MAX_ML)
+}
 
 val THEME_MODES = intArrayOf(
     AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
@@ -28,18 +66,25 @@ fun themeModeLabelRes(mode: Int): Int = when (mode) {
 }
 
 /** ml → display string in the active unit (no unit suffix; suitable for EditText). */
-fun Int.toDisplay(unit: String): String =
-    if (unit == UNIT_CL) formatCl(this) else this.toString()
+fun Int.toDisplay(unit: String): String = when (unit) {
+    UNIT_CL -> formatCl(this)
+    UNIT_OZ -> formatOz(this)
+    else -> this.toString()
+}
 
-/** ml → display string with unit suffix (e.g. "0.5 cl", "250 ml"). */
+/** ml → display string with unit suffix (e.g. "0.5 cl", "250 ml", "8.5 oz"). */
 fun Int.fmt(unit: String): String = "${toDisplay(unit)} $unit"
 
 fun Int.days(): String = if (this == 1) "1 day" else "$this days"
 
-/** User-entered display string → ml. Accepts "0.5" / "0,5" for cl. Null if invalid or out of range. */
+/** User-entered display string → ml. Accepts "0.5" / "0,5" for cl/oz. Null if invalid or out of range. */
 fun String.toMl(unit: String): Int? {
     val v = trim().replace(',', '.').toDoubleOrNull() ?: return null
-    val ml = if (unit == UNIT_CL) v * 10 else v
+    val ml = when (unit) {
+        UNIT_CL -> v * 10
+        UNIT_OZ -> v * ML_PER_FL_OZ
+        else -> v
+    }
     if (ml < 0 || ml > Int.MAX_VALUE.toDouble()) return null
     return ml.toInt()
 }
@@ -47,6 +92,9 @@ fun String.toMl(unit: String): Int? {
 const val CUSTOM_MAX_ML = 5_000
 const val GOAL_MIN_ML   = 100
 const val GOAL_MAX_ML   = 10_000
+
+/** The app's fixed recommended minimum, shown as the non-personalized default goal. */
+const val DEFAULT_DAILY_GOAL_ML = 1500
 
 fun String.toValidCustomMl(unit: String): Int? =
     toMl(unit)?.takeIf { it in 1..CUSTOM_MAX_ML }
@@ -69,8 +117,37 @@ fun SharedPreferences.loadAllHistory(): List<Pair<LocalDate, Int>> {
     return merged.entries.map { (date, ml) -> Pair(date, ml) }.sortedBy { it.first }
 }
 
+/** "kg" or "lb" depending on the active water unit — oz implies imperial, everything else metric. */
+fun weightUnitLabel(unit: String): String = if (isImperial(unit)) "lb" else "kg"
+
+/** Age & weight validation bounds (stored in kg) converted to whichever unit is currently active. */
+fun weightBoundsDisplay(unit: String): Pair<Int, Int> = if (isImperial(unit)) {
+    (PROFILE_WEIGHT_KG_MIN / KG_PER_LB).toInt() to (PROFILE_WEIGHT_KG_MAX / KG_PER_LB).toInt()
+} else {
+    PROFILE_WEIGHT_KG_MIN.toInt() to PROFILE_WEIGHT_KG_MAX.toInt()
+}
+
+/** User-entered weight in the active unit → kg. Null if unparseable (range isn't checked here). */
+fun String.parseWeightInput(unit: String): Double? {
+    val entered = trim().replace(',', '.').toDoubleOrNull() ?: return null
+    return if (isImperial(unit)) entered * KG_PER_LB else entered
+}
+
+/** Weight stored in kg → compact display string in the active unit (e.g. "70", "154.3"), no unit suffix. */
+fun Float.formatWeight(unit: String): String {
+    val display = if (isImperial(unit)) this / KG_PER_LB else this
+    return if (display == display.toInt().toFloat()) display.toInt().toString()
+        else String.format(Locale.US, "%.1f", display)
+}
+
 private fun formatCl(ml: Int): String {
     val cl = ml / 10.0
     return if (cl == cl.toInt().toDouble()) cl.toInt().toString()
            else String.format(Locale.US, "%.1f", cl)
+}
+
+private fun formatOz(ml: Int): String {
+    val oz = ml / ML_PER_FL_OZ
+    return if (oz == oz.toInt().toDouble()) oz.toInt().toString()
+           else String.format(Locale.US, "%.1f", oz)
 }

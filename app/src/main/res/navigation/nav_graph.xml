@@ -12,6 +12,23 @@
         tools:layout="@layout/fragment_water" />
 
     <fragment
+        android:id="@+id/ProfileSetupFragment"
+        android:name="com.david.waterreminder.ProfileSetupFragment"
+        android:label="@string/profile_setup_title"
+        tools:layout="@layout/fragment_profile_setup">
+
+        <action
+            android:id="@+id/action_ProfileSetupFragment_to_ReminderSetupFragment"
+            app:destination="@id/ReminderSetupFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ReminderSetupFragment"
+        android:name="com.david.waterreminder.ReminderSetupFragment"
+        android:label="@string/reminder_setup_title"
+        tools:layout="@layout/fragment_reminder_setup" />
+
+    <fragment
         android:id="@+id/SecondFragment"
         android:name="com.david.waterreminder.SecondFragment"
         android:label="@string/second_fragment_label"

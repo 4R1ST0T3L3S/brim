@@ -85,6 +85,13 @@
                 android:letterSpacing="0.08" />
 
             <include
+                android:id="@+id/row_profile"
+                layout="@layout/item_settings_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp" />
+
+            <include
                 android:id="@+id/row_set_personal_goal"
                 layout="@layout/item_settings_row"
                 android:layout_width="match_parent"

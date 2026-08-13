@@ -52,6 +52,10 @@ class MainActivity : AppCompatActivity() {
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
 
+        if (!prefs.getBoolean(PREF_PROFILE_SETUP_DONE, false)) {
+            navController.navigate(R.id.ProfileSetupFragment)
+        }
+
         binding.fab.setOnClickListener {
             if (fabExpanded) collapseFabs() else expandFabs()
         }
@@ -64,14 +68,23 @@ class MainActivity : AppCompatActivity() {
         // Show FABs only on the water reminder screen
         navController.addOnDestinationChangedListener { _, destination, _ ->
             collapseFabs()
-            val onWaterScreen = destination.id == R.id.FirstFragment
-            val fabVisibility = if (onWaterScreen) View.VISIBLE else View.GONE
-            binding.fab.visibility = fabVisibility
-            binding.fabAnalytics.visibility = fabVisibility
-            if (onWaterScreen) {
-                binding.fabAnalytics.setImageResource(R.drawable.ic_chart)
-                binding.fabAnalytics.setOnClickListener {
-                    navController.navigate(R.id.AnalyticsFragment)
+            // Deferred to the next frame so this settles together with the fragment
+            // transaction's own layout pass, instead of a frame ahead of it — otherwise
+            // the toolbar/FABs can flash into view while the outgoing screen is still visible,
+            // visibly pushing its content down before the new screen actually swaps in.
+            binding.root.post {
+                val onWaterScreen = destination.id == R.id.FirstFragment
+                val fabVisibility = if (onWaterScreen) View.VISIBLE else View.GONE
+                binding.fab.visibility = fabVisibility
+                binding.fabAnalytics.visibility = fabVisibility
+                // Full-screen onboarding: no toolbar/menu until setup is finished.
+                val onboarding = destination.id == R.id.ProfileSetupFragment || destination.id == R.id.ReminderSetupFragment
+                binding.toolbar.visibility = if (onboarding) View.GONE else View.VISIBLE
+                if (onWaterScreen) {
+                    binding.fabAnalytics.setImageResource(R.drawable.ic_chart)
+                    binding.fabAnalytics.setOnClickListener {
+                        navController.navigate(R.id.AnalyticsFragment)
+                    }
                 }
             }
         }
