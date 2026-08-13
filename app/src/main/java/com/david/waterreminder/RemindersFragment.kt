@@ -174,7 +174,7 @@ class RemindersFragment : Fragment() {
         )
 
         rowBinding.textReminderTime.text = if (reminder.type == "hourly") {
-            "🔔  Every hour  ${String.format("%02d:00", reminder.hour)}–${String.format("%02d:00", reminder.endHour)}"
+            "🔔  ${String.format("%02d:00", reminder.hour)}–${String.format("%02d:00", reminder.endHour)}"
         } else {
             "🔔  ${reminder.time}"
         }
