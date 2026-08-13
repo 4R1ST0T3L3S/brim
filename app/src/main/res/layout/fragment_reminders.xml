@@ -22,17 +22,28 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- The built-in hourly reminder, above the "My reminders" section.
-             Notification settings now live under Settings → Notifications. -->
+        <!-- Shortcut to Settings → Notifications; its subtitle doubles as the
+             at-a-glance state of the master toggle. -->
+        <include
+            android:id="@+id/row_notification_settings"
+            layout="@layout/item_settings_row"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/title_reminders" />
+
+        <!-- The built-in hourly reminder, above the "My reminders" section. -->
         <LinearLayout
             android:id="@+id/container_default_reminder"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="16dp"
             android:orientation="vertical"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/title_reminders" />
+            app:layout_constraintTop_toBottomOf="@id/row_notification_settings" />
 
         <View
             android:id="@+id/divider"

@@ -21,7 +21,12 @@
         android:id="@+id/RemindersFragment"
         android:name="com.david.waterreminder.RemindersFragment"
         android:label="Reminders"
-        tools:layout="@layout/fragment_reminders" />
+        tools:layout="@layout/fragment_reminders">
+
+        <action
+            android:id="@+id/action_RemindersFragment_to_NotificationsFragment"
+            app:destination="@id/NotificationsFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/AnalyticsFragment"

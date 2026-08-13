@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.widget.TimePicker
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.david.waterreminder.databinding.FragmentRemindersBinding
 import com.david.waterreminder.databinding.ItemReminderBinding
 
@@ -66,6 +67,12 @@ class RemindersFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        binding.rowNotificationSettings.rowIcon.setImageResource(R.drawable.ic_bell)
+        binding.rowNotificationSettings.rowTitle.text = getString(R.string.action_notifications)
+        binding.rowNotificationSettings.rowContainer.setOnClickListener {
+            findNavController().navigate(R.id.action_RemindersFragment_to_NotificationsFragment)
+        }
+
         binding.buttonAddReminder.setOnClickListener { showTimePickerDialog() }
 
         binding.buttonResetReminders.setOnClickListener {
@@ -83,7 +90,15 @@ class RemindersFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         // The master toggle lives in Settings → Notifications, so re-read it on the way back.
-        _binding?.let { updateRemindersAlpha(prefs.getBoolean("notifications_enabled", false)) }
+        _binding?.let { refreshNotificationsState() }
+    }
+
+    private fun refreshNotificationsState() {
+        val enabled = prefs.getBoolean("notifications_enabled", false)
+        binding.rowNotificationSettings.rowSubtitle.text =
+            if (enabled) getString(R.string.settings_notifications_enabled)
+            else getString(R.string.settings_notifications_disabled)
+        updateRemindersAlpha(enabled)
     }
 
     // ─── Load / Save ──────────────────────────────────────────────
