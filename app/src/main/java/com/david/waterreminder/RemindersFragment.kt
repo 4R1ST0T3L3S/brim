@@ -69,6 +69,8 @@ class RemindersFragment : Fragment() {
 
         binding.rowNotificationSettings.rowIcon.setImageResource(R.drawable.ic_bell)
         binding.rowNotificationSettings.rowTitle.text = getString(R.string.action_notifications)
+        binding.rowNotificationSettings.rowSubtitle.text =
+            getString(R.string.reminders_row_notifications_subtitle)
         binding.rowNotificationSettings.rowContainer.setOnClickListener {
             findNavController().navigate(R.id.action_RemindersFragment_to_NotificationsFragment)
         }
@@ -90,20 +92,16 @@ class RemindersFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         // The master toggle lives in Settings → Notifications, so re-read it on the way back.
-        _binding?.let { refreshNotificationsState() }
-    }
-
-    private fun refreshNotificationsState() {
-        val enabled = prefs.getBoolean("notifications_enabled", false)
-        binding.rowNotificationSettings.rowSubtitle.text =
-            if (enabled) getString(R.string.settings_notifications_enabled)
-            else getString(R.string.settings_notifications_disabled)
-        updateRemindersAlpha(enabled)
+        _binding?.let { updateRemindersAlpha(prefs.getBoolean("notifications_enabled", false)) }
     }
 
     // ─── Load / Save ──────────────────────────────────────────────
 
     private fun loadReminders() {
+        // The fragment instance outlives its view, so onViewCreated can run more than
+        // once (e.g. returning from Notifications). Start clean or rows pile up.
+        reminders.clear()
+
         val saved = prefs.getStringSet("reminders_v3", null)
 
         if (saved == null) {

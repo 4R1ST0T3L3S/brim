@@ -106,10 +106,9 @@
 
 
     <!-- Reminders -->
-    <string name="reminders_legend_edit">Edit</string>
-    <string name="reminders_legend_delete">Delete</string>
-    <string name="reminders_legend_edit_desc">Swipe a reminder right to edit it</string>
-    <string name="reminders_legend_delete_desc">Swipe a reminder left to delete it</string>
+    <string name="reminders_row_notifications_subtitle">Settings</string>
+    <string name="reminders_legend_swipe">Swipe a reminder right to edit, left to delete</string>
+    <string name="reminders_legend_tap_type">Tap Daily or One-time to switch between them</string>
 
 
     <!-- Help rows -->

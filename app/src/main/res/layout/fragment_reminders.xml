@@ -123,115 +123,56 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/container_reminders" />
 
-        <!-- Swipe legend — sits under the list, mirrors the Edit/Delete backgrounds
-             in item_reminder.xml. Shown only while there is a swipeable
-             (non-hourly) reminder, so it never appears next to the empty state. -->
+        <!-- Row-interaction hints — sit under the list. Shown only while there is a
+             swipeable (non-hourly) reminder, so they never appear next to the empty
+             state — which is also exactly when the type chip is tappable. -->
         <LinearLayout
             android:id="@+id/legend_swipe"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:gravity="center"
-            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/text_no_reminders">
 
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginEnd="8dp"
-                android:importantForAccessibility="no"
-                android:src="@drawable/ic_info"
-                android:tint="?attr/colorOnSurfaceVariant" />
-
-            <!-- Swipe right → edit -->
             <LinearLayout
-                android:id="@+id/legend_edit"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/bg_type_chip"
-                android:backgroundTint="@color/swipe_edit_bg"
-                android:contentDescription="@string/reminders_legend_edit_desc"
-                android:focusable="true"
                 android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp">
+                android:orientation="horizontal">
 
                 <ImageView
                     android:layout_width="16dp"
                     android:layout_height="16dp"
-                    android:layout_marginEnd="6dp"
+                    android:layout_marginEnd="8dp"
                     android:importantForAccessibility="no"
-                    android:src="@android:drawable/ic_menu_edit"
-                    android:tint="@color/white" />
+                    android:src="@drawable/ic_info"
+                    android:tint="?attr/colorOnSurfaceVariant" />
 
                 <TextView
+                    android:id="@+id/legend_swipe_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp"
-                    android:importantForAccessibility="no"
-                    android:text="@string/reminders_legend_edit"
-                    android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:importantForAccessibility="no"
-                    android:src="@drawable/ic_arrow_forward"
-                    android:tint="@color/white" />
+                    android:gravity="center"
+                    android:text="@string/reminders_legend_swipe"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="12sp" />
 
             </LinearLayout>
 
-            <!-- Swipe left → delete -->
-            <LinearLayout
-                android:id="@+id/legend_delete"
+            <!-- The type chip is tappable too, which is just as hidden as the swipes. -->
+            <TextView
+                android:id="@+id/legend_tap_type"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_type_chip"
-                android:backgroundTint="@color/brand_red"
-                android:contentDescription="@string/reminders_legend_delete_desc"
-                android:focusable="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp">
-
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginEnd="6dp"
-                    android:importantForAccessibility="no"
-                    android:src="@drawable/ic_arrow_back"
-                    android:tint="@color/white" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp"
-                    android:importantForAccessibility="no"
-                    android:text="@string/reminders_legend_delete"
-                    android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:importantForAccessibility="no"
-                    android:src="@android:drawable/ic_menu_delete"
-                    android:tint="@color/white" />
-
-            </LinearLayout>
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:text="@string/reminders_legend_tap_type"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="12sp" />
 
         </LinearLayout>
 
