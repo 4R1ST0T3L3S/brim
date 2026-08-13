@@ -1,23 +1,15 @@
 package com.david.waterreminder
 
-import android.Manifest
-import android.app.AlarmManager
-import android.app.NotificationManager
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TimePicker
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.david.waterreminder.databinding.FragmentRemindersBinding
 import com.david.waterreminder.databinding.ItemReminderBinding
@@ -66,13 +58,6 @@ class RemindersFragment : Fragment() {
         Reminder("08:00", 8, 0, "hourly", true, endHour = 20)
     )
 
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        binding.switchNotifications.isChecked = granted
-        if (granted) enableNotifications() else binding.switchNotifications.isChecked = false
-    }
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentRemindersBinding.inflate(inflater, container, false)
         return binding.root
@@ -80,24 +65,6 @@ class RemindersFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        val notificationsEnabled = prefs.getBoolean("notifications_enabled", false)
-        binding.switchNotifications.isChecked = notificationsEnabled
-        updateRemindersAlpha(notificationsEnabled)
-        binding.switchNotifications.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) requestNotificationPermission() else disableNotifications()
-            updateRemindersAlpha(isChecked)
-        }
-
-        binding.rowStopOnGoal.rowIcon.setImageResource(android.R.drawable.ic_lock_silent_mode_off)
-        binding.rowStopOnGoal.rowTitle.text = getString(R.string.settings_row_stop_on_goal)
-        binding.rowStopOnGoal.rowChevron.visibility = View.GONE
-        binding.rowStopOnGoal.rowContainer.setOnClickListener {
-            val current = prefs.getBoolean("stop_notifications_on_goal", false)
-            prefs.edit().putBoolean("stop_notifications_on_goal", !current).apply()
-            refreshStopOnGoalRow()
-        }
-        refreshStopOnGoalRow()
 
         binding.buttonAddReminder.setOnClickListener { showTimePickerDialog() }
 
@@ -111,6 +78,12 @@ class RemindersFragment : Fragment() {
         }
 
         loadReminders()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // The master toggle lives in Settings → Notifications, so re-read it on the way back.
+        _binding?.let { updateRemindersAlpha(prefs.getBoolean("notifications_enabled", false)) }
     }
 
     // ─── Load / Save ──────────────────────────────────────────────
@@ -179,6 +152,10 @@ class RemindersFragment : Fragment() {
             "🔔  ${reminder.time}"
         }
         rowBinding.switchReminderEnabled.isChecked = reminder.enabled
+
+        // The section divider already separates the hourly row from "My reminders",
+        // so drop the row's own to avoid two lines stacked together.
+        if (reminder.type == "hourly") rowBinding.rowDivider.visibility = View.GONE
 
         applyTypeChip(rowBinding, reminder.type)
 
@@ -426,63 +403,17 @@ class RemindersFragment : Fragment() {
     }
 
     private fun checkExactAlarmPermissionAndSchedule(reminder: Reminder) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val alarmManager = requireContext().getSystemService(AlarmManager::class.java)
-            if (!alarmManager.canScheduleExactAlarms()) {
-                AlertDialog.Builder(requireContext())
-                    .setTitle("Permission required")
-                    .setMessage("To receive reminders when the app is closed, please allow exact alarms in Settings.")
-                    .setPositiveButton("Open Settings") { _, _ ->
-                        startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
-                    }
-                    .setNegativeButton("Cancel", null)
-                    .show()
-                return
-            }
-        }
+        if (!ensureExactAlarmPermission()) return
         ReminderScheduler.schedule(requireContext(), reminder)
     }
 
-    // ─── Notifications ────────────────────────────────────────────
-
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            when {
-                ContextCompat.checkSelfPermission(
-                    requireContext(), Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED -> enableNotifications()
-                else -> requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        } else {
-            enableNotifications()
-        }
-    }
-
-    private fun enableNotifications() {
-        prefs.edit().putBoolean("notifications_enabled", true).apply()
-        reminders.filter { it.enabled }.forEach { scheduleOrCancel(it) }
-    }
-
-    private fun disableNotifications() {
-        prefs.edit().putBoolean("notifications_enabled", false).apply()
-    }
-
-
-    private fun refreshStopOnGoalRow() {
-        binding.rowStopOnGoal.rowSubtitle.text =
-            if (prefs.getBoolean("stop_notifications_on_goal", false))
-                getString(R.string.settings_stop_on_goal_enabled)
-            else getString(R.string.settings_stop_on_goal_disabled)
-    }
-
+    // Dimmed while the master toggle in Settings → Notifications is off.
     private fun updateRemindersAlpha(enabled: Boolean) {
         val alpha = if (enabled) 1f else 0.38f
         binding.containerDefaultReminder.alpha = alpha
         binding.containerReminders.alpha = alpha
         binding.textNoReminders.alpha = alpha
         binding.legendSwipe.alpha = alpha
-        binding.rowStopOnGoal.root.alpha = alpha
-        binding.rowStopOnGoal.rowContainer.isEnabled = enabled
     }
 
     override fun onDestroyView() {

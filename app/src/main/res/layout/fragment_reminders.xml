@@ -22,54 +22,23 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Notifications toggle -->
-        <TextView
-            android:id="@+id/label_notifications"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:text="Enable notifications"
-            android:textSize="16sp"
-            android:textColor="?attr/colorOnSurface"
-            app:layout_constraintBottom_toBottomOf="@id/switch_notifications"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/title_reminders" />
-
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/switch_notifications"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/title_reminders" />
-
-        <include
-            android:id="@+id/row_stop_on_goal"
-            layout="@layout/item_settings_row"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/switch_notifications" />
-
-        <!-- The built-in hourly reminder. Kept out of container_reminders so it sits
-             with the other always-on settings, above the "My reminders" section. -->
+        <!-- The built-in hourly reminder, above the "My reminders" section.
+             Notification settings now live under Settings → Notifications. -->
         <LinearLayout
             android:id="@+id/container_default_reminder"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="24dp"
             android:orientation="vertical"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/row_stop_on_goal" />
+            app:layout_constraintTop_toBottomOf="@id/title_reminders" />
 
         <View
             android:id="@+id/divider"
             android:layout_width="0dp"
             android:layout_height="1dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:background="?attr/colorOutlineVariant"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

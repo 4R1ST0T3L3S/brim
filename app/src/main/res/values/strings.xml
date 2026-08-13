@@ -91,6 +91,18 @@
     <string name="dialog_import_title">Are you sure?</string>
     <string name="dialog_import_message">Recommended: export a backup before importing. This will overwrite all your current data.</string>
     <string name="dialog_import_confirm">Import</string>
+    <string name="dialog_exact_alarm_title">Permission required</string>
+    <string name="dialog_exact_alarm_message">To receive reminders when the app is closed, please allow exact alarms in Settings.</string>
+    <string name="dialog_exact_alarm_open_settings">Open Settings</string>
+
+
+    <!-- Notifications -->
+    <string name="action_notifications">Notifications</string>
+    <string name="settings_section_notifications">Notifications</string>
+    <string name="settings_row_notifications_subtitle">Manage reminder notifications</string>
+    <string name="settings_row_enable_notifications">Enable notifications</string>
+    <string name="settings_notifications_enabled">Enabled</string>
+    <string name="settings_notifications_disabled">Disabled</string>
 
 
     <!-- Reminders -->
