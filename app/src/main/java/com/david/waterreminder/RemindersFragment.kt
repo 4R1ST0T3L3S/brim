@@ -157,6 +157,7 @@ class RemindersFragment : Fragment() {
     // ─── UI ───────────────────────────────────────────────────────
 
     private fun rebuildReminderRows() {
+        binding.containerDefaultReminder.removeAllViews()
         binding.containerReminders.removeAllViews()
         reminders.sortedWith(compareBy({ it.type != "hourly" }, { it.time })).forEach { reminder ->
             addReminderRow(reminder)
@@ -164,8 +165,12 @@ class RemindersFragment : Fragment() {
     }
 
     private fun addReminderRow(reminder: Reminder) {
+        // Hourly is the built-in default and lives above the "My reminders" section.
+        val container = if (reminder.type == "hourly")
+            binding.containerDefaultReminder else binding.containerReminders
+
         val rowBinding = ItemReminderBinding.inflate(
-            LayoutInflater.from(requireContext()), binding.containerReminders, false
+            LayoutInflater.from(requireContext()), container, false
         )
 
         rowBinding.textReminderTime.text = if (reminder.type == "hourly") {
@@ -204,7 +209,7 @@ class RemindersFragment : Fragment() {
             canDelete = reminder.type != "hourly"
         )
 
-        binding.containerReminders.addView(rowBinding.root)
+        container.addView(rowBinding.root)
     }
 
     private fun applyTypeChip(rowBinding: ItemReminderBinding, type: String) {
@@ -472,6 +477,7 @@ class RemindersFragment : Fragment() {
 
     private fun updateRemindersAlpha(enabled: Boolean) {
         val alpha = if (enabled) 1f else 0.38f
+        binding.containerDefaultReminder.alpha = alpha
         binding.containerReminders.alpha = alpha
         binding.textNoReminders.alpha = alpha
         binding.legendSwipe.alpha = alpha
