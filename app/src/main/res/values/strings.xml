@@ -93,6 +93,13 @@
     <string name="dialog_import_confirm">Import</string>
 
 
+    <!-- Reminders -->
+    <string name="reminders_legend_edit">Edit</string>
+    <string name="reminders_legend_delete">Delete</string>
+    <string name="reminders_legend_edit_desc">Swipe a reminder right to edit it</string>
+    <string name="reminders_legend_delete_desc">Swipe a reminder left to delete it</string>
+
+
     <!-- Help rows -->
     <string name="help_row_replay_tour_title">Replay guide tour</string>
     <string name="help_row_replay_tour_subtitle">See the intro again</string>

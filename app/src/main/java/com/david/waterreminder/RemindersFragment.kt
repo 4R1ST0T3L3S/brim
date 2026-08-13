@@ -198,7 +198,7 @@ class RemindersFragment : Fragment() {
             foreground = rowBinding.foreground,
             editBg = rowBinding.editBackground,
             deleteBg = rowBinding.deleteBackground,
-            swipeHandle = rowBinding.textReminderTime,
+            swipeHandle = rowBinding.foreground,
             reminder = reminder,
             canEdit = reminder.type != "hourly",
             canDelete = reminder.type != "hourly"
@@ -230,6 +230,8 @@ class RemindersFragment : Fragment() {
     private fun refreshEmptyState() {
         val hasCustom = reminders.any { it.type != "hourly" }
         binding.textNoReminders.visibility = if (hasCustom) View.GONE else View.VISIBLE
+        // Hourly rows aren't swipeable, so the legend only makes sense alongside a custom one.
+        binding.legendSwipe.visibility = if (hasCustom) View.VISIBLE else View.GONE
     }
 
     // ─── Add reminder dialog ──────────────────────────────────────
@@ -472,6 +474,7 @@ class RemindersFragment : Fragment() {
         val alpha = if (enabled) 1f else 0.38f
         binding.containerReminders.alpha = alpha
         binding.textNoReminders.alpha = alpha
+        binding.legendSwipe.alpha = alpha
         binding.rowStopOnGoal.root.alpha = alpha
         binding.rowStopOnGoal.rowContainer.isEnabled = enabled
     }
