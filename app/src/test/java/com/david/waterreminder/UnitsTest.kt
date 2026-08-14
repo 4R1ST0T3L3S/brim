@@ -3,6 +3,8 @@ package com.david.waterreminder
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.util.Calendar
+import java.util.Locale
 
 class UnitsTest {
 
@@ -148,5 +150,142 @@ class UnitsTest {
     @Test
     fun toValidGoalMl_empty_returnsNull() {
         assertNull("".toValidGoalMl(UNIT_ML))
+    }
+
+    // ─── asHourLabel ──────────────────────────────────────────────
+
+    @Test
+    fun asHourLabel_padsSingleDigit() {
+        assertEquals("08:00", 8.asHourLabel())
+    }
+
+    @Test
+    fun asHourLabel_doubleDigit() {
+        assertEquals("20:00", 20.asHourLabel())
+    }
+
+    @Test
+    fun asHourLabel_midnight() {
+        assertEquals("00:00", 0.asHourLabel())
+    }
+
+    // The label is persisted and parsed back, so it must survive a round-trip
+    // through a locale whose default digits aren't ASCII.
+    @Test
+    fun asHourLabel_isLocaleIndependent() {
+        val previous = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("ar-EG-u-nu-arab"))
+            assertEquals("08:00", 8.asHourLabel())
+        } finally {
+            Locale.setDefault(previous)
+        }
+    }
+
+    // ─── nextIntervalFireTime ─────────────────────────────────────
+
+    private fun at(hour: Int, minute: Int): Calendar = Calendar.getInstance().apply {
+        set(2026, Calendar.AUGUST, 14, hour, minute, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+
+    private fun Calendar.hhmm() =
+        String.format(Locale.US, "%02d:%02d", get(Calendar.HOUR_OF_DAY), get(Calendar.MINUTE))
+
+    private fun Calendar.dayOfMonth() = get(Calendar.DAY_OF_MONTH)
+
+    @Test
+    fun nextInterval_beforeAnchor_firesAtAnchorToday() {
+        val next = nextIntervalFireTime(at(7, 0), 9, 30, 2, 20)
+        assertEquals("09:30", next.hhmm())
+        assertEquals(14, next.dayOfMonth())
+    }
+
+    @Test
+    fun nextInterval_afterAnchor_firesAtNextRepeat() {
+        val next = nextIntervalFireTime(at(10, 0), 9, 30, 2, 20)
+        assertEquals("11:30", next.hhmm())
+    }
+
+    @Test
+    fun nextInterval_exactlyOnAnchor_movesToNextRepeat() {
+        val next = nextIntervalFireTime(at(9, 30), 9, 30, 2, 20)
+        assertEquals("11:30", next.hhmm())
+    }
+
+    @Test
+    fun nextInterval_everyHour_stepsByOne() {
+        assertEquals("10:30", nextIntervalFireTime(at(10, 0), 9, 30, 1, 20).hhmm())
+    }
+
+    @Test
+    fun nextInterval_everyFourHours_stepsByFour() {
+        assertEquals("17:30", nextIntervalFireTime(at(14, 0), 9, 30, 4, 20).hhmm())
+    }
+
+    // Repeats stop at the go-to-bed hour and pick up at the anchor tomorrow.
+    @Test
+    fun nextInterval_pastWindowEnd_rollsToAnchorTomorrow() {
+        val next = nextIntervalFireTime(at(20, 0), 9, 30, 2, 20)
+        assertEquals("09:30", next.hhmm())
+        assertEquals(15, next.dayOfMonth())
+    }
+
+    @Test
+    fun nextInterval_repeatLandingPastWindowEnd_isSkipped() {
+        // 09:30 + 2h steps → 19:30 is the last one at or before a 20:00 end; 21:30 is not.
+        val next = nextIntervalFireTime(at(19, 45), 9, 30, 2, 20)
+        assertEquals("09:30", next.hhmm())
+        assertEquals(15, next.dayOfMonth())
+    }
+
+    @Test
+    fun nextInterval_repeatExactlyAtWindowEndHour_stillFires() {
+        // End hour 20 is inclusive, matching how the hourly window behaves.
+        assertEquals("20:30", nextIntervalFireTime(at(19, 0), 8, 30, 4, 20).hhmm())
+    }
+
+    // The anchor is the user's explicit choice, so it fires even outside the window —
+    // only the repeats are bounded. Otherwise a 22:00 reminder would never fire at all.
+    @Test
+    fun nextInterval_anchorOutsideWindow_stillFiresAtAnchor() {
+        val next = nextIntervalFireTime(at(21, 0), 22, 0, 2, 20)
+        assertEquals("22:00", next.hhmm())
+        assertEquals(14, next.dayOfMonth())
+    }
+
+    @Test
+    fun nextInterval_anchorOutsideWindow_doesNotRepeatSameDay() {
+        val next = nextIntervalFireTime(at(22, 30), 22, 0, 2, 20)
+        assertEquals("22:00", next.hhmm())
+        assertEquals(15, next.dayOfMonth())
+    }
+
+    @Test
+    fun nextInterval_lateAnchorNeverExceedsMidnight() {
+        // 23:00 + 2h would be hour 25 — must roll to tomorrow, not overflow.
+        val next = nextIntervalFireTime(at(23, 30), 23, 0, 2, 23)
+        assertEquals("23:00", next.hhmm())
+        assertEquals(15, next.dayOfMonth())
+    }
+
+    @Test
+    fun nextInterval_zeroInterval_treatedAsHourly() {
+        // Guards against a malformed entry scheduling an infinite loop of same-time fires.
+        assertEquals("10:30", nextIntervalFireTime(at(10, 0), 9, 30, 0, 20).hhmm())
+    }
+
+    @Test
+    fun nextInterval_preservesAnchorMinute() {
+        assertEquals("13:07", nextIntervalFireTime(at(12, 0), 7, 7, 3, 20).hhmm())
+    }
+
+    @Test
+    fun asHourLabel_defaults_parseBackAsReminder() {
+        val r = Reminder.fromPrefsString(
+            "${DEFAULT_REMINDER_START_HOUR.asHourLabel()}|hourly|true|$DEFAULT_REMINDER_END_HOUR"
+        )!!
+        assertEquals(DEFAULT_REMINDER_START_HOUR, r.hour)
+        assertEquals(DEFAULT_REMINDER_END_HOUR, r.endHour)
     }
 }

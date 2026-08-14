@@ -10,8 +10,12 @@ import java.util.Calendar
 object ReminderScheduler {
 
     fun schedule(context: Context, reminder: Reminder) {
-        if (reminder.type == "hourly") {
+        if (reminder.isHourly) {
             scheduleHourly(context, reminder)
+            return
+        }
+        if (reminder.isInterval) {
+            scheduleInterval(context, reminder)
             return
         }
 
@@ -40,17 +44,32 @@ object ReminderScheduler {
         alarmManager.cancel(buildPendingIntent(context, reminder))
     }
 
-    fun rescheduleNextDay(context: Context, reminderTime: String, reminderType: String) {
-        val parts = reminderTime.split(":")
-        if (parts.size != 2) return
-        val hour = parts[0].toIntOrNull() ?: return
-        val minute = parts[1].toIntOrNull() ?: return
+    /**
+     * Interval reminders repeat from their own start time, so — unlike the hourly one —
+     * the window only bounds them at the top end. That end hour lives with the hourly
+     * reminder in prefs, so it is read here rather than threaded through every caller.
+     */
+    private fun scheduleInterval(context: Context, reminder: Reminder) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
 
-        val reminder = Reminder(reminderTime, hour, minute, reminderType, true)
-        schedule(context, reminder)
+        val prefs = context.getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        val fireAt = nextIntervalFireTime(
+            from = Calendar.getInstance(),
+            anchorHour = reminder.hour,
+            anchorMinute = reminder.minute,
+            intervalHours = reminder.intervalHours,
+            windowEndHour = prefs.reminderWindowEndHour()
+        )
+
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            fireAt.timeInMillis,
+            buildPendingIntent(context, reminder)
+        )
     }
 
-    fun scheduleHourly(context: Context, reminder: Reminder) {
+    private fun scheduleHourly(context: Context, reminder: Reminder) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
 
@@ -87,40 +106,12 @@ object ReminderScheduler {
         )
     }
 
-    fun rescheduleHourly(context: Context, reminderTime: String, startHour: Int, endHour: Int, type: String) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
-
-        val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-
-        val fireCal = Calendar.getInstance().apply {
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            if (currentHour < endHour) {
-                set(Calendar.HOUR_OF_DAY, currentHour + 1)
-            } else {
-                add(Calendar.DAY_OF_MONTH, 1)
-                set(Calendar.HOUR_OF_DAY, startHour)
-            }
-        }
-
-        val reminder = Reminder(reminderTime, startHour, 0, type, true, endHour)
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            fireCal.timeInMillis,
-            buildPendingIntent(context, reminder)
-        )
-    }
-
+    // Only the time label travels with the alarm — it identifies the reminder, and the
+    // receiver reads everything else from prefs. Alarms pending from older versions
+    // carry extra values, which are simply ignored.
     private fun buildPendingIntent(context: Context, reminder: Reminder): PendingIntent {
         val intent = Intent(context, ReminderReceiver::class.java).apply {
             putExtra("reminder_time", reminder.time)
-            putExtra("reminder_type", reminder.type)
-            if (reminder.type == "hourly") {
-                putExtra("reminder_start_hour", reminder.hour)
-                putExtra("reminder_end_hour", reminder.endHour)
-            }
         }
         return PendingIntent.getBroadcast(
             context,

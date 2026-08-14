@@ -9,7 +9,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import com.david.waterreminder.databinding.DialogHourPickerBinding
+import com.david.waterreminder.databinding.DialogReminderWindowBinding
 import com.david.waterreminder.databinding.FragmentNotificationsBinding
 
 class NotificationsFragment : BaseMenuFragment() {
@@ -61,6 +64,10 @@ class NotificationsFragment : BaseMenuFragment() {
             refreshRows()
         }
 
+        binding.rowReminderWindow.rowIcon.setImageResource(R.drawable.ic_clock)
+        binding.rowReminderWindow.rowTitle.text = getString(R.string.settings_row_reminder_window)
+        binding.rowReminderWindow.rowContainer.setOnClickListener { showReminderWindowDialog() }
+
         refreshRows()
     }
 
@@ -68,6 +75,11 @@ class NotificationsFragment : BaseMenuFragment() {
         super.onResume()
         // The exact-alarm screen is a system Activity — re-read on the way back.
         _binding?.let { refreshRows() }
+        // Self-heal: saving a window cancels the old alarm before scheduling the new
+        // one, so a save that stopped at the exact-alarm prompt leaves nothing pending.
+        // schedule() no-ops while the permission is still missing, so this is safe to
+        // run on every resume, and rescheduling an existing alarm is idempotent.
+        if (prefs.getBoolean("notifications_enabled", false)) rescheduleEnabledReminders()
     }
 
     override fun onDestroyView() {
@@ -91,7 +103,149 @@ class NotificationsFragment : BaseMenuFragment() {
         // Pausing on goal is meaningless while notifications are off.
         binding.rowStopOnGoal.root.alpha = if (enabled) 1f else 0.38f
         binding.rowStopOnGoal.rowContainer.isEnabled = enabled
+
+        val window = Reminder.hourlyOrDefault(savedReminders())
+        binding.rowReminderWindow.rowSubtitle.text = getString(
+            R.string.settings_reminder_window_value,
+            window.hour.asHourLabel(),
+            window.endHour.asHourLabel()
+        )
     }
+
+    // ─── Reminder window ─────────────────────────────────────────
+
+    private fun showReminderWindowDialog() {
+        val window = Reminder.hourlyOrDefault(savedReminders())
+        var startHour = window.hour
+        var endHour = window.endHour
+
+        val dialogBinding = DialogReminderWindowBinding.inflate(layoutInflater)
+
+        dialogBinding.buttonResetWindow.text = getString(
+            R.string.dialog_reminder_window_reset,
+            DEFAULT_REMINDER_START_HOUR.asHourLabel(),
+            DEFAULT_REMINDER_END_HOUR.asHourLabel()
+        )
+
+        // Each phrase lives in one string only: it labels the button and titles the
+        // hour list opened from it, so the two can never drift apart.
+        fun getUpLabel() = getString(R.string.reminder_setup_day_begins, startHour.asHourLabel())
+        fun goToBedLabel() = getString(R.string.reminder_setup_off_to_bed, endHour.asHourLabel())
+
+        fun refreshDialog() {
+            dialogBinding.buttonGetUp.text = getUpLabel()
+            dialogBinding.buttonGoToBed.text = goToBedLabel()
+            // Nothing to reset while the pickers already sit on the defaults. Kept
+            // INVISIBLE rather than GONE so the dialog doesn't resize under the pointer
+            // as the hours are edited.
+            val isDefault = startHour == DEFAULT_REMINDER_START_HOUR &&
+                endHour == DEFAULT_REMINDER_END_HOUR
+            dialogBinding.buttonResetWindow.visibility =
+                if (isDefault) View.INVISIBLE else View.VISIBLE
+        }
+        refreshDialog()
+
+        // Titled with the button's own label, so it's clear which end is being set.
+        dialogBinding.buttonGetUp.setOnClickListener {
+            showHourPicker(getUpLabel(), startHour) { startHour = it; refreshDialog() }
+        }
+        dialogBinding.buttonGoToBed.setOnClickListener {
+            showHourPicker(goToBedLabel(), endHour) { endHour = it; refreshDialog() }
+        }
+
+        // Puts the pickers back to 08:00–20:00; still takes a Save to apply, so it
+        // stays undoable with Cancel.
+        dialogBinding.buttonResetWindow.setOnClickListener {
+            startHour = DEFAULT_REMINDER_START_HOUR
+            endHour = DEFAULT_REMINDER_END_HOUR
+            refreshDialog()
+        }
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle(getString(R.string.dialog_reminder_window_title))
+            .setView(dialogBinding.root)
+            .setPositiveButton(getString(R.string.dialog_save), null)
+            .setNegativeButton(getString(R.string.dialog_cancel), null)
+            .create()
+
+        // Save is wired after show() so an invalid window keeps the dialog open
+        // instead of dismissing and throwing away the picked hours.
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                // The hour pickers are unrestricted, so the window is validated here.
+                if (startHour >= endHour) {
+                    showWindowError(getString(R.string.reminder_setup_error_window))
+                    return@setOnClickListener
+                }
+                val saved = savedReminders()
+                // Alarms are keyed by their time label, so the window start must not
+                // land on one of the user's own reminders or they'd cancel each other.
+                val clashes = saved.any { !it.isHourly && it.time == startHour.asHourLabel() }
+                if (clashes) {
+                    showWindowError(
+                        getString(R.string.dialog_reminder_window_conflict, startHour.asHourLabel())
+                    )
+                    return@setOnClickListener
+                }
+                saveReminderWindow(saved, startHour, endHour)
+                refreshRows()
+                dialog.dismiss()
+            }
+        }
+        dialog.show()
+    }
+
+    // Reminders always fire at the top of the hour, so there is no minute to choose: an
+    // hours-only wheel instead of a TimePicker, whose minute column can't be hidden
+    // through public API and whose value would be discarded anyway.
+    // displayedValues (rather than setFormatter) so the labels render before any scroll.
+    private fun showHourPicker(title: String, initialHour: Int, onPicked: (Int) -> Unit) {
+        val pickerBinding = DialogHourPickerBinding.inflate(layoutInflater)
+        val picker = pickerBinding.pickerHour.apply {
+            minValue = 0
+            maxValue = 23
+            displayedValues = Array(24) { it.asHourLabel() }
+            value = initialHour
+            wrapSelectorWheel = true
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(title)
+            .setView(pickerBinding.root)
+            .setPositiveButton(getString(R.string.dialog_save)) { _, _ -> onPicked(picker.value) }
+            .setNegativeButton(getString(R.string.dialog_cancel), null)
+            .show()
+    }
+
+    private fun showWindowError(message: String) {
+        AlertDialog.Builder(requireContext())
+            .setTitle(getString(R.string.reminder_setup_error_window_title))
+            .setMessage(message)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
+    private fun saveReminderWindow(saved: List<Reminder>, startHour: Int, endHour: Int) {
+        // The pending alarm is keyed by the old time label, so cancel before replacing it.
+        saved.firstOrNull { it.isHourly }
+            ?.let { ReminderScheduler.cancel(requireContext(), it) }
+
+        val updated = Reminder.withHourlyWindow(saved, startHour, endHour)
+        prefs.edit()
+            .putStringSet("reminders_v3", updated.map { it.toPrefsString() }.toSet())
+            .apply()
+
+        if (prefs.getBoolean("notifications_enabled", false)) {
+            // Cancelled above, so a deferred exact-alarm grant would leave no alarm at
+            // all — onResume reschedules once the permission comes back.
+            if (!ensureExactAlarmPermission()) return
+            // Not just the hourly one: interval reminders stop at the window end too, so
+            // their next fire moves with it.
+            rescheduleEnabledReminders()
+        }
+    }
+
+    private fun savedReminders(): List<Reminder> =
+        Reminder.parseAll(prefs.getStringSet("reminders_v3", emptySet()))
 
     // ─── Notifications ────────────────────────────────────────────
 

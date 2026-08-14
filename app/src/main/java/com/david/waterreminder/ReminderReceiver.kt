@@ -18,16 +18,17 @@ class ReminderReceiver : BroadcastReceiver() {
 
     fun onReceiveWithPrefs(context: Context, intent: Intent, prefs: SharedPreferences) {
         val reminderTime = intent.getStringExtra("reminder_time") ?: return
-        val reminderType = intent.getStringExtra("reminder_type") ?: "daily"
 
-        // Always reschedule first so the chain never breaks regardless of the notification toggle.
-        when (reminderType) {
-            "daily" -> ReminderScheduler.rescheduleNextDay(context, reminderTime, reminderType)
-            "hourly" -> {
-                val startHour = intent.getIntExtra("reminder_start_hour", 8)
-                val endHour = intent.getIntExtra("reminder_end_hour", 20)
-                ReminderScheduler.rescheduleHourly(context, reminderTime, startHour, endHour, reminderType)
-            }
+        // Prefs are the source of truth, so the alarm carries only its time label and
+        // everything else is looked up. One reschedule path covers every type; nothing
+        // to look up means the reminder is gone, so there is nothing to fire either.
+        val reminder = Reminder.parseAll(prefs.getStringSet("reminders_v3", emptySet()))
+            .firstOrNull { it.time == reminderTime } ?: return
+
+        // Reschedule first so the chain never breaks regardless of the notification
+        // toggle. One-time reminders are the exception — they fire once and stay off.
+        if (reminder.enabled && reminder.type != Reminder.TYPE_ONETIME) {
+            ReminderScheduler.schedule(context, reminder)
         }
 
         // Respect the global notifications toggle
@@ -35,17 +36,15 @@ class ReminderReceiver : BroadcastReceiver() {
 
         // Piggyback: refresh all other enabled reminders so a dropped alarm is recovered
         // within the next hourly firing cycle rather than waiting for a reboot.
-        val allReminders = prefs.getStringSet("reminders_v3", emptySet()) ?: emptySet()
-        allReminders.mapNotNull { Reminder.fromPrefsString(it) }
+        Reminder.parseAll(prefs.getStringSet("reminders_v3", emptySet()))
             .filter { it.enabled }
             .forEach { ReminderScheduler.schedule(context, it) }
 
-        // For hourly: only notify within the window
-        if (reminderType == "hourly") {
-            val startHour = intent.getIntExtra("reminder_start_hour", 8)
-            val endHour = intent.getIntExtra("reminder_end_hour", 20)
+        // For hourly: only notify within the window. Repeating reminders need no such
+        // check — their fire times are already bounded when scheduled.
+        if (reminder.isHourly) {
             val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-            if (currentHour !in startHour..endHour) return
+            if (currentHour !in reminder.hour..reminder.endHour) return
         }
 
         // Read today's intake and goal (shared by suppression check + progress bar)
@@ -100,14 +99,12 @@ class ReminderReceiver : BroadcastReceiver() {
 
         notificationManager.notify(reminderTime.hashCode(), notification)
 
-        if (reminderType == "onetime") {
+        if (reminder.type == Reminder.TYPE_ONETIME) {
             // Mark as disabled in prefs so the UI shows it as off
-            val saved = prefs.getStringSet("reminders_v3", emptySet())
-                ?.toMutableSet() ?: return
-            val updated = saved.map { entry ->
-                val r = Reminder.fromPrefsString(entry)
-                if (r?.time == reminderTime) r.copy(enabled = false).toPrefsString() else entry
-            }.toSet()
+            val updated = Reminder.parseAll(prefs.getStringSet("reminders_v3", emptySet()))
+                .map { if (it.time == reminderTime) it.copy(enabled = false) else it }
+                .map { it.toPrefsString() }
+                .toSet()
             prefs.edit().putStringSet("reminders_v3", updated).apply()
         }
     }

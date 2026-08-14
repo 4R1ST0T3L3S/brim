@@ -3,6 +3,7 @@ package com.david.waterreminder
 import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatDelegate
 import java.time.LocalDate
+import java.util.Calendar
 import java.util.Locale
 
 const val PREF_UNIT = "unit"
@@ -47,6 +48,58 @@ fun String.toMl(unit: String): Int? {
 const val CUSTOM_MAX_ML = 5_000
 const val GOAL_MIN_ML   = 100
 const val GOAL_MAX_ML   = 10_000
+
+/** Default window for the built-in hourly reminder. */
+const val DEFAULT_REMINDER_START_HOUR = 8
+const val DEFAULT_REMINDER_END_HOUR   = 20
+
+/**
+ * Hour of day → the "08:00" label reminders are stored and keyed by.
+ * Locale-fixed: the label is persisted and parsed back, so it must stay ASCII digits.
+ */
+fun Int.asHourLabel(): String = String.format(Locale.US, "%02d:00", this)
+
+/** The "go to bed" hour that bounds the hourly reminder and every interval reminder. */
+fun SharedPreferences.reminderWindowEndHour(): Int =
+    Reminder.hourlyOrDefault(Reminder.parseAll(getStringSet("reminders_v3", emptySet()))).endHour
+
+/**
+ * When an interval reminder anchored at [anchorHour]:[anchorMinute] and repeating every
+ * [intervalHours] hours should next fire, given it is now [from].
+ *
+ * Repeats stop once they would land past [windowEndHour] — the "go to bed" hour — and
+ * pick up again at the anchor tomorrow, so an every-2-hours reminder doesn't ping at
+ * 03:30. The anchor itself always fires even when it sits outside the window: the user
+ * chose that time explicitly, so only the repeats are bounded.
+ */
+fun nextIntervalFireTime(
+    from: Calendar,
+    anchorHour: Int,
+    anchorMinute: Int,
+    intervalHours: Int,
+    windowEndHour: Int
+): Calendar {
+    val step = intervalHours.coerceAtLeast(1)
+    var repeat = 0
+    while (true) {
+        val hour = anchorHour + repeat * step
+        if (hour > 23) break
+        if (repeat > 0 && hour > windowEndHour) break
+        val candidate = from.sameDayAt(hour, anchorMinute)
+        if (candidate.after(from)) return candidate
+        repeat++
+    }
+    return from.sameDayAt(anchorHour, anchorMinute)
+        .apply { add(Calendar.DAY_OF_MONTH, 1) }
+}
+
+private fun Calendar.sameDayAt(hour: Int, minute: Int): Calendar =
+    (clone() as Calendar).apply {
+        set(Calendar.HOUR_OF_DAY, hour)
+        set(Calendar.MINUTE, minute)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
 
 fun String.toValidCustomMl(unit: String): Int? =
     toMl(unit)?.takeIf { it in 1..CUSTOM_MAX_ML }

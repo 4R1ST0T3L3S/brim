@@ -43,6 +43,25 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp" />
 
+            <!-- Separate section: the window edits the hourly reminder itself, so it
+                 stays usable even while the master toggle above is off. -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/settings_section_reminder_schedule"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="12sp"
+                android:textAllCaps="true"
+                android:letterSpacing="0.08" />
+
+            <include
+                android:id="@+id/row_reminder_window"
+                layout="@layout/item_settings_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
