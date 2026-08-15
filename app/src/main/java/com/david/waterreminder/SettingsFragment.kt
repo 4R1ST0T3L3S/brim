@@ -74,6 +74,14 @@ class SettingsFragment : BaseMenuFragment() {
 
         binding.rowSetPersonalGoal.rowContainer.setOnClickListener { showPersonalGoalDialog() }
 
+        binding.rowNotifications.rowIcon.setImageResource(R.drawable.ic_bell)
+        binding.rowNotifications.rowTitle.text = getString(R.string.action_notifications)
+        binding.rowNotifications.rowSubtitle.text =
+            getString(R.string.settings_row_notifications_subtitle)
+        binding.rowNotifications.rowContainer.setOnClickListener {
+            findNavController().navigate(R.id.action_SettingsFragment_to_NotificationsFragment)
+        }
+
         binding.rowData.rowIcon.setImageResource(android.R.drawable.ic_menu_save)
         binding.rowData.rowTitle.text = getString(R.string.action_data)
         binding.rowData.rowSubtitle.text = getString(R.string.settings_row_data_subtitle)

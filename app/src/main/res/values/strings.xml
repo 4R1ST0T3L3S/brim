@@ -95,6 +95,43 @@
     <string name="dialog_import_title">Are you sure?</string>
     <string name="dialog_import_message">Recommended: export a backup before importing. This will overwrite all your current data.</string>
     <string name="dialog_import_confirm">Import</string>
+    <string name="dialog_exact_alarm_title">Permission required</string>
+    <string name="dialog_exact_alarm_message">To receive reminders when the app is closed, please allow exact alarms in Settings.</string>
+    <string name="dialog_exact_alarm_open_settings">Open Settings</string>
+    <string name="dialog_reminder_window_title">Reminder window</string>
+    <string name="dialog_reminder_window_hint">Hourly reminders are sent every hour inside this window.</string>
+    <string name="dialog_reminder_window_reset">Reset to default (%1$s – %2$s)</string>
+    <!-- Settings voice. The onboarding screen says the same thing in its own first-person
+         voice — see reminder_setup_day_begins. The two error strings below are shared. -->
+    <string name="reminder_window_get_up">Get up at %s</string>
+    <string name="reminder_window_go_to_bed">Go to bed at %s</string>
+
+
+    <!-- Notifications -->
+    <string name="action_notifications">Notifications</string>
+    <string name="settings_section_notifications">Notifications</string>
+    <string name="settings_row_notifications_subtitle">Manage reminder notifications</string>
+    <string name="settings_row_enable_notifications">Enable notifications</string>
+    <string name="settings_notifications_enabled">Enabled</string>
+    <string name="settings_notifications_disabled">Disabled</string>
+    <string name="settings_section_reminder_schedule">Reminder schedule</string>
+    <string name="settings_row_reminder_window">Reminder window</string>
+    <string name="settings_reminder_window_value">Repeats between %1$s and %2$s</string>
+
+
+    <!-- Reminders -->
+    <string name="reminders_row_notifications_subtitle">Settings</string>
+    <string name="reminders_legend_swipe">Swipe a reminder right to edit, left to delete</string>
+    <string name="reminders_legend_tap_type">Tap a reminder\'s chip to change how often it repeats</string>
+
+    <!-- Reminder triggers -->
+    <string name="dialog_reminder_trigger_title">How often?</string>
+    <string name="reminder_trigger_onetime">One-time</string>
+    <string name="reminder_trigger_daily">Daily</string>
+    <plurals name="reminder_trigger_every_hours">
+        <item quantity="one">Every hour</item>
+        <item quantity="other">Every %d hours</item>
+    </plurals>
 
 
     <!-- Help rows -->

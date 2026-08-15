@@ -38,7 +38,12 @@
         android:id="@+id/RemindersFragment"
         android:name="com.david.waterreminder.RemindersFragment"
         android:label="Reminders"
-        tools:layout="@layout/fragment_reminders" />
+        tools:layout="@layout/fragment_reminders">
+
+        <action
+            android:id="@+id/action_RemindersFragment_to_NotificationsFragment"
+            app:destination="@id/NotificationsFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/AnalyticsFragment"
@@ -66,6 +71,10 @@
         <action
             android:id="@+id/action_SettingsFragment_to_DataFragment"
             app:destination="@id/DataFragment" />
+
+        <action
+            android:id="@+id/action_SettingsFragment_to_NotificationsFragment"
+            app:destination="@id/NotificationsFragment" />
     </fragment>
 
     <fragment
@@ -79,6 +88,12 @@
         android:name="com.david.waterreminder.DataFragment"
         android:label="@string/action_data"
         tools:layout="@layout/fragment_data" />
+
+    <fragment
+        android:id="@+id/NotificationsFragment"
+        android:name="com.david.waterreminder.NotificationsFragment"
+        android:label="@string/action_notifications"
+        tools:layout="@layout/fragment_notifications" />
 
     <fragment
         android:id="@+id/HelpFragment"

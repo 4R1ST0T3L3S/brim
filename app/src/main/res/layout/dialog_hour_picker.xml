@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="12dp"
+    android:paddingBottom="8dp">
+
+    <!-- blocksDescendants keeps the picker's inner EditText from taking focus and
+         popping the keyboard, so this stays a pure wheel. -->
+    <NumberPicker
+        android:id="@+id/picker_hour"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:descendantFocusability="blocksDescendants" />
+
+</FrameLayout>
