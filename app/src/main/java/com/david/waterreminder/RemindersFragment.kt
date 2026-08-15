@@ -1,6 +1,7 @@
 package com.david.waterreminder
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
@@ -21,80 +22,75 @@ data class Reminder(
     val minute: Int,
     var type: String,        // one of the TYPE_* constants
     var enabled: Boolean,
-    val endHour: Int = -1,      // only used by TYPE_HOURLY
     val intervalHours: Int = 0  // 0 = fires once a day; N = repeats every N hours
 ) {
-    /** The built-in every-hour reminder, as opposed to one the user added. */
-    val isHourly get() = type == TYPE_HOURLY
-
     /** Repeats through the day rather than firing once — "every 2 hours" and friends. */
     val isInterval get() = intervalHours > 0
 
-    // Positional format, so a trailing field can only be added: 3 fields for daily and
-    // one-time, a 4th for the hourly window, a 5th for the repeat interval. Entries
-    // written by older versions still parse.
-    fun toPrefsString() = when {
-        intervalHours > 0 -> "$time|$type|$enabled|$endHour|$intervalHours"
-        endHour >= 0 -> "$time|$type|$enabled|$endHour"
-        else -> "$time|$type|$enabled"
-    }
+    /** Fires once and stays off, so it is never rescheduled. */
+    val isOneTime get() = type == TYPE_ONETIME
+
+    // Positional format, so a trailing field can only be added: 3 fields, plus a 5th for
+    // the repeat interval. Field 4 held the old hourly reminder's window end — written as
+    // a placeholder and ignored on read, so older entries still parse.
+    fun toPrefsString() =
+        if (intervalHours > 0) "$time|$type|$enabled|-1|$intervalHours"
+        else "$time|$type|$enabled"
 
     companion object {
-        const val TYPE_HOURLY = "hourly"
         const val TYPE_DAILY = "daily"
         const val TYPE_ONETIME = "onetime"
 
-        /** An hourly reminder spanning [startHour]..[endHour]; minute is always 0. */
-        private fun hourly(startHour: Int, endHour: Int, enabled: Boolean = true) = Reminder(
+        /** Retired in favour of a plain every-1-hour reminder; still read from old prefs. */
+        private const val LEGACY_TYPE_HOURLY = "hourly"
+
+        /** What a new install starts with and Reset puts back — an ordinary reminder. */
+        fun defaultReminder(startHour: Int) = Reminder(
             time = startHour.asHourLabel(),
             hour = startHour,
             minute = 0,
-            type = TYPE_HOURLY,
-            enabled = enabled,
-            endHour = endHour
+            type = TYPE_DAILY,
+            enabled = true,
+            intervalHours = 1
         )
-
-        /** The built-in hourly reminder as it ships: every hour, 08:00–20:00, on. */
-        fun defaultHourly() = hourly(DEFAULT_REMINDER_START_HOUR, DEFAULT_REMINDER_END_HOUR)
 
         fun parseAll(saved: Set<String>?): List<Reminder> =
             saved?.mapNotNull { fromPrefsString(it) } ?: emptyList()
-
-        /**
-         * The stored hourly reminder, falling back to [defaultHourly] when there is none.
-         * A missing endHour reads as the default window end; a window that is still
-         * unusable (end at or before the start) reads as the whole default window, so
-         * callers can trust that start < end. The on/off state is always preserved.
-         */
-        fun hourlyOrDefault(reminders: List<Reminder>): Reminder {
-            val stored = reminders.firstOrNull { it.isHourly } ?: return defaultHourly()
-            val endHour = if (stored.endHour >= 0) stored.endHour else DEFAULT_REMINDER_END_HOUR
-            return if (endHour > stored.hour) stored.copy(endHour = endHour)
-            else defaultHourly().copy(enabled = stored.enabled)
-        }
-
-        /**
-         * [reminders] with its hourly entry replaced by one spanning [startHour]..[endHour].
-         * The user's own reminders are left untouched and the hourly on/off state is kept.
-         */
-        fun withHourlyWindow(reminders: List<Reminder>, startHour: Int, endHour: Int): List<Reminder> =
-            reminders.filterNot { it.isHourly } +
-                hourly(startHour, endHour, reminders.firstOrNull { it.isHourly }?.enabled ?: true)
 
         fun fromPrefsString(s: String): Reminder? {
             val parts = s.split("|")
             if (parts.size < 3) return null
             val timeParts = parts[0].split(":")
             if (timeParts.size != 2) return null
+            // An old hourly entry reads as what it always was: every 1 hour.
+            val legacyHourly = parts[1] == LEGACY_TYPE_HOURLY
             return Reminder(
                 time = parts[0],
                 hour = timeParts[0].toIntOrNull() ?: return null,
                 minute = timeParts[1].toIntOrNull() ?: return null,
-                type = parts[1],
+                type = if (legacyHourly) TYPE_DAILY else parts[1],
                 enabled = parts[2].toBoolean(),
-                endHour = if (parts.size >= 4) parts[3].toIntOrNull() ?: -1 else -1,
-                intervalHours = if (parts.size >= 5) parts[4].toIntOrNull() ?: 0 else 0
+                intervalHours = if (legacyHourly) 1 else parts.getOrNull(4)?.toIntOrNull() ?: 0
             )
+        }
+
+        /** The window an old hourly entry carried, or null if there is none. */
+        fun legacyHourlyWindow(saved: Set<String>?): Pair<Int, Int>? {
+            val legacy = saved.orEmpty().map { it.split("|") }
+                .firstOrNull { it.size >= 4 && it[1] == LEGACY_TYPE_HOURLY } ?: return null
+            val start = legacy[0].substringBefore(":").toIntOrNull() ?: return null
+            return start to (legacy[3].toIntOrNull() ?: return null)
+        }
+
+        /**
+         * Rescues the window an old install kept on its hourly reminder. The entry itself
+         * needs no rewriting — [fromPrefsString] already reads it correctly, and its alarm
+         * is keyed by a time label that hasn't changed.
+         */
+        fun migrateLegacyHourly(prefs: SharedPreferences) {
+            if (prefs.contains(PREF_WINDOW_END_HOUR)) return
+            legacyHourlyWindow(prefs.getStringSet("reminders_v3", null))
+                ?.let { (start, end) -> prefs.setReminderWindow(start, end) }
         }
     }
 }
@@ -109,8 +105,6 @@ class RemindersFragment : Fragment() {
     private val prefs by lazy {
         requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
     }
-
-    private val defaultReminders = listOf(Reminder.defaultHourly())
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentRemindersBinding.inflate(inflater, container, false)
@@ -131,12 +125,12 @@ class RemindersFragment : Fragment() {
         binding.buttonAddReminder.setOnClickListener { showTimePickerDialog() }
 
         binding.buttonResetReminders.setOnClickListener {
+            val (start, end) = prefs.reminderWindow()
             AlertDialog.Builder(requireContext())
                 .setTitle("Reset reminders")
                 .setMessage(
-                    "This will remove all current reminders and restore hourly reminders " +
-                        "from ${DEFAULT_REMINDER_START_HOUR.asHourLabel()} " +
-                        "to ${DEFAULT_REMINDER_END_HOUR.asHourLabel()}."
+                    "This will remove all current reminders and restore the default one: " +
+                        "every hour from ${start.asHourLabel()} to ${end.asHourLabel()}."
                 )
                 .setPositiveButton("Reset") { _, _ -> resetToDefaults() }
                 .setNegativeButton("Cancel", null)
@@ -160,18 +154,10 @@ class RemindersFragment : Fragment() {
         reminders.clear()
 
         val saved = prefs.getStringSet("reminders_v3", null)
-
         if (saved == null) {
-            // First launch — set defaults
-            defaultReminders.forEach { r ->
-                reminders.add(r)
-                scheduleOrCancel(r)
-            }
-            saveAllReminders()
+            addDefaultReminder()   // First launch
         } else {
-            saved.mapNotNull { Reminder.fromPrefsString(it) }
-                .sortedBy { it.time }
-                .forEach { reminders.add(it) }
+            saved.mapNotNull { Reminder.fromPrefsString(it) }.forEach { reminders.add(it) }
         }
 
         rebuildReminderRows()
@@ -179,17 +165,19 @@ class RemindersFragment : Fragment() {
     }
 
     private fun resetToDefaults() {
-        // Cancel all existing alarms
         reminders.forEach { ReminderScheduler.cancel(requireContext(), it) }
         reminders.clear()
-        // Add and schedule defaults
-        defaultReminders.forEach { r ->
-            reminders.add(r)
-            scheduleOrCancel(r)
-        }
-        saveAllReminders()
+        addDefaultReminder()
         rebuildReminderRows()
         refreshEmptyState()
+    }
+
+    /** Adds, schedules and saves the default reminder — the caller only redraws. */
+    private fun addDefaultReminder() {
+        val default = Reminder.defaultReminder(prefs.reminderWindow().first)
+        reminders.add(default)
+        scheduleOrCancel(default)
+        saveAllReminders()
     }
 
     private fun saveAllReminders() {
@@ -200,43 +188,27 @@ class RemindersFragment : Fragment() {
     // ─── UI ───────────────────────────────────────────────────────
 
     private fun rebuildReminderRows() {
-        binding.containerDefaultReminder.removeAllViews()
         binding.containerReminders.removeAllViews()
-        reminders.sortedWith(compareBy({ !it.isHourly }, { it.time })).forEach { reminder ->
-            addReminderRow(reminder)
-        }
+        reminders.sortedBy { it.time }.forEach { addReminderRow(it) }
     }
 
     private fun addReminderRow(reminder: Reminder) {
-        // Hourly is the built-in default and lives above the "My reminders" section.
-        val container = if (reminder.isHourly)
-            binding.containerDefaultReminder else binding.containerReminders
+        val container = binding.containerReminders
 
         val rowBinding = ItemReminderBinding.inflate(
             LayoutInflater.from(requireContext()), container, false
         )
 
-        rowBinding.textReminderTime.text = if (reminder.isHourly) {
-            "🔔  ${reminder.hour.asHourLabel()}–${reminder.endHour.asHourLabel()}"
-        } else if (reminder.isInterval) {
-            // The repeats stop at the go-to-bed hour, so show where they end.
-            val until = prefs.reminderWindowEndHour().asHourLabel()
-            "🔔  ${reminder.time}  ·  ${getString(R.string.reminder_repeats_until, until)}"
-        } else {
-            "🔔  ${reminder.time}"
-        }
+        // A repeating reminder reads as a range, ending at the go-to-bed hour.
+        rowBinding.textReminderTime.text =
+            if (reminder.isInterval)
+                "🔔  ${reminder.time}–${prefs.reminderWindow().second.asHourLabel()}"
+            else "🔔  ${reminder.time}"
         rowBinding.switchReminderEnabled.isChecked = reminder.enabled
-
-        // The section divider already separates the hourly row from "My reminders",
-        // so drop the row's own to avoid two lines stacked together.
-        if (reminder.isHourly) rowBinding.rowDivider.visibility = View.GONE
 
         applyTypeChip(rowBinding, reminder)
 
-        // Tap the chip to change how often it repeats (not applicable for hourly, whose
-        // window is set in Settings → Notifications).
         rowBinding.textReminderType.setOnClickListener {
-            if (reminder.isHourly) return@setOnClickListener
             showTriggerDialog(reminder.type to reminder.intervalHours) { type, hours ->
                 applyTrigger(reminder, type, hours)
             }
@@ -249,26 +221,21 @@ class RemindersFragment : Fragment() {
             saveAllReminders()
         }
 
-        // Swipe right = edit (daily/onetime only), swipe left = delete (daily/onetime only)
+        // Swipe right = edit, swipe left = delete
         addSwipeActions(
             foreground = rowBinding.foreground,
             editBg = rowBinding.editBackground,
             deleteBg = rowBinding.deleteBackground,
             swipeHandle = rowBinding.foreground,
-            reminder = reminder,
-            canEdit = !reminder.isHourly,
-            canDelete = !reminder.isHourly
+            reminder = reminder
         )
 
         container.addView(rowBinding.root)
     }
 
     private fun applyTypeChip(rowBinding: ItemReminderBinding, reminder: Reminder) {
-        rowBinding.textReminderType.text =
-            if (reminder.isHourly) getString(R.string.reminder_trigger_builtin_hourly)
-            else triggerLabel(reminder.type, reminder.intervalHours)
+        rowBinding.textReminderType.text = triggerLabel(reminder.type, reminder.intervalHours)
         val color = when {
-            reminder.isHourly -> 0xFF009688.toInt()               // teal
             reminder.isInterval -> 0xFF9C27B0.toInt()              // purple
             reminder.type == Reminder.TYPE_ONETIME -> 0xFFFF9800.toInt()  // orange
             else -> 0xFF2196F3.toInt()                             // blue
@@ -283,10 +250,10 @@ class RemindersFragment : Fragment() {
     }
 
     private fun refreshEmptyState() {
-        val hasCustom = reminders.any { !it.isHourly }
-        binding.textNoReminders.visibility = if (hasCustom) View.GONE else View.VISIBLE
-        // Hourly rows aren't swipeable, so the legend only makes sense alongside a custom one.
-        binding.legendSwipe.visibility = if (hasCustom) View.VISIBLE else View.GONE
+        val hasReminders = reminders.isNotEmpty()
+        binding.textNoReminders.visibility = if (hasReminders) View.GONE else View.VISIBLE
+        // The legend describes row gestures — nothing to describe without a row.
+        binding.legendSwipe.visibility = if (hasReminders) View.VISIBLE else View.GONE
     }
 
     // ─── Add reminder dialog ──────────────────────────────────────
@@ -417,9 +384,7 @@ class RemindersFragment : Fragment() {
         editBg: View,
         deleteBg: View,
         swipeHandle: View,
-        reminder: Reminder,
-        canEdit: Boolean = true,
-        canDelete: Boolean = true
+        reminder: Reminder
     ) {
         var startX = 0f
         var startY = 0f
@@ -434,15 +399,9 @@ class RemindersFragment : Fragment() {
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    val rawDeltaX = event.rawX - startX
+                    val deltaX = event.rawX - startX
                     val deltaY = event.rawY - startY
-                    // Clamp movement to allowed directions
-                    val deltaX = when {
-                        rawDeltaX > 0 && !canEdit -> 0f
-                        rawDeltaX < 0 && !canDelete -> 0f
-                        else -> rawDeltaX
-                    }
-                    if (!isSwiping && Math.abs(rawDeltaX) > Math.abs(deltaY) && Math.abs(rawDeltaX) > 12) {
+                    if (!isSwiping && Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 12) {
                         isSwiping = true
                         foreground.parent?.requestDisallowInterceptTouchEvent(true)
                     }
@@ -467,33 +426,23 @@ class RemindersFragment : Fragment() {
                         val threshold = foreground.width * 0.4f
                         when {
                             deltaX > threshold -> {
-                                if (canEdit) {
-                                    // Swiped right → edit
-                                    foreground.animate()
-                                        .translationX(foreground.width.toFloat())
-                                        .setDuration(200)
-                                        .withEndAction {
-                                            foreground.translationX = 0f
-                                            editBg.visibility = View.GONE
-                                            showEditTimePickerDialog(reminder)
-                                        }
-                                        .start()
-                                } else {
-                                    foreground.animate().translationX(0f).setDuration(150)
-                                        .withEndAction { editBg.visibility = View.GONE }.start()
-                                }
+                                // Swiped right → edit
+                                foreground.animate()
+                                    .translationX(foreground.width.toFloat())
+                                    .setDuration(200)
+                                    .withEndAction {
+                                        foreground.translationX = 0f
+                                        editBg.visibility = View.GONE
+                                        showEditTimePickerDialog(reminder)
+                                    }
+                                    .start()
                             }
                             deltaX < -threshold -> {
-                                if (canDelete) {
-                                    foreground.animate()
-                                        .translationX(-foreground.width.toFloat())
-                                        .setDuration(200)
-                                        .withEndAction { deleteReminder(reminder) }
-                                        .start()
-                                } else {
-                                    foreground.animate().translationX(0f).setDuration(150)
-                                        .withEndAction { deleteBg.visibility = View.GONE }.start()
-                                }
+                                foreground.animate()
+                                    .translationX(-foreground.width.toFloat())
+                                    .setDuration(200)
+                                    .withEndAction { deleteReminder(reminder) }
+                                    .start()
                             }
                             else -> {
                                 // Snap back
@@ -539,7 +488,6 @@ class RemindersFragment : Fragment() {
     // Dimmed while the master toggle in Settings → Notifications is off.
     private fun updateRemindersAlpha(enabled: Boolean) {
         val alpha = if (enabled) 1f else 0.38f
-        binding.containerDefaultReminder.alpha = alpha
         binding.containerReminders.alpha = alpha
         binding.textNoReminders.alpha = alpha
         binding.legendSwipe.alpha = alpha

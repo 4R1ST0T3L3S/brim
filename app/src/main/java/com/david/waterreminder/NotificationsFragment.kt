@@ -104,20 +104,18 @@ class NotificationsFragment : BaseMenuFragment() {
         binding.rowStopOnGoal.root.alpha = if (enabled) 1f else 0.38f
         binding.rowStopOnGoal.rowContainer.isEnabled = enabled
 
-        val window = Reminder.hourlyOrDefault(savedReminders())
+        val (windowStart, windowEnd) = prefs.reminderWindow()
         binding.rowReminderWindow.rowSubtitle.text = getString(
             R.string.settings_reminder_window_value,
-            window.hour.asHourLabel(),
-            window.endHour.asHourLabel()
+            windowStart.asHourLabel(),
+            windowEnd.asHourLabel()
         )
     }
 
     // ─── Reminder window ─────────────────────────────────────────
 
     private fun showReminderWindowDialog() {
-        val window = Reminder.hourlyOrDefault(savedReminders())
-        var startHour = window.hour
-        var endHour = window.endHour
+        var (startHour, endHour) = prefs.reminderWindow()
 
         val dialogBinding = DialogReminderWindowBinding.inflate(layoutInflater)
 
@@ -177,17 +175,7 @@ class NotificationsFragment : BaseMenuFragment() {
                     showWindowError(getString(R.string.reminder_setup_error_window))
                     return@setOnClickListener
                 }
-                val saved = savedReminders()
-                // Alarms are keyed by their time label, so the window start must not
-                // land on one of the user's own reminders or they'd cancel each other.
-                val clashes = saved.any { !it.isHourly && it.time == startHour.asHourLabel() }
-                if (clashes) {
-                    showWindowError(
-                        getString(R.string.dialog_reminder_window_conflict, startHour.asHourLabel())
-                    )
-                    return@setOnClickListener
-                }
-                saveReminderWindow(saved, startHour, endHour)
+                saveReminderWindow(startHour, endHour)
                 refreshRows()
                 dialog.dismiss()
             }
@@ -224,28 +212,20 @@ class NotificationsFragment : BaseMenuFragment() {
             .show()
     }
 
-    private fun saveReminderWindow(saved: List<Reminder>, startHour: Int, endHour: Int) {
-        // The pending alarm is keyed by the old time label, so cancel before replacing it.
-        saved.firstOrNull { it.isHourly }
-            ?.let { ReminderScheduler.cancel(requireContext(), it) }
-
-        val updated = Reminder.withHourlyWindow(saved, startHour, endHour)
-        prefs.edit()
-            .putStringSet("reminders_v3", updated.map { it.toPrefsString() }.toSet())
-            .apply()
+    /**
+     * No reminder is rewritten and no alarm cancelled — the window is its own pref, and
+     * alarms are keyed by time labels that don't change. Every repeating reminder is
+     * bounded by the window, so they all get rescheduled onto their new fire times.
+     */
+    private fun saveReminderWindow(startHour: Int, endHour: Int) {
+        prefs.setReminderWindow(startHour, endHour)
 
         if (prefs.getBoolean("notifications_enabled", false)) {
-            // Cancelled above, so a deferred exact-alarm grant would leave no alarm at
-            // all — onResume reschedules once the permission comes back.
+            // onResume reschedules again once a deferred exact-alarm grant comes back.
             if (!ensureExactAlarmPermission()) return
-            // Not just the hourly one: interval reminders stop at the window end too, so
-            // their next fire moves with it.
             rescheduleEnabledReminders()
         }
     }
-
-    private fun savedReminders(): List<Reminder> =
-        Reminder.parseAll(prefs.getStringSet("reminders_v3", emptySet()))
 
     // ─── Notifications ────────────────────────────────────────────
 

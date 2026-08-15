@@ -49,9 +49,12 @@ const val CUSTOM_MAX_ML = 5_000
 const val GOAL_MIN_ML   = 100
 const val GOAL_MAX_ML   = 10_000
 
-/** Default window for the built-in hourly reminder. */
+/** Default reminder window, and where the default reminder is anchored. */
 const val DEFAULT_REMINDER_START_HOUR = 8
 const val DEFAULT_REMINDER_END_HOUR   = 20
+
+const val PREF_WINDOW_START_HOUR = "reminder_window_start_hour"
+const val PREF_WINDOW_END_HOUR   = "reminder_window_end_hour"
 
 /**
  * Hour of day → the "08:00" label reminders are stored and keyed by.
@@ -59,25 +62,46 @@ const val DEFAULT_REMINDER_END_HOUR   = 20
  */
 fun Int.asHourLabel(): String = String.format(Locale.US, "%02d:00", this)
 
-/** The "go to bed" hour that bounds the hourly reminder and every interval reminder. */
-fun SharedPreferences.reminderWindowEndHour(): Int =
-    Reminder.hourlyOrDefault(Reminder.parseAll(getStringSet("reminders_v3", emptySet()))).endHour
+/**
+ * [start]..[end] if reminders can be scheduled in it, the default window otherwise — so
+ * callers can trust start < end. A stored window can be inverted or out of range: the two
+ * hour pickers don't constrain each other, and prefs can be hand-edited or imported.
+ */
+fun usableWindow(start: Int, end: Int): Pair<Int, Int> =
+    if (start in 0..23 && end in 0..23 && start < end) start to end
+    else DEFAULT_REMINDER_START_HOUR to DEFAULT_REMINDER_END_HOUR
+
+/**
+ * The "get up" and "go to bed" hours bounding every repeating reminder. Kept in their own
+ * prefs, so the window outlives any single reminder the user edits or deletes.
+ */
+fun SharedPreferences.reminderWindow(): Pair<Int, Int> = usableWindow(
+    getInt(PREF_WINDOW_START_HOUR, DEFAULT_REMINDER_START_HOUR),
+    getInt(PREF_WINDOW_END_HOUR, DEFAULT_REMINDER_END_HOUR)
+)
+
+fun SharedPreferences.setReminderWindow(startHour: Int, endHour: Int) {
+    edit().putInt(PREF_WINDOW_START_HOUR, startHour)
+        .putInt(PREF_WINDOW_END_HOUR, endHour)
+        .apply()
+}
 
 /**
  * When an interval reminder anchored at [anchorHour]:[anchorMinute] and repeating every
  * [intervalHours] hours should next fire, given it is now [from].
  *
- * Repeats stop once they would land past [windowEndHour] — the "go to bed" hour — and
- * pick up again at the anchor tomorrow, so an every-2-hours reminder doesn't ping at
- * 03:30. The anchor itself always fires even when it sits outside the window: the user
- * chose that time explicitly, so only the repeats are bounded.
+ * Repeats are confined to [windowStartHour]..[windowEndHour] and pick up again at the
+ * anchor tomorrow, so an every-2-hours reminder doesn't ping at 03:30. The anchor itself
+ * always fires even outside the window: the user chose that time explicitly, so only the
+ * repeats are bounded.
  */
 fun nextIntervalFireTime(
     from: Calendar,
     anchorHour: Int,
     anchorMinute: Int,
     intervalHours: Int,
-    windowEndHour: Int
+    windowEndHour: Int,
+    windowStartHour: Int = 0
 ): Calendar {
     val step = intervalHours.coerceAtLeast(1)
     var repeat = 0
@@ -85,13 +109,22 @@ fun nextIntervalFireTime(
         val hour = anchorHour + repeat * step
         if (hour > 23) break
         if (repeat > 0 && hour > windowEndHour) break
-        val candidate = from.sameDayAt(hour, anchorMinute)
-        if (candidate.after(from)) return candidate
+        // Skipped, not stopped: with an early anchor the later repeats still land in window.
+        if (repeat == 0 || hour >= windowStartHour) {
+            val candidate = from.sameDayAt(hour, anchorMinute)
+            if (candidate.after(from)) return candidate
+        }
         repeat++
     }
     return from.sameDayAt(anchorHour, anchorMinute)
         .apply { add(Calendar.DAY_OF_MONTH, 1) }
 }
+
+/** [hour]:[minute] today if that is still ahead, tomorrow otherwise. */
+fun Calendar.nextOccurrenceOf(hour: Int, minute: Int): Calendar =
+    sameDayAt(hour, minute).apply {
+        if (!after(this@nextOccurrenceOf)) add(Calendar.DAY_OF_MONTH, 1)
+    }
 
 private fun Calendar.sameDayAt(hour: Int, minute: Int): Calendar =
     (clone() as Calendar).apply {

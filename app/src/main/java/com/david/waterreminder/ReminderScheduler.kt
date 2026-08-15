@@ -10,31 +10,12 @@ import java.util.Calendar
 object ReminderScheduler {
 
     fun schedule(context: Context, reminder: Reminder) {
-        if (reminder.isHourly) {
-            scheduleHourly(context, reminder)
-            return
-        }
-        if (reminder.isInterval) {
-            scheduleInterval(context, reminder)
-            return
-        }
-
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-            return
-        }
-
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, reminder.hour)
-            set(Calendar.MINUTE, reminder.minute)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            if (!after(Calendar.getInstance())) add(Calendar.DAY_OF_MONTH, 1)
-        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
 
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
+            nextFireTime(context, reminder).timeInMillis,
             buildPendingIntent(context, reminder)
         )
     }
@@ -45,64 +26,22 @@ object ReminderScheduler {
     }
 
     /**
-     * Interval reminders repeat from their own start time, so — unlike the hourly one —
-     * the window only bounds them at the top end. That end hour lives with the hourly
-     * reminder in prefs, so it is read here rather than threaded through every caller.
+     * A repeating reminder is bounded by the window, which is read from prefs here rather
+     * than threaded through every caller. Anything else just fires at its own time.
      */
-    private fun scheduleInterval(context: Context, reminder: Reminder) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
+    private fun nextFireTime(context: Context, reminder: Reminder): Calendar {
+        val now = Calendar.getInstance()
+        if (!reminder.isInterval) return now.nextOccurrenceOf(reminder.hour, reminder.minute)
 
-        val prefs = context.getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
-        val fireAt = nextIntervalFireTime(
-            from = Calendar.getInstance(),
+        val (windowStart, windowEnd) = context
+            .getSharedPreferences("water_prefs", Context.MODE_PRIVATE).reminderWindow()
+        return nextIntervalFireTime(
+            from = now,
             anchorHour = reminder.hour,
             anchorMinute = reminder.minute,
             intervalHours = reminder.intervalHours,
-            windowEndHour = prefs.reminderWindowEndHour()
-        )
-
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            fireAt.timeInMillis,
-            buildPendingIntent(context, reminder)
-        )
-    }
-
-    private fun scheduleHourly(context: Context, reminder: Reminder) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
-
-        val startHour = reminder.hour
-        val endHour = reminder.endHour
-        val now = Calendar.getInstance()
-
-        // Next top-of-hour from now
-        val candidate = Calendar.getInstance().apply {
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            add(Calendar.HOUR_OF_DAY, 1)
-        }
-        val candidateHour = candidate.get(Calendar.HOUR_OF_DAY)
-
-        val fireCal = if (candidateHour in startHour..endHour) {
-            candidate
-        } else {
-            // Outside window — use startHour today (or tomorrow if already past)
-            Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, startHour)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-                if (!after(now)) add(Calendar.DAY_OF_MONTH, 1)
-            }
-        }
-
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            fireCal.timeInMillis,
-            buildPendingIntent(context, reminder)
+            windowEndHour = windowEnd,
+            windowStartHour = windowStart
         )
     }
 

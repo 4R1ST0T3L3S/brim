@@ -280,12 +280,86 @@ class UnitsTest {
         assertEquals("13:07", nextIntervalFireTime(at(12, 0), 7, 7, 3, 20).hhmm())
     }
 
+    // ─── nextOccurrenceOf ─────────────────────────────────────────
+
+    @Test
+    fun nextOccurrence_laterToday_staysToday() {
+        val next = at(9, 0).nextOccurrenceOf(14, 30)
+        assertEquals("14:30", next.hhmm())
+        assertEquals(14, next.dayOfMonth())
+    }
+
+    @Test
+    fun nextOccurrence_alreadyPast_rollsToTomorrow() {
+        val next = at(15, 0).nextOccurrenceOf(14, 30)
+        assertEquals("14:30", next.hhmm())
+        assertEquals(15, next.dayOfMonth())
+    }
+
+    // Exactly now counts as past, or the alarm would be set for the moment it fired.
+    @Test
+    fun nextOccurrence_exactlyNow_rollsToTomorrow() {
+        assertEquals(15, at(14, 30).nextOccurrenceOf(14, 30).dayOfMonth())
+    }
+
+    // The get-up hour bounds repeats at the bottom the way bedtime does at the top.
+    @Test
+    fun nextInterval_repeatBeforeWindowStart_isSkipped() {
+        // 05:00 + 1h steps, get up at 08:00 → the 06:00 and 07:00 repeats are skipped.
+        assertEquals("08:00", nextIntervalFireTime(at(5, 30), 5, 0, 1, 20, windowStartHour = 8).hhmm())
+    }
+
+    @Test
+    fun nextInterval_anchorBeforeWindowStart_stillFiresAtAnchor() {
+        val next = nextIntervalFireTime(at(4, 0), 5, 0, 1, 20, windowStartHour = 8)
+        assertEquals("05:00", next.hhmm())
+        assertEquals(14, next.dayOfMonth())
+    }
+
+    // The default reminder is anchored at the get-up hour, so it never skips anything.
+    @Test
+    fun nextInterval_anchoredAtWindowStart_isUnaffectedByTheLowerBound() {
+        assertEquals("09:00", nextIntervalFireTime(at(8, 30), 8, 0, 1, 20, windowStartHour = 8).hhmm())
+    }
+
+    @Test
+    fun nextInterval_noWindowStartGiven_boundsOnlyTheTopEnd() {
+        assertEquals("06:00", nextIntervalFireTime(at(5, 30), 5, 0, 1, 20).hhmm())
+    }
+
     @Test
     fun asHourLabel_defaults_parseBackAsReminder() {
         val r = Reminder.fromPrefsString(
-            "${DEFAULT_REMINDER_START_HOUR.asHourLabel()}|hourly|true|$DEFAULT_REMINDER_END_HOUR"
+            Reminder.defaultReminder(DEFAULT_REMINDER_START_HOUR).toPrefsString()
         )!!
         assertEquals(DEFAULT_REMINDER_START_HOUR, r.hour)
-        assertEquals(DEFAULT_REMINDER_END_HOUR, r.endHour)
+        assertEquals(1, r.intervalHours)
+    }
+
+    // ─── usableWindow ─────────────────────────────────────────────
+
+    private val defaultWindow = DEFAULT_REMINDER_START_HOUR to DEFAULT_REMINDER_END_HOUR
+
+    @Test
+    fun usableWindow_keepsAWindowRemindersCanRunIn() {
+        assertEquals(6 to 22, usableWindow(6, 22))
+        assertEquals(0 to 23, usableWindow(0, 23))
+    }
+
+    // Callers schedule against the window, so an unusable one has to read as the default.
+    @Test
+    fun usableWindow_inverted_readsAsDefaults() {
+        assertEquals(defaultWindow, usableWindow(21, 8))
+    }
+
+    @Test
+    fun usableWindow_empty_readsAsDefaults() {
+        assertEquals(defaultWindow, usableWindow(20, 20))
+    }
+
+    @Test
+    fun usableWindow_outOfRangeHour_readsAsDefaults() {
+        assertEquals(defaultWindow, usableWindow(-1, 20))
+        assertEquals(defaultWindow, usableWindow(8, 24))
     }
 }

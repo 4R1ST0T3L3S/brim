@@ -34,26 +34,15 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/title_reminders" />
 
-        <!-- The built-in hourly reminder, above the "My reminders" section. -->
-        <LinearLayout
-            android:id="@+id/container_default_reminder"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:orientation="vertical"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/row_notification_settings" />
-
         <View
             android:id="@+id/divider"
             android:layout_width="0dp"
             android:layout_height="1dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="16dp"
             android:background="?attr/colorOutlineVariant"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/container_default_reminder" />
+            app:layout_constraintTop_toBottomOf="@id/row_notification_settings" />
 
         <!-- Add reminder -->
         <TextView
@@ -115,7 +104,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:gravity="center"
-            android:text="No custom reminders yet.\nTap '+ Add reminder' to get started."
+            android:text="No reminders yet.\nTap '+ Add reminder', or Reset to bring the default one back."
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             android:lineSpacingMultiplier="1.4"
@@ -123,9 +112,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/container_reminders" />
 
-        <!-- Row-interaction hints — sit under the list. Shown only while there is a
-             swipeable (non-hourly) reminder, so they never appear next to the empty
-             state — which is also exactly when the type chip is tappable. -->
+        <!-- Row-interaction hints — hidden alongside the empty state. -->
         <LinearLayout
             android:id="@+id/legend_swipe"
             android:layout_width="0dp"

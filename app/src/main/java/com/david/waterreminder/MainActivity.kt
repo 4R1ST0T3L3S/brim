@@ -38,6 +38,8 @@ class MainActivity : AppCompatActivity() {
         )
         super.onCreate(savedInstanceState)
 
+        Reminder.migrateLegacyHourly(prefs)
+
         createNotificationChannel()
 
         binding = ActivityMainBinding.inflate(layoutInflater)

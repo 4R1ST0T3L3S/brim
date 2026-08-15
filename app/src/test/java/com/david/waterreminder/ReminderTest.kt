@@ -18,7 +18,7 @@ class ReminderTest {
         assertEquals(0, r.minute)
         assertEquals("daily", r.type)
         assertTrue(r.enabled)
-        assertEquals(-1, r.endHour)
+        assertEquals(0, r.intervalHours)
     }
 
     @Test
@@ -27,13 +27,21 @@ class ReminderTest {
         assertFalse(r.enabled)
     }
 
+    // An entry from before the hourly reminder became an ordinary row still has to
+    // behave as what it always was: every hour, starting at its own time.
     @Test
-    fun fromPrefsString_hourly_with_endHour() {
+    fun fromPrefsString_legacyHourly_readsAsEveryOneHour() {
         val r = Reminder.fromPrefsString("08:00|hourly|true|20")!!
-        assertEquals("hourly", r.type)
+        assertEquals(Reminder.TYPE_DAILY, r.type)
         assertEquals(8, r.hour)
-        assertEquals(20, r.endHour)
+        assertEquals(1, r.intervalHours)
+        assertTrue(r.isInterval)
         assertTrue(r.enabled)
+    }
+
+    @Test
+    fun fromPrefsString_legacyHourly_keepsDisabledState() {
+        assertFalse(Reminder.fromPrefsString("08:00|hourly|false|20")!!.enabled)
     }
 
     @Test
@@ -70,12 +78,6 @@ class ReminderTest {
         assertEquals("09:30|onetime|false", r.toPrefsString())
     }
 
-    @Test
-    fun toPrefsString_hourly_includesEndHour() {
-        val r = Reminder("08:00", 8, 0, "hourly", true, endHour = 20)
-        assertEquals("08:00|hourly|true|20", r.toPrefsString())
-    }
-
     // ─── round-trip ───────────────────────────────────────────────
 
     @Test
@@ -86,10 +88,9 @@ class ReminderTest {
     }
 
     @Test
-    fun roundTrip_hourly() {
-        val original = Reminder("08:00", 8, 0, "hourly", true, endHour = 20)
-        val restored = Reminder.fromPrefsString(original.toPrefsString())!!
-        assertEquals(original, restored)
+    fun roundTrip_defaultReminder() {
+        val original = Reminder.defaultReminder(DEFAULT_REMINDER_START_HOUR)
+        assertEquals(original, Reminder.fromPrefsString(original.toPrefsString()))
     }
 
     @Test
@@ -115,35 +116,17 @@ class ReminderTest {
     fun repeating_isIntervalOnlyWhenHoursSet() {
         assertTrue(repeating(3).isInterval)
         assertFalse(repeating(0).isInterval)
-        assertFalse(repeating(3).isHourly)
-    }
-
-    // A repeating user reminder must not be mistaken for the built-in hourly one, or the
-    // window dialog would start editing the user's own reminder.
-    @Test
-    fun repeating_isNotPickedUpAsTheBuiltInHourly() {
-        val saved = listOf(repeating(1))
-        assertEquals(DEFAULT_REMINDER_START_HOUR, Reminder.hourlyOrDefault(saved).hour)
-        assertEquals(2, Reminder.withHourlyWindow(saved, 7, 22).size)
-    }
-
-    @Test
-    fun withHourlyWindow_keepsRepeatingReminders() {
-        val saved = listOf(repeating(2), Reminder.defaultHourly())
-        assertTrue(Reminder.withHourlyWindow(saved, 6, 22).contains(repeating(2)))
     }
 
     // Entries written before repeats existed must keep parsing.
     @Test
     fun legacyEntries_haveNoInterval() {
         assertEquals(0, Reminder.fromPrefsString("08:00|daily|true")!!.intervalHours)
-        assertEquals(0, Reminder.fromPrefsString("08:00|hourly|true|20")!!.intervalHours)
     }
 
     @Test
-    fun nonRepeating_prefsStringStaysThreeOrFourFields() {
+    fun nonRepeating_prefsStringStaysThreeFields() {
         assertEquals("09:30|daily|true", repeating(0).toPrefsString())
-        assertEquals("08:00|hourly|true|20", Reminder.defaultHourly().toPrefsString())
     }
 
     @Test
@@ -151,142 +134,71 @@ class ReminderTest {
         assertEquals(0, Reminder.fromPrefsString("09:30|daily|true|-1|x")!!.intervalHours)
     }
 
-    // ─── hourlyOrDefault ──────────────────────────────────────────
+    // ─── defaultReminder ──────────────────────────────────────────
 
     @Test
-    fun hourlyOrDefault_empty_returnsDefaultWindow() {
-        val r = Reminder.hourlyOrDefault(emptyList())
+    fun defaultReminder_isAnOrdinaryEveryOneHourReminder() {
+        val r = Reminder.defaultReminder(DEFAULT_REMINDER_START_HOUR)
         assertEquals(DEFAULT_REMINDER_START_HOUR, r.hour)
-        assertEquals(DEFAULT_REMINDER_END_HOUR, r.endHour)
+        assertEquals("08:00", r.time)
+        assertEquals(0, r.minute)
+        assertEquals(Reminder.TYPE_DAILY, r.type)
+        assertEquals(1, r.intervalHours)
         assertTrue(r.enabled)
     }
 
+    // Nothing marks it as special, so it can be edited and deleted like any other.
     @Test
-    fun hourlyOrDefault_noHourlyEntry_returnsDefaultWindow() {
-        val saved = listOf(Reminder("09:30", 9, 30, "daily", true))
-        assertEquals(DEFAULT_REMINDER_START_HOUR, Reminder.hourlyOrDefault(saved).hour)
-    }
-
-    @Test
-    fun hourlyOrDefault_returnsStoredWindow() {
-        val saved = listOf(Reminder("06:00", 6, 0, "hourly", true, endHour = 22))
-        val r = Reminder.hourlyOrDefault(saved)
-        assertEquals(6, r.hour)
-        assertEquals(22, r.endHour)
-    }
-
-    @Test
-    fun hourlyOrDefault_missingEndHour_fallsBackToDefaultEnd() {
-        val saved = listOf(Reminder("06:00", 6, 0, "hourly", true))
-        val r = Reminder.hourlyOrDefault(saved)
-        assertEquals(6, r.hour)
-        assertEquals(DEFAULT_REMINDER_END_HOUR, r.endHour)
-    }
-
-    @Test
-    fun hourlyOrDefault_keepsDisabledState() {
-        val saved = listOf(Reminder("06:00", 6, 0, "hourly", false, endHour = 22))
-        assertFalse(Reminder.hourlyOrDefault(saved).enabled)
-    }
-
-    // The window dialog only offers hours that keep start < end, so a stored window
-    // that breaks it (hand-edited or imported data) has to read as something usable.
-    @Test
-    fun hourlyOrDefault_invertedWindow_fallsBackToDefaultWindow() {
-        val saved = listOf(Reminder("21:00", 21, 0, "hourly", true, endHour = 8))
-        val r = Reminder.hourlyOrDefault(saved)
-        assertEquals(DEFAULT_REMINDER_START_HOUR, r.hour)
-        assertEquals("08:00", r.time)
-        assertEquals(DEFAULT_REMINDER_END_HOUR, r.endHour)
-    }
-
-    @Test
-    fun hourlyOrDefault_emptyWindow_fallsBackToDefaultWindow() {
-        val saved = listOf(Reminder("20:00", 20, 0, "hourly", true, endHour = 20))
-        assertEquals(DEFAULT_REMINDER_START_HOUR, Reminder.hourlyOrDefault(saved).hour)
-    }
-
-    @Test
-    fun hourlyOrDefault_missingEndHour_pastDefaultEnd_fallsBackToDefaultWindow() {
-        val saved = listOf(Reminder("22:00", 22, 0, "hourly", true))
-        val r = Reminder.hourlyOrDefault(saved)
-        assertEquals(DEFAULT_REMINDER_START_HOUR, r.hour)
-        assertEquals(DEFAULT_REMINDER_END_HOUR, r.endHour)
-    }
-
-    @Test
-    fun hourlyOrDefault_invertedWindow_stillKeepsDisabledState() {
-        val saved = listOf(Reminder("21:00", 21, 0, "hourly", false, endHour = 8))
-        assertFalse(Reminder.hourlyOrDefault(saved).enabled)
-    }
-
-    @Test
-    fun hourlyOrDefault_alwaysReturnsUsableWindow() {
-        assertTrue(Reminder.hourlyOrDefault(emptyList()).let { it.endHour > it.hour })
-    }
-
-    // ─── withHourlyWindow ─────────────────────────────────────────
-
-    @Test
-    fun withHourlyWindow_replacesWindowAndTimeLabel() {
-        val saved = listOf(Reminder("08:00", 8, 0, "hourly", true, endHour = 20))
-        val hourly = Reminder.withHourlyWindow(saved, 7, 23).single()
-        assertEquals("07:00", hourly.time)
-        assertEquals(7, hourly.hour)
-        assertEquals(0, hourly.minute)
-        assertEquals(23, hourly.endHour)
-        assertEquals("hourly", hourly.type)
-    }
-
-    @Test
-    fun withHourlyWindow_keepsCustomRemindersUntouched() {
-        val custom = listOf(
-            Reminder("09:30", 9, 30, "daily", true),
-            Reminder("22:00", 22, 0, "onetime", false)
+    fun defaultReminder_isIndistinguishableFromAHandMadeOne() {
+        assertEquals(
+            Reminder("07:00", 7, 0, Reminder.TYPE_DAILY, true, intervalHours = 1),
+            Reminder.defaultReminder(7)
         )
-        val saved = custom + Reminder("08:00", 8, 0, "hourly", true, endHour = 20)
-
-        val result = Reminder.withHourlyWindow(saved, 6, 22)
-
-        assertEquals(3, result.size)
-        assertTrue(result.containsAll(custom))
-        assertEquals(1, result.count { it.type == "hourly" })
     }
 
     @Test
-    fun withHourlyWindow_preservesEnabledState() {
-        val saved = listOf(Reminder("08:00", 8, 0, "hourly", false, endHour = 20))
-        assertFalse(Reminder.withHourlyWindow(saved, 6, 22).single().enabled)
+    fun defaultReminder_followsTheGetUpHour() {
+        assertEquals("06:00", Reminder.defaultReminder(6).time)
+    }
+
+    // ─── legacyHourlyWindow ───────────────────────────────────────
+
+    @Test
+    fun legacyHourlyWindow_readsTheWindowOffTheHourlyEntry() {
+        val saved = setOf("06:00|hourly|true|22", "09:30|daily|true")
+        assertEquals(6 to 22, Reminder.legacyHourlyWindow(saved))
     }
 
     @Test
-    fun withHourlyWindow_noExistingHourly_addsEnabledOne() {
-        val saved = listOf(Reminder("09:30", 9, 30, "daily", true))
-        val result = Reminder.withHourlyWindow(saved, 6, 22)
-        assertEquals(2, result.size)
-        assertTrue(result.single { it.type == "hourly" }.enabled)
+    fun legacyHourlyWindow_noneStored_isNull() {
+        assertNull(Reminder.legacyHourlyWindow(null))
+        assertNull(Reminder.legacyHourlyWindow(emptySet()))
+        assertNull(Reminder.legacyHourlyWindow(setOf("09:30|daily|true|-1|2")))
     }
 
     @Test
-    fun withHourlyWindow_collapsesDuplicateHourlyEntries() {
-        val saved = listOf(
-            Reminder("08:00", 8, 0, "hourly", true, endHour = 20),
-            Reminder("09:00", 9, 0, "hourly", true, endHour = 21)
+    fun legacyHourlyWindow_missingOrMalformedEndHour_isNull() {
+        assertNull(Reminder.legacyHourlyWindow(setOf("06:00|hourly|true")))
+        assertNull(Reminder.legacyHourlyWindow(setOf("06:00|hourly|true|x")))
+    }
+
+    // Migration writes it through as-is; usableWindow is what makes it safe on read.
+    @Test
+    fun legacyHourlyWindow_invertedWindow_readsAsDefaults() {
+        val (start, end) = Reminder.legacyHourlyWindow(setOf("21:00|hourly|true|8"))!!
+        assertEquals(
+            DEFAULT_REMINDER_START_HOUR to DEFAULT_REMINDER_END_HOUR,
+            usableWindow(start, end)
         )
-        assertEquals(1, Reminder.withHourlyWindow(saved, 6, 22).size)
     }
 
+    // The entry is left alone by the migration, so it has to keep reading correctly.
     @Test
-    fun withHourlyWindow_roundTripsThroughPrefsStrings() {
-        val saved = listOf(
-            Reminder("09:30", 9, 30, "daily", true),
-            Reminder("08:00", 8, 0, "hourly", true, endHour = 20)
-        )
-        val stored = Reminder.withHourlyWindow(saved, 7, 23).map { it.toPrefsString() }.toSet()
-        val hourly = Reminder.hourlyOrDefault(Reminder.parseAll(stored))
-        assertEquals(7, hourly.hour)
-        assertEquals(23, hourly.endHour)
-        assertEquals(2, Reminder.parseAll(stored).size)
+    fun legacyEntry_survivesMigrationUnrewritten() {
+        val r = Reminder.parseAll(setOf("06:00|hourly|false|22")).single()
+        assertEquals("06:00", r.time)   // the alarm key, which must not change
+        assertEquals(1, r.intervalHours)
+        assertFalse(r.enabled)
     }
 
     // ─── parseAll ─────────────────────────────────────────────────
@@ -298,8 +210,8 @@ class ReminderTest {
 
     @Test
     fun parseAll_skipsMalformedEntries() {
-        val parsed = Reminder.parseAll(setOf("08:00|hourly|true|20", "garbage", "0800|daily|true"))
+        val parsed = Reminder.parseAll(setOf("08:00|daily|true", "garbage", "0800|daily|true"))
         assertEquals(1, parsed.size)
-        assertEquals("hourly", parsed.single().type)
+        assertEquals("08:00", parsed.single().time)
     }
 }

@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import androidx.core.app.NotificationCompat
-import java.util.Calendar
 
 class ReminderReceiver : BroadcastReceiver() {
 
@@ -19,33 +18,26 @@ class ReminderReceiver : BroadcastReceiver() {
     fun onReceiveWithPrefs(context: Context, intent: Intent, prefs: SharedPreferences) {
         val reminderTime = intent.getStringExtra("reminder_time") ?: return
 
-        // Prefs are the source of truth, so the alarm carries only its time label and
-        // everything else is looked up. One reschedule path covers every type; nothing
-        // to look up means the reminder is gone, so there is nothing to fire either.
-        val reminder = Reminder.parseAll(prefs.getStringSet("reminders_v3", emptySet()))
-            .firstOrNull { it.time == reminderTime } ?: return
+        // Alarms keep firing on an install that is never reopened, and rescheduling below
+        // reads the window — so the migration runs here as well as in MainActivity.
+        Reminder.migrateLegacyHourly(prefs)
 
-        // Reschedule first so the chain never breaks regardless of the notification
-        // toggle. One-time reminders are the exception — they fire once and stay off.
-        if (reminder.enabled && reminder.type != Reminder.TYPE_ONETIME) {
-            ReminderScheduler.schedule(context, reminder)
-        }
+        // Prefs are the source of truth, so the alarm carries only its time label and
+        // everything else is looked up. Nothing to look up means the reminder is gone,
+        // so there is nothing to fire either.
+        val saved = Reminder.parseAll(prefs.getStringSet("reminders_v3", emptySet()))
+        val reminder = saved.firstOrNull { it.time == reminderTime } ?: return
+
+        // Reschedule first so the chain never breaks regardless of the notification toggle.
+        if (reminder.enabled && !reminder.isOneTime) ReminderScheduler.schedule(context, reminder)
 
         // Respect the global notifications toggle
         if (!prefs.getBoolean("notifications_enabled", false)) return
 
-        // Piggyback: refresh all other enabled reminders so a dropped alarm is recovered
-        // within the next hourly firing cycle rather than waiting for a reboot.
-        Reminder.parseAll(prefs.getStringSet("reminders_v3", emptySet()))
-            .filter { it.enabled }
+        // Piggyback: refresh the others so a dropped alarm is recovered on the next
+        // firing rather than waiting for a reboot.
+        saved.filter { it !== reminder && it.enabled && !it.isOneTime }
             .forEach { ReminderScheduler.schedule(context, it) }
-
-        // For hourly: only notify within the window. Repeating reminders need no such
-        // check — their fire times are already bounded when scheduled.
-        if (reminder.isHourly) {
-            val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-            if (currentHour !in reminder.hour..reminder.endHour) return
-        }
 
         // Read today's intake and goal (shared by suppression check + progress bar)
         val savedDate = prefs.getString("date", "")
@@ -54,11 +46,9 @@ class ReminderReceiver : BroadcastReceiver() {
         val personalGoal = prefs.getInt("personal_goal_ml", 0)
         val goal = if (personalGoal > 0) personalGoal else prefs.getInt("goal_ml", 1500)
         val unit = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
+        val goalReached = goal > 0 && intakeToday >= goal
 
-        // Suppress notification if today's goal has already been reached
-        if (prefs.getBoolean("stop_notifications_on_goal", false)) {
-            if (goal > 0 && intakeToday >= goal) return
-        }
+        if (goalReached && prefs.getBoolean("stop_notifications_on_goal", false)) return
 
         // Show the notification
         val notificationManager =
@@ -72,7 +62,6 @@ class ReminderReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val goalReached = goal > 0 && intakeToday >= goal
         val builder = NotificationCompat.Builder(context, "water_reminder_channel")
             .setSmallIcon(R.drawable.ic_water_drop)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -99,13 +88,12 @@ class ReminderReceiver : BroadcastReceiver() {
 
         notificationManager.notify(reminderTime.hashCode(), notification)
 
-        if (reminder.type == Reminder.TYPE_ONETIME) {
+        if (reminder.isOneTime) {
             // Mark as disabled in prefs so the UI shows it as off
-            val updated = Reminder.parseAll(prefs.getStringSet("reminders_v3", emptySet()))
-                .map { if (it.time == reminderTime) it.copy(enabled = false) else it }
-                .map { it.toPrefsString() }
-                .toSet()
-            prefs.edit().putStringSet("reminders_v3", updated).apply()
+            val updated = saved.map { if (it === reminder) it.copy(enabled = false) else it }
+            prefs.edit()
+                .putStringSet("reminders_v3", updated.map { it.toPrefsString() }.toSet())
+                .apply()
         }
     }
 }

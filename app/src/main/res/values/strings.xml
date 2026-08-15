@@ -101,7 +101,6 @@
     <string name="reminder_setup_off_to_bed">Go to bed at %s</string>
     <string name="reminder_setup_error_window_title">Check your times</string>
     <string name="reminder_setup_error_window">Bedtime must be after the time your day begins.</string>
-    <string name="dialog_reminder_window_conflict">You already have your own reminder at %s. Pick a different start hour.</string>
 
 
     <!-- Notifications -->
@@ -113,7 +112,7 @@
     <string name="settings_notifications_disabled">Disabled</string>
     <string name="settings_section_reminder_schedule">Reminder schedule</string>
     <string name="settings_row_reminder_window">Reminder window</string>
-    <string name="settings_reminder_window_value">Every hour from %1$s to %2$s</string>
+    <string name="settings_reminder_window_value">Repeats between %1$s and %2$s</string>
 
 
     <!-- Reminders -->
@@ -125,12 +124,10 @@
     <string name="dialog_reminder_trigger_title">How often?</string>
     <string name="reminder_trigger_onetime">One-time</string>
     <string name="reminder_trigger_daily">Daily</string>
-    <string name="reminder_trigger_builtin_hourly">Hourly</string>
     <plurals name="reminder_trigger_every_hours">
         <item quantity="one">Every hour</item>
         <item quantity="other">Every %d hours</item>
     </plurals>
-    <string name="reminder_repeats_until">Repeats until %s</string>
 
 
     <!-- Help rows -->
