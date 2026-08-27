@@ -14,6 +14,42 @@
     <color name="brand_orange">#FF6F00</color>
     <color name="brand_red">#F44336</color>
     <color name="brand_blue_light">#90CAF9</color>
+    <color name="icon_backdrop_blue">#E3F2FD</color>
+
+    <!-- Dark Blue theme surfaces (navy rather than neutral grey) -->
+    <color name="blue_dark_page_background">#08213D</color>
+    <color name="blue_dark_toolbar">#0F3D6B</color>
+    <color name="blue_dark_icon_backdrop">#1D5490</color>
+    <color name="blue_dark_surface_lowest">#051829</color>
+    <color name="blue_dark_surface_low">#0C2B4C</color>
+    <color name="blue_dark_surface">#11375E</color>
+    <color name="blue_dark_surface_high">#164575</color>
+    <color name="blue_dark_surface_highest">#1C548C</color>
+    <color name="blue_dark_on_surface">#E6F0FA</color>
+    <color name="blue_dark_on_surface_variant">#AFC7DE</color>
+    <color name="blue_dark_outline">#4E7BA6</color>
+    <color name="blue_dark_outline_variant">#2A5480</color>
+    <color name="blue_dark_quick_remove_fg">#9BC8F5</color>
+    <color name="blue_dark_quick_remove_bg">#17457A</color>
+
+    <!-- Light Blue theme surfaces (blue-tinted rather than white / neutral grey) -->
+    <color name="blue_light_page_background">#DCEBF9</color>
+    <color name="blue_light_icon_backdrop">#B7D8F5</color>
+    <color name="blue_light_surface_lowest">#F0F7FD</color>
+    <color name="blue_light_surface_low">#E7F1FB</color>
+    <color name="blue_light_surface">#D3E5F7</color>
+    <color name="blue_light_surface_high">#C3DBF2</color>
+    <color name="blue_light_surface_highest">#B0CEEC</color>
+    <color name="blue_light_on_surface">#0D2440</color>
+    <color name="blue_light_on_surface_variant">#33506E</color>
+    <color name="blue_light_outline">#6A8AAC</color>
+    <color name="blue_light_outline_variant">#A8C4DF</color>
+    <color name="blue_light_toolbar">#1565C0</color>
+    <color name="blue_light_quick_remove_bg">#A9CEF0</color>
+    <color name="blue_light_quick_remove_fg">#0A4D8C</color>
+
+    <!-- Quick remove chips (the add chips use brand_blue on white) -->
+    <color name="quick_remove_bg">#E3F2FD</color>
 
     <!-- Swipe-action backgrounds -->
     <color name="swipe_edit_bg">#888888</color>

@@ -78,6 +78,9 @@ dependencies {
     implementation("com.getkeepsafe.taptargetview:taptargetview:1.13.3")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     testImplementation(libs.junit)
+    // Real org.json so the backup round trip can be tested on the JVM; the android.jar
+    // stub in unit tests throws on every method.
+    testImplementation(libs.json)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }

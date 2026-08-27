@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:paddingHorizontal="24dp"
+    android:paddingVertical="12dp">
+
+    <!-- Drop filled blue on days that reached the minimum, pale on the rest — the chart's
+         two-tone reading, carried by an icon instead of a second row of chrome. -->
+    <ImageView
+        android:id="@+id/icon_day"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/ic_water_drop"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/text_day_date"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="14dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="16sp"
+        tools:text="Aug 17" />
+
+    <TextView
+        android:id="@+id/text_day_total"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        tools:text="1,800 ml" />
+
+    <ImageView
+        android:id="@+id/icon_day_goal_met"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="8dp"
+        android:src="@drawable/ic_check"
+        android:tint="@color/brand_blue"
+        android:importantForAccessibility="no"
+        tools:visibility="visible" />
+
+</LinearLayout>

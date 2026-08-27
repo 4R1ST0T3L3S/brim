@@ -1,16 +1,21 @@
 package com.david.waterreminder
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.res.ColorStateList
-import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
+import androidx.annotation.AttrRes
+import androidx.annotation.ColorInt
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import com.david.waterreminder.databinding.FragmentWaterBinding
@@ -18,38 +23,62 @@ import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
-import java.time.LocalDate
+import com.google.android.material.color.MaterialColors
 
 class FirstFragment : Fragment() {
 
     companion object {
-        val FIXED_ML = listOf(100, 200, 250, 330, 500)
+        /** Amounts drawn as a glass instead of a drop — the small sips. */
         val AMOUNT_ICONS = mapOf(
             100 to R.drawable.ic_glass_half,
             200 to R.drawable.ic_glass_full
         )
-        const val ADD_BG = "#2196F3"
-        const val ADD_FG = "#FFFFFF"
-        const val REM_BG = "#E3F2FD"
-        const val REM_FG = "#2196F3"
-        const val TAG_CUSTOM_SLOT = "custom_slot"
+        const val TAG_ADD_SLOT = "add_slot"
+
+        /** Bottles that still fit one row at full size; past this the row wraps at 24dp bottles. */
+        const val BOTTLES_PER_ROW = 6
+        const val BOTTLES_PER_ROW_COMPACT = 10
     }
 
     private var _binding: FragmentWaterBinding? = null
     private val binding get() = _binding!!
 
     private var currentMl = 0
-    private val goalMl = 1500
-    private var customQuickMl = 0
+    private val goalMl = DEFAULT_DAILY_GOAL_ML
+    /** The amounts both quick rows are built from; empty is a valid state (all buttons removed). */
+    private var quickAmounts: List<Int> = DEFAULT_QUICK_AMOUNTS_ML
+    /** The bottle icons currently in the row; rebuilt only when the goal changes their number. */
+    private var bottleViews: List<ImageView> = emptyList()
 
     private val prefs by lazy {
-        requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        requireContext().waterPrefs()
     }
     // Separate prefs file excluded from backup so the tour always runs after a reinstall.
     private val tourPrefs by lazy {
         requireContext().getSharedPreferences("tour_prefs", Context.MODE_PRIVATE)
     }
     private val unit get() = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
+
+    /**
+     * Water logged from a notification button lands in prefs behind this screen's back, so the
+     * bottles follow it while the phone is awake instead of waiting for the next onResume.
+     *
+     * Held in a field on purpose: SharedPreferences keeps its listeners weakly, and a lambda
+     * passed straight to register() is collectible the moment the call returns. Filtered to the
+     * one key because a single logIntake commit touches several, and deliberately does not
+     * celebrate — the popups belong to the tap that caused them, in addWater.
+     */
+    private val intakeListener =
+        SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            // Note: this also fires for this screen's own writes, so addWater/removeWater
+            // redraw a second time. That is deliberate — both passes land inside one click,
+            // before any frame is drawn, and the redundant one is nearly free because the
+            // views all early-out on unchanged values. Dropping the explicit redraw would make
+            // the home screen depend on this listener being registered.
+            if (key != "intake_ml" || _binding == null) return@OnSharedPreferenceChangeListener
+            currentMl = prefs.getInt("intake_ml", 0).asDayIntake()
+            updateIntakeUI()
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -60,8 +89,8 @@ class FirstFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        customQuickMl = prefs.getInt("custom_quick_ml", 0)
-        rebuildQuickButtons()
+        // The rows are built in onResume, which still runs before the first draw — and so
+        // before the tour below measures its targets.
         // Run the guide tour only on the very first launch.
         // doOnPreDraw waits until layout is finished so all targets have positions.
         if (!tourPrefs.getBoolean("tour_done", false)) {
@@ -73,63 +102,46 @@ class FirstFragment : Fragment() {
         super.onResume()
         loadAndResetIfNewDay()
         updateIntakeUI()
-        rebuildQuickButtons()   // refresh labels if unit changed in Settings
+        quickAmounts = prefs.quickAmounts()
+        rebuildQuickButtons()   // refresh if the unit or the amounts changed elsewhere
+        prefs.registerOnSharedPreferenceChangeListener(intakeListener)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        prefs.unregisterOnSharedPreferenceChangeListener(intakeListener)
     }
 
     // ─── Day reset / load ─────────────────────────────────────────
 
     private fun loadAndResetIfNewDay() {
-        val today = LocalDate.now().toString()
-        val yesterday = LocalDate.now().minusDays(1).toString()
-        val savedDate = prefs.getString("date", "")
-
-        if (savedDate != today) {
-            if (!savedDate.isNullOrEmpty()) {
-                val previousIntake = prefs.getInt("intake_ml", 0)
-                prefs.edit().putInt("history_$savedDate", previousIntake).apply()
-            }
-            val goalMetPreviousDay = prefs.getBoolean("goal_met", false)
-            val streakBroken = savedDate != yesterday || !goalMetPreviousDay
-            val newStreak = if (streakBroken) 0 else prefs.getInt("streak", 0)
-            currentMl = 0
-            prefs.edit()
-                .putString("date", today)
-                .putInt("intake_ml", 0)
-                .putBoolean("goal_met", false)
-                .putInt("streak", newStreak)
-                .apply()
-        } else {
-            currentMl = prefs.getInt("intake_ml", 0)
-        }
+        // The rollover itself lives in Units.kt, so the History screen's day editor can lean on the
+        // same "which day is intake_ml about" rule before it touches today's number.
+        prefs.rollOverDayIfNeeded()
+        // Clamped on the way in too: prefs can arrive from a backup restore or an imported file.
+        currentMl = prefs.getInt("intake_ml", 0).asDayIntake()
     }
 
     // ─── Water add / remove ───────────────────────────────────────
 
     private fun addWater(ml: Int) {
-        val personalGoal = prefs.getInt("personal_goal_ml", 0)
-        val wasGoalMet         = currentMl >= goalMl
-        val wasPersonalGoalMet = personalGoal > 0 && currentMl >= personalGoal
+        // The arithmetic and the writes live in Intake.kt, shared with the notification
+        // buttons — this side is only the celebrating, which needs a fragment to do.
+        val result = prefs.logIntake(ml)
+        // No BackupManager call: MainActivity keeps a listener on water_prefs for as long as it
+        // is started, and a resumed fragment is always inside that window.
+        currentMl = result.newTotal
 
-        currentMl += ml
-
-        if (!wasGoalMet && currentMl >= goalMl) {
-            val newStreak = prefs.getInt("streak", 0) + 1
-            prefs.edit()
-                .putInt("streak", newStreak)
-                .putBoolean("goal_met", true)
-                .apply()
-            showGoalReachedPopup(newStreak)
+        if (result.crossedDailyGoal) showGoalReachedPopup(result.streak)
+        if (result.crossedPersonalGoal) {
+            showPersonalGoalReachedPopup(prefs.getInt("personal_goal_ml", 0))
         }
 
-        if (personalGoal > 0 && !wasPersonalGoalMet && currentMl >= personalGoal) {
-            showPersonalGoalReachedPopup(personalGoal)
-        }
-
-        saveIntake()
         updateIntakeUI()
     }
 
     private fun showGoalReachedPopup(streak: Int) {
+        if (!prefs.celebrationsEnabled()) return
         val streakLine = if (streak > 1) "\n🔥 $streak day streak — keep it up!" else ""
         AlertDialog.Builder(requireContext())
             .setTitle(getString(R.string.dialog_minimum_reached_title))
@@ -139,6 +151,7 @@ class FirstFragment : Fragment() {
     }
 
     private fun showPersonalGoalReachedPopup(personalGoal: Int) {
+        if (!prefs.celebrationsEnabled()) return
         AlertDialog.Builder(requireContext())
             .setTitle(getString(R.string.dialog_personal_goal_reached_title))
             .setMessage(getString(R.string.dialog_personal_goal_reached_message, personalGoal.fmt(unit)))
@@ -147,26 +160,10 @@ class FirstFragment : Fragment() {
     }
 
     private fun removeWater(ml: Int) {
-        val wasGoalMet = currentMl >= goalMl
-        currentMl = (currentMl - ml).coerceAtLeast(0)
-        if (wasGoalMet && currentMl < goalMl) {
-            val reducedStreak = (prefs.getInt("streak", 0) - 1).coerceAtLeast(0)
-            prefs.edit()
-                .putInt("streak", reducedStreak)
-                .putBoolean("goal_met", false)
-                .apply()
-        }
-        saveIntake()
+        // Same path as adding, negated — including dropping the streak back on the way under
+        // the goal. No popups: taking water off is never a celebration.
+        currentMl = prefs.logIntake(-ml).newTotal
         updateIntakeUI()
-    }
-
-    private fun saveIntake() {
-        val today = LocalDate.now().toString()
-        prefs.edit()
-            .putInt("intake_ml", currentMl)
-            .putInt("history_$today", currentMl)   // always persist under dated key so data
-            .apply()                                 // survives reinstalls and backup/restore
-        android.app.backup.BackupManager(requireContext()).dataChanged()
     }
 
     private fun updateIntakeUI() {
@@ -181,32 +178,80 @@ class FirstFragment : Fragment() {
         // Congratulations banner is tied to the fixed daily goal
         binding.textGoalReached.visibility = if (currentMl >= goalMl) View.VISIBLE else View.GONE
 
-        updateBottlesUI()
+        updateBottlesUI(activeGoal)
     }
 
-    private fun updateBottlesUI() {
-        val mlPerBottle = 500
-        val bottles = listOf(binding.bottle1, binding.bottle2, binding.bottle3, binding.bottle4)
-        bottles.forEachIndexed { index, imageView ->
-            val bottleMin = index * mlPerBottle
-            val fill = (currentMl - bottleMin).coerceIn(0, mlPerBottle)
-            val icon = when ((fill / 100).coerceIn(0, 5)) {
-                0    -> R.drawable.ic_bottle_empty
-                1    -> R.drawable.ic_bottle_quarter
-                2    -> R.drawable.ic_bottle_half
-                3    -> R.drawable.ic_bottle_three_quarters
-                4    -> R.drawable.ic_bottle_almost_full
-                else -> R.drawable.ic_bottle_full
-            }
-            imageView.setImageResource(icon)
+    /**
+     * A bottle per 500 ml of the active goal, so a bigger goal simply gets more bottles and the
+     * whole row reads full once the goal is reached. Beyond [BOTTLES_PER_ROW] the row wraps and the
+     * bottles shrink, which keeps even a 20-bottle goal on screen.
+     */
+    private fun updateBottlesUI(activeGoal: Int) {
+        val fillSteps = bottleFillSteps(currentMl, activeGoal)
+        if (bottleViews.size != fillSteps.size) rebuildBottles(fillSteps.size)
+        bottleViews.forEachIndexed { index, imageView ->
+            imageView.setImageResource(bottleIcon(fillSteps[index]))
         }
     }
 
-    // ─── Custom quick slot ────────────────────────────────────────
+    private fun rebuildBottles(count: Int) {
+        val dp = resources.displayMetrics.density
+        val compact = count > BOTTLES_PER_ROW
+        val sizePx = ((if (compact) 24f else 36f) * dp).toInt()
+        val gapPx  = ((if (compact) 6f else 12f) * dp).toInt()
+        // Balance the rows (13 bottles → 7 + 6, not 10 + 3) rather than filling each to the brim.
+        val rows = (count + BOTTLES_PER_ROW_COMPACT - 1) / BOTTLES_PER_ROW_COMPACT
+        val perRow = (count + rows - 1) / rows
 
-    fun applyCustomQuickMl(value: Int) {
-        customQuickMl = value
-        prefs.edit().putInt("custom_quick_ml", customQuickMl).apply()
+        val tint = ColorStateList.valueOf(
+            ContextCompat.getColor(requireContext(), R.color.brand_blue)
+        )
+        val views = List(count) { index ->
+            ImageView(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(sizePx, sizePx).apply {
+                    if (index % perRow > 0) marginStart = gapPx
+                }
+                imageTintList = tint
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            }
+        }
+
+        binding.containerBottles.removeAllViews()
+        views.chunked(perRow).forEachIndexed { rowIndex, rowViews ->
+            val row = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { if (rowIndex > 0) topMargin = gapPx }
+            }
+            rowViews.forEach(row::addView)
+            binding.containerBottles.addView(row)
+        }
+        bottleViews = views
+    }
+
+    private fun bottleIcon(fillStep: Int): Int = when (fillStep) {
+        0    -> R.drawable.ic_bottle_empty
+        1    -> R.drawable.ic_bottle_quarter
+        2    -> R.drawable.ic_bottle_half
+        3    -> R.drawable.ic_bottle_three_quarters
+        4    -> R.drawable.ic_bottle_almost_full
+        else -> R.drawable.ic_bottle_full
+    }
+
+    // ─── Quick amounts ────────────────────────────────────────────
+
+    /** Persist [amounts] (sanitized on the way in) and rebuild both rows. */
+    private fun applyQuickAmounts(amounts: List<Int>) {
+        quickAmounts = prefs.setQuickAmounts(amounts)
+        rebuildQuickButtons()
+    }
+
+    /** Called by SettingsFragment after it resets the amounts to the defaults. */
+    fun onQuickAmountsChanged() {
+        quickAmounts = prefs.quickAmounts()
         rebuildQuickButtons()
     }
 
@@ -215,62 +260,68 @@ class FirstFragment : Fragment() {
     private fun rebuildQuickButtons() {
         val dp = resources.displayMetrics.density
 
-        binding.containerQuickAdd.removeAllViews()
-        addSortedItems().forEach { (ml, isCustom) ->
-            val iconRes = AMOUNT_ICONS[ml] ?: R.drawable.ic_water_drop
-            val btn = if (isCustom && ml == 0) makeCustomSlotButton(dp)
-                      else makeAmountButton("+${ml.fmt(unit)}", ADD_BG, ADD_FG, dp,
-                               iconRes = iconRes,
-                               onClick = { if (isCustom) addWater(customQuickMl) else addWater(ml) },
-                               onLongClick = if (isCustom) ::showCustomValueDialog else null)
-            btn.tag = if (isCustom && ml == 0) TAG_CUSTOM_SLOT else ml
-            binding.containerQuickAdd.addView(btn)
+        val addBg = themeColor(R.attr.quickAddBackground)
+        val addFg = themeColor(R.attr.quickAddForeground)
+
+        fillAmountRow(binding.containerQuickAdd, dp, "+", addBg, addFg,
+            onClick = ::addWater, onLongClick = { ml -> showAmountDialog(existingMl = ml) })
+        // The "+" slot always trails the amounts, so it stays put as they are edited. Once the
+        // row is full it disappears until an amount is removed.
+        if (quickAmounts.size < QUICK_AMOUNTS_MAX) {
+            binding.containerQuickAdd.addView(makeAddSlotButton(dp, addBg, addFg))
         }
 
-        binding.containerQuickRemove.removeAllViews()
-        removeSortedItems().forEach { (ml, _) ->
-            val iconRes = AMOUNT_ICONS[ml] ?: R.drawable.ic_water_drop
-            binding.containerQuickRemove.addView(
-                makeAmountButton("-${ml.fmt(unit)}", REM_BG, REM_FG, dp,
-                    iconRes = iconRes, onClick = { removeWater(ml) })
+        fillAmountRow(
+            binding.containerQuickRemove, dp, "-",
+            themeColor(R.attr.quickRemoveBackground), themeColor(R.attr.quickRemoveForeground),
+            onClick = ::removeWater
+        )
+
+        // Nothing to subtract with once every amount is gone — hide the section rather than
+        // leaving a labelled empty row behind.
+        val removeVisibility = if (quickAmounts.isEmpty()) View.GONE else View.VISIBLE
+        binding.textQuickRemoveLabel.visibility = removeVisibility
+        binding.containerQuickRemove.visibility = removeVisibility
+    }
+
+    /** Resolves a theme color attribute against the current view's theme. */
+    @ColorInt
+    private fun themeColor(@AttrRes attr: Int): Int = MaterialColors.getColor(requireView(), attr)
+
+    /** Refills [container] with one button per amount, each tagged with its ml value. */
+    private fun fillAmountRow(
+        container: ViewGroup, dp: Float, prefix: String, @ColorInt bg: Int, @ColorInt fg: Int,
+        onClick: (Int) -> Unit, onLongClick: ((Int) -> Unit)? = null
+    ) {
+        val unit = unit   // a prefs read per button otherwise, and this runs twice per rebuild
+        container.removeAllViews()
+        quickAmounts.forEach { ml ->
+            container.addView(
+                makeAmountButton("$prefix${ml.fmt(unit)}", bg, fg, dp,
+                    iconRes = AMOUNT_ICONS[ml] ?: R.drawable.ic_water_drop,
+                    onClick = { onClick(ml) },
+                    onLongClick = onLongClick?.let { handler -> { handler(ml) } }
+                ).apply { tag = ml }
             )
         }
     }
 
-    /** Add row: circle "+" first when no value; otherwise sorted by ml. */
-    private fun addSortedItems(): List<Pair<Int, Boolean>> {
-        val fixed = FIXED_ML.map { it to false }
-        return when {
-            customQuickMl == 0          -> fixed + listOf(0 to true)
-            customQuickMl !in FIXED_ML  -> (fixed + (customQuickMl to true)).sortedBy { it.first }
-            else                        -> fixed + (customQuickMl to true)
-        }
-    }
-
-    /** Remove row: fixed values + custom (only when set and unique). */
-    private fun removeSortedItems(): List<Pair<Int, Boolean>> {
-        val fixed = FIXED_ML.map { it to false }
-        return if (customQuickMl > 0 && customQuickMl !in FIXED_ML)
-            (fixed + (customQuickMl to true)).sortedBy { it.first }
-        else fixed
-    }
-
     /** Button for a specific ml amount — used in both add and remove rows. */
     private fun makeAmountButton(
-        label: String, bgHex: String, fgHex: String, dp: Float,
+        label: String, @ColorInt bg: Int, @ColorInt fg: Int, dp: Float,
         iconRes: Int = R.drawable.ic_water_drop,
         onClick: () -> Unit, onLongClick: (() -> Unit)? = null
     ) = MaterialButton(requireContext()).apply {
         text = label
-        setTextColor(Color.parseColor(fgHex))
-        backgroundTintList = ColorStateList.valueOf(Color.parseColor(bgHex))
+        setTextColor(fg)
+        backgroundTintList = ColorStateList.valueOf(bg)
         cornerRadius = (24 * dp).toInt()
         insetTop = 0; insetBottom = 0
         textSize = 11f
         isSingleLine = true
         setPadding((8 * dp).toInt(), 0, (8 * dp).toInt(), 0)
         setIconResource(iconRes)
-        iconTint = ColorStateList.valueOf(Color.parseColor(fgHex))
+        iconTint = ColorStateList.valueOf(fg)
         iconPadding = (2 * dp).toInt()
         iconSize = (12 * dp).toInt()
         iconGravity = ICON_GRAVITY_TEXT_START
@@ -282,13 +333,15 @@ class FirstFragment : Fragment() {
         onLongClick?.let { lc -> setOnLongClickListener { lc(); true } }
     }
 
-    /** Placeholder shown in the add row when no custom value has been set yet. */
-    private fun makeCustomSlotButton(dp: Float): MaterialButton {
+    /** The circular "+" closing the add row; opens the dialog that adds a new amount. */
+    private fun makeAddSlotButton(dp: Float, @ColorInt bg: Int, @ColorInt fg: Int): MaterialButton {
         val size = (40 * dp).toInt()
         return MaterialButton(requireContext()).apply {
             text = "+"
-            setTextColor(Color.parseColor(ADD_FG))
-            backgroundTintList = ColorStateList.valueOf(Color.parseColor(ADD_BG))
+            tag = TAG_ADD_SLOT
+            contentDescription = getString(R.string.dialog_add_amount_title)
+            setTextColor(fg)
+            backgroundTintList = ColorStateList.valueOf(bg)
             cornerRadius = size / 2
             insetTop = 0; insetBottom = 0
             textSize = 16f
@@ -297,37 +350,51 @@ class FirstFragment : Fragment() {
             iconSize = 0
             layoutParams = LinearLayout.LayoutParams(size, size)
                 .apply { marginEnd = (8 * dp).toInt(); bottomMargin = (8 * dp).toInt() }
-            setOnClickListener { showCustomValueDialog() }
-            setOnLongClickListener { showCustomValueDialog(); true }
+            setOnClickListener { showAmountDialog(existingMl = null) }
+            setOnLongClickListener { showAmountDialog(existingMl = null); true }
         }
     }
 
-    private fun showCustomValueDialog() {
+    /**
+     * One dialog for both jobs: adding an amount ([existingMl] null) and editing an existing one,
+     * which can also be removed from here — so every button on the row, shipped or self-added,
+     * is changed the same way.
+     */
+    private fun showAmountDialog(existingMl: Int?) {
         val editText = EditText(requireContext()).apply {
             inputType = InputType.TYPE_CLASS_NUMBER or
-                if (unit == UNIT_CL) InputType.TYPE_NUMBER_FLAG_DECIMAL else 0
-            hint = "Amount in $unit (e.g. ${180.toDisplay(unit)})"
+                if (isDecimalUnit(unit)) InputType.TYPE_NUMBER_FLAG_DECIMAL else 0
+            hint = getString(R.string.dialog_amount_hint, unit, 180.toDisplay(unit))
             setPadding(48, 32, 48, 32)
-            if (customQuickMl > 0) setText(customQuickMl.toDisplay(unit))
+            if (existingMl != null) { setText(existingMl.toDisplay(unit)); selectAll() }
         }
         val dialog = AlertDialog.Builder(requireContext())
-            .setTitle("Custom amount")
+            .setTitle(getString(
+                if (existingMl == null) R.string.dialog_add_amount_title
+                else R.string.dialog_edit_amount_title
+            ))
             .setView(editText)
-            .setPositiveButton("Save", null)
+            .setPositiveButton(getString(R.string.dialog_save), null)
             .apply {
-                if (customQuickMl > 0) {
-                    setNeutralButton("Clear") { _, _ -> applyCustomQuickMl(0) }
+                if (existingMl != null) {
+                    setNeutralButton(getString(R.string.dialog_remove)) { _, _ ->
+                        applyQuickAmounts(quickAmounts.filterNot { it == existingMl })
+                    }
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(getString(R.string.dialog_cancel), null)
             .show()
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
             val ml = editText.text.toString().toValidCustomMl(unit)
-            if (ml != null) {
-                applyCustomQuickMl(ml)
-                dialog.dismiss()
-            } else {
-                editText.error = "Enter a value between 1 and ${CUSTOM_MAX_ML.fmt(unit)}"
+            when {
+                ml == null ->
+                    editText.error = getString(R.string.error_amount_range, CUSTOM_MAX_ML.fmt(unit))
+                ml != existingMl && ml in quickAmounts ->
+                    editText.error = getString(R.string.error_amount_duplicate)
+                else -> {
+                    applyQuickAmounts(quickAmounts.filterNot { it == existingMl } + ml)
+                    dialog.dismiss()
+                }
             }
         }
         editText.requestFocus()
@@ -368,34 +435,35 @@ class FirstFragment : Fragment() {
                     TapTarget.forView(
                         binding.containerBottles,
                         "Daily progress",
-                        "Each bottle represents 500 ml. Watch them fill up as you log your intake throughout the day."
+                        "Each bottle represents 500 ml, and together they add up to your daily goal. " +
+                            "Watch them fill up as you log your intake throughout the day."
                     ).style(radius = 110)
                 },
                 {
-                    findQuickAdd(200)?.let {
+                    // The row's first button, whatever it happens to be — pointing at a specific
+                    // amount would break once the user removes it. It has to be a single button:
+                    // a target wide enough to hold the whole row leaves the pulse ring drawn
+                    // inside the transparent hole, i.e. underneath the buttons.
+                    binding.containerQuickAdd.getChildAt(0)?.let {
                         TapTarget.forView(
-                            it, "Small sips",
-                            "Glass icons are small amounts: 100 ml (half) and 200 ml (full). Tap to log instantly."
+                            it, "Log a drink",
+                            "Tap an amount to log it instantly — a glass icon is a small sip, a " +
+                                "drop is a bigger drink. Long-press any button to change its " +
+                                "value or remove it from the row."
                         ).style()
                     }
                 },
                 {
-                    findQuickAdd(250)?.let {
+                    findQuickAdd(TAG_ADD_SLOT)?.let {
                         TapTarget.forView(
-                            it, "Bigger drinks",
-                            "Drop icons are larger amounts (250–500 ml)."
+                            it, "Your own amounts",
+                            "Tap + to add an amount of your own, up to $QUICK_AMOUNTS_MAX in total. " +
+                                "Reset them any time from Settings."
                         ).style()
                     }
                 },
                 {
-                    findQuickAdd(TAG_CUSTOM_SLOT)?.let {
-                        TapTarget.forView(
-                            it, "Your own amount",
-                            "Long-press the + button to set a custom quick-add value."
-                        ).style()
-                    }
-                },
-                {
+                    // Null once every amount has been removed — the row is empty and hidden then.
                     binding.containerQuickRemove.getChildAt(0)?.let {
                         TapTarget.forView(
                             it, "Made a mistake?",
@@ -412,10 +480,10 @@ class FirstFragment : Fragment() {
                     }
                 },
                 {
-                    activity.findViewById<View>(R.id.fab)?.let {
+                    activity.findViewById<View>(R.id.fab_reminders)?.let {
                         TapTarget.forView(
                             it, "Reminders",
-                            "Tap here, then the bell, to set up reminder times."
+                            "Tap the bell to set up reminder times."
                         ).style(tint = false)
                     }
                 },
@@ -438,6 +506,7 @@ class FirstFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        bottleViews = emptyList()   // they belong to the destroyed view tree
         _binding = null
     }
 }

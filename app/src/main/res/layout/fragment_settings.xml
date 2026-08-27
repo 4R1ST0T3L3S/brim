@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/page_background">
+    android:background="?attr/pageBackground">
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="0dp"
@@ -49,7 +49,7 @@
                 android:letterSpacing="0.08" />
 
             <include
-                android:id="@+id/row_reset_custom"
+                android:id="@+id/row_reset_quick_amounts"
                 layout="@layout/item_settings_row"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -85,7 +85,39 @@
                 android:letterSpacing="0.08" />
 
             <include
+                android:id="@+id/row_profile"
+                layout="@layout/item_settings_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp" />
+
+            <include
                 android:id="@+id/row_set_personal_goal"
+                layout="@layout/item_settings_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp" />
+
+            <include
+                android:id="@+id/row_celebrations"
+                layout="@layout/item_settings_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <!-- Section: Notifications -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/settings_section_notifications"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="12sp"
+                android:textAllCaps="true"
+                android:letterSpacing="0.08" />
+
+            <include
+                android:id="@+id/row_notifications"
                 layout="@layout/item_settings_row"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />

@@ -10,7 +10,6 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import com.david.waterreminder.databinding.FragmentDataBinding
-import org.json.JSONArray
 import org.json.JSONObject
 
 class DataFragment : BaseMenuFragment() {
@@ -22,7 +21,7 @@ class DataFragment : BaseMenuFragment() {
     private lateinit var importLauncher: ActivityResultLauncher<Array<String>>
 
     private val prefs by lazy {
-        requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        requireContext().waterPrefs()
     }
     private val tourPrefs by lazy {
         requireContext().getSharedPreferences("tour_prefs", Context.MODE_PRIVATE)
@@ -52,7 +51,7 @@ class DataFragment : BaseMenuFragment() {
         binding.rowExportData.rowTitle.text = getString(R.string.settings_export_data)
         binding.rowExportData.rowSubtitle.text = getString(R.string.settings_export_data_subtitle)
         binding.rowExportData.rowContainer.setOnClickListener {
-            exportLauncher.launch("waterreminder_backup.json")
+            exportLauncher.launch("fillmeup_backup.json")
         }
 
         binding.rowImportData.rowIcon.setImageResource(android.R.drawable.ic_menu_revert)
@@ -77,31 +76,7 @@ class DataFragment : BaseMenuFragment() {
 
     private fun writeBackup(uri: Uri) {
         try {
-            val strings = JSONObject()
-            val ints = JSONObject()
-            val booleans = JSONObject()
-            val sets = JSONObject()
-
-            prefs.all.forEach { (key, value) ->
-                when (value) {
-                    is String  -> strings.put(key, value)
-                    is Int     -> ints.put(key, value)
-                    is Boolean -> booleans.put(key, value)
-                    is Set<*>  -> {
-                        val arr = JSONArray()
-                        value.forEach { arr.put(it) }
-                        sets.put(key, arr)
-                    }
-                }
-            }
-
-            booleans.put("tour_done", tourPrefs.getBoolean("tour_done", false))
-
-            val json = JSONObject()
-                .put("strings", strings)
-                .put("ints", ints)
-                .put("booleans", booleans)
-                .put("sets", sets)
+            val json = buildBackupJson(prefs.all, tourPrefs.getBoolean(TOUR_DONE_KEY, false))
 
             requireContext().contentResolver.openOutputStream(uri)?.use { stream ->
                 stream.write(json.toString(2).toByteArray())
@@ -118,30 +93,12 @@ class DataFragment : BaseMenuFragment() {
             val content = requireContext().contentResolver.openInputStream(uri)
                 ?.bufferedReader()?.readText() ?: return
 
-            val json = JSONObject(content)
             val editor = prefs.edit().clear()
-
-            json.getJSONObject("strings").let { obj ->
-                obj.keys().forEach { key -> editor.putString(key, obj.getString(key)) }
+            applyBackupJson(JSONObject(content), editor) { done ->
+                tourPrefs.edit().putBoolean(TOUR_DONE_KEY, done).apply()
             }
-            json.getJSONObject("ints").let { obj ->
-                obj.keys().forEach { key -> editor.putInt(key, obj.getInt(key)) }
-            }
-            json.getJSONObject("booleans").let { obj ->
-                obj.keys().forEach { key ->
-                    if (key == "tour_done") tourPrefs.edit().putBoolean(key, obj.getBoolean(key)).apply()
-                    else editor.putBoolean(key, obj.getBoolean(key))
-                }
-            }
-            json.getJSONObject("sets").let { obj ->
-                obj.keys().forEach { key ->
-                    val arr = obj.getJSONArray(key)
-                    val set = (0 until arr.length()).mapTo(mutableSetOf()) { arr.getString(it) }
-                    editor.putStringSet(key, set)
-                }
-            }
-
             editor.apply()
+
             Toast.makeText(requireContext(), getString(R.string.import_success), Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             Toast.makeText(requireContext(), getString(R.string.import_failed), Toast.LENGTH_SHORT).show()

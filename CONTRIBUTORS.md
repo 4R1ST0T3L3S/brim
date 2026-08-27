@@ -1,6 +1,6 @@
 # Contributors
 
-Thanks to the people who have contributed fixes, testing, and improvements to Water Reminder.
+Thanks to the people who have contributed fixes, testing, and improvements to FillMeUp!
 
 - [numerator](https://codeberg.org/numerator)
   - Fixed integer overflow in custom amount input.

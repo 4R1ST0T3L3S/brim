@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.animation.AnimationUtils
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.navigation.findNavController
@@ -25,18 +24,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
 
-    private var fabExpanded = false
-
     private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
         BackupManager(this).dataChanged()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val prefs = getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
-        AppCompatDelegate.setDefaultNightMode(
-            prefs.getInt(PREF_THEME_MODE, DEFAULT_THEME_MODE)
-        )
+        val prefs = waterPrefs()
+        val themeMode = prefs.getInt(PREF_THEME_MODE, DEFAULT_THEME_MODE)
+        setTheme(themeStyleRes(themeMode))
+        AppCompatDelegate.setDefaultNightMode(nightModeFor(themeMode))
         super.onCreate(savedInstanceState)
+
+        Reminder.migrateLegacyHourly(prefs)
 
         createNotificationChannel()
 
@@ -52,45 +51,36 @@ class MainActivity : AppCompatActivity() {
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
 
-        binding.fab.setOnClickListener {
-            if (fabExpanded) collapseFabs() else expandFabs()
+        if (!prefs.getBoolean(PREF_PROFILE_SETUP_DONE, false)) {
+            navController.navigate(R.id.ProfileSetupFragment)
         }
 
-        binding.fabBell.setOnClickListener {
-            collapseFabs()
+        binding.fabReminders.setOnClickListener {
             navController.navigate(R.id.RemindersFragment)
         }
 
         // Show FABs only on the water reminder screen
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            collapseFabs()
-            val onWaterScreen = destination.id == R.id.FirstFragment
-            val fabVisibility = if (onWaterScreen) View.VISIBLE else View.GONE
-            binding.fab.visibility = fabVisibility
-            binding.fabAnalytics.visibility = fabVisibility
-            if (onWaterScreen) {
-                binding.fabAnalytics.setImageResource(R.drawable.ic_chart)
-                binding.fabAnalytics.setOnClickListener {
-                    navController.navigate(R.id.AnalyticsFragment)
+            // Deferred to the next frame so this settles together with the fragment
+            // transaction's own layout pass, instead of a frame ahead of it — otherwise
+            // the toolbar/FABs can flash into view while the outgoing screen is still visible,
+            // visibly pushing its content down before the new screen actually swaps in.
+            binding.root.post {
+                val onWaterScreen = destination.id == R.id.FirstFragment
+                val fabVisibility = if (onWaterScreen) View.VISIBLE else View.GONE
+                binding.fabReminders.visibility = fabVisibility
+                binding.fabAnalytics.visibility = fabVisibility
+                // Full-screen onboarding: no toolbar/menu until setup is finished.
+                val onboarding = destination.id == R.id.ProfileSetupFragment || destination.id == R.id.ReminderSetupFragment
+                binding.toolbar.visibility = if (onboarding) View.GONE else View.VISIBLE
+                if (onWaterScreen) {
+                    binding.fabAnalytics.setImageResource(R.drawable.ic_chart)
+                    binding.fabAnalytics.setOnClickListener {
+                        navController.navigate(R.id.AnalyticsFragment)
+                    }
                 }
             }
         }
-    }
-
-    private fun expandFabs() {
-        if (fabExpanded) return
-        fabExpanded = true
-        binding.fabGroup.visibility = View.VISIBLE
-        binding.fabGroup.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_in))
-        binding.fab.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-    }
-
-    private fun collapseFabs() {
-        if (!fabExpanded) return
-        fabExpanded = false
-        binding.fabGroup.startAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out))
-        binding.fabGroup.visibility = View.GONE
-        binding.fab.setImageResource(android.R.drawable.ic_input_add)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -125,13 +115,13 @@ R.id.action_help -> {
 
     override fun onStart() {
         super.onStart()
-        getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        waterPrefs()
             .registerOnSharedPreferenceChangeListener(prefsListener)
     }
 
     override fun onStop() {
         super.onStop()
-        getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        waterPrefs()
             .unregisterOnSharedPreferenceChangeListener(prefsListener)
     }
 
@@ -144,7 +134,7 @@ R.id.action_help -> {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                "water_reminder_channel",
+                REMINDER_CHANNEL_ID,
                 getString(R.string.notification_channel_name),
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply { description = getString(R.string.notification_channel_description) }

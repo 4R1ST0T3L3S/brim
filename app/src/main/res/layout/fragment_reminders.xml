@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/page_background">
+    android:background="?attr/pageBackground">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -22,36 +22,17 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Notifications toggle -->
-        <TextView
-            android:id="@+id/label_notifications"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:text="Enable notifications"
-            android:textSize="16sp"
-            android:textColor="?attr/colorOnSurface"
-            app:layout_constraintBottom_toBottomOf="@id/switch_notifications"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/title_reminders" />
-
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/switch_notifications"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/title_reminders" />
-
+        <!-- Shortcut to Settings → Notifications; its subtitle doubles as the
+             at-a-glance state of the master toggle. -->
         <include
-            android:id="@+id/row_stop_on_goal"
+            android:id="@+id/row_notification_settings"
             layout="@layout/item_settings_row"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="24dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/switch_notifications" />
+            app:layout_constraintTop_toBottomOf="@id/title_reminders" />
 
         <View
             android:id="@+id/divider"
@@ -61,7 +42,7 @@
             android:background="?attr/colorOutlineVariant"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/row_stop_on_goal" />
+            app:layout_constraintTop_toBottomOf="@id/row_notification_settings" />
 
         <!-- Add reminder -->
         <TextView
@@ -123,13 +104,64 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:gravity="center"
-            android:text="No custom reminders yet.\nTap '+ Add reminder' to get started."
+            android:text="No reminders yet.\nTap '+ Add reminder', or Reset to bring the default one back."
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             android:lineSpacingMultiplier="1.4"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/container_reminders" />
+
+        <!-- Row-interaction hints — hidden alongside the empty state. -->
+        <LinearLayout
+            android:id="@+id/legend_swipe"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/text_no_reminders">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginEnd="8dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_info"
+                    android:tint="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/legend_swipe_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/reminders_legend_swipe"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <!-- The type chip is tappable too, which is just as hidden as the swipes. -->
+            <TextView
+                android:id="@+id/legend_tap_type"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:text="@string/reminders_legend_tap_type"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="12sp" />
+
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView>

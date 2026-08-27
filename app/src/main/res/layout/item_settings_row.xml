@@ -49,6 +49,18 @@
 
         </LinearLayout>
 
+        <!-- A row shows one or the other: a chevron if it opens something, a switch if it
+             toggles. The switch is non-interactive — the row owns the tap, so state can be
+             written straight in without detaching a listener first. -->
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/row_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:clickable="false"
+            android:focusable="false"
+            android:visibility="gone" />
+
         <ImageView
             android:id="@+id/row_chevron"
             android:layout_width="20dp"
