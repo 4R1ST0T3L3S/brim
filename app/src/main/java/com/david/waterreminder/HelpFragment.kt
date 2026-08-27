@@ -52,7 +52,7 @@ class HelpFragment : BaseMenuFragment() {
         binding.rowReportProblem.rowTitle.text = getString(R.string.help_section_report)
         binding.rowReportProblem.rowSubtitle.text = getString(R.string.help_row_report_subtitle)
         binding.rowReportProblem.rowContainer.setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://codeberg.org/DavidCRicardo/WaterReminder/issues")))
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://codeberg.org/DavidCRicardo/FillMeUp/issues")))
         }
 
     }
