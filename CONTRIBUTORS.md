@@ -6,3 +6,4 @@ Thanks to the people who have contributed fixes, testing, feedback, and suggesti
 - [Lubla](https://codeberg.org/Lubla)
 - [eIKpaSrnMoKI](https://codeberg.org/eIKpaSrnMoKI)
 - [yaomtc](https://codeberg.org/yaomtc)
+- [Farious](https://github.com/Farious)
