@@ -201,6 +201,46 @@ class ReminderTest {
         assertFalse(r.enabled)
     }
 
+    // ─── firedOutsideWindow ───────────────────────────────────────
+
+    private fun anchoredAt(hour: Int) =
+        Reminder("${hour.asHourLabel()}", hour, 0, Reminder.TYPE_DAILY, true, intervalHours = 1)
+
+    @Test
+    fun firedOutsideWindow_currentHourInWindow_isFalse() {
+        assertFalse(anchoredAt(8).firedOutsideWindow(currentHour = 14, windowStart = 8, windowEnd = 20))
+    }
+
+    // The scenario the check exists for: an OS-delayed alarm delivers after bedtime.
+    @Test
+    fun firedOutsideWindow_deliveredAfterBedtime_isTrue() {
+        assertTrue(anchoredAt(8).firedOutsideWindow(currentHour = 22, windowStart = 8, windowEnd = 20))
+    }
+
+    @Test
+    fun firedOutsideWindow_deliveredBeforeGetUp_isTrue() {
+        assertTrue(anchoredAt(8).firedOutsideWindow(currentHour = 5, windowStart = 8, windowEnd = 20))
+    }
+
+    // An anchor placed outside the window on purpose always fires — that's the reminder
+    // working as configured, not a stale delivery.
+    @Test
+    fun firedOutsideWindow_anchoredOutsideWindow_isFalse() {
+        assertFalse(anchoredAt(22).firedOutsideWindow(currentHour = 22, windowStart = 8, windowEnd = 20))
+    }
+
+    @Test
+    fun firedOutsideWindow_nonInterval_isFalse() {
+        val onetime = Reminder("22:00", 22, 0, Reminder.TYPE_ONETIME, true)
+        assertFalse(onetime.firedOutsideWindow(currentHour = 22, windowStart = 8, windowEnd = 20))
+    }
+
+    @Test
+    fun firedOutsideWindow_exactlyAtWindowBounds_isFalse() {
+        assertFalse(anchoredAt(8).firedOutsideWindow(currentHour = 20, windowStart = 8, windowEnd = 20))
+        assertFalse(anchoredAt(8).firedOutsideWindow(currentHour = 8, windowStart = 8, windowEnd = 20))
+    }
+
     // ─── parseAll ─────────────────────────────────────────────────
 
     @Test

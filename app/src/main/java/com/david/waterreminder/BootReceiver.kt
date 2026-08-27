@@ -18,9 +18,9 @@ class BootReceiver : BroadcastReceiver() {
     }
 
     private fun rescheduleAll(context: Context) {
-        val prefs = context.getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        val prefs = context.waterPrefs()
         if (!prefs.getBoolean("notifications_enabled", false)) return
-        val saved = prefs.getStringSet("reminders_v3", emptySet()) ?: return
+        val saved = prefs.getStringSet(REMINDERS_KEY, emptySet()) ?: return
         saved.mapNotNull { Reminder.fromPrefsString(it) }
             .filter { it.enabled }
             .forEach { ReminderScheduler.schedule(context, it) }

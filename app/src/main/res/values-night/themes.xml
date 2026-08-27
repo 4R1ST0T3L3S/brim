@@ -1,9 +1,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.WaterReminder" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
-    </style>
-
+    <!--
+      Base.Theme.WaterReminder is not redeclared here on purpose: its surface attributes point at
+      colors that already have values-night variants, and a night-only copy of the style would
+      silently drop any item later added to the default one.
+    -->
     <style name="PopupTheme" parent="ThemeOverlay.AppCompat.Dark" />
 </resources>

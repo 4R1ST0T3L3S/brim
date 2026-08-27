@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/page_background">
+    android:background="?attr/pageBackground">
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="0dp"
@@ -34,14 +34,20 @@
                 layout="@layout/item_settings_row"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="2dp" />
+                android:layout_marginBottom="4dp" />
 
             <include
-                android:id="@+id/row_stop_on_goal"
+                android:id="@+id/row_show_after_goal"
                 layout="@layout/item_settings_row"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp" />
+                android:layout_marginBottom="4dp" />
+
+            <include
+                android:id="@+id/row_quick_log_actions"
+                layout="@layout/item_settings_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
             <!-- Separate section: the window edits the hourly reminder itself, so it
                  stays usable even while the master toggle above is off. -->

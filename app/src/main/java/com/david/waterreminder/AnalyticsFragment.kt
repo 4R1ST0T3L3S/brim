@@ -2,19 +2,26 @@ package com.david.waterreminder
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.os.Bundle
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import java.io.File
 import java.io.FileOutputStream
+import com.david.waterreminder.databinding.DialogPickListBinding
 import com.david.waterreminder.databinding.FragmentAnalyticsBinding
+import com.david.waterreminder.databinding.ItemPickDayBinding
 import com.google.android.material.color.MaterialColors
 import com.github.mikephil.charting.components.LimitLine
 import com.github.mikephil.charting.components.XAxis
@@ -33,8 +40,9 @@ class AnalyticsFragment : Fragment() {
 
     private val goalMl = DEFAULT_DAILY_GOAL_ML
     private val dayFormatter = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH)
+    private val fullDayFormatter = DateTimeFormatter.ofPattern("EEE, MMM d", Locale.ENGLISH)
     private val prefs by lazy {
-        requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        requireContext().waterPrefs()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -46,24 +54,147 @@ class AnalyticsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val history = loadHistory()
-        val allHistory = prefs.loadAllHistory()
-        val personalGoal = prefs.getInt("personal_goal_ml", 0)
-        setupChart(history, personalGoal)
-        setupStats(allHistory, personalGoal)
+        render(animate = true)
 
         binding.textViewAllHistory.setOnClickListener {
             findNavController().navigate(R.id.action_AnalyticsFragment_to_AllHistoryFragment)
         }
 
         binding.btnShare.setOnClickListener { shareWeeklyCard() }
+        binding.fabEditDay.setOnClickListener { showDayPicker() }
+    }
+
+    /**
+     * Chart + stats, rebuilt from prefs — also how the screen refreshes after a day is edited.
+     * [animate] is for the first pass only: growing the bars out of the floor again on every edit
+     * reads as a reload rather than as the one value changing.
+     */
+    private fun render(animate: Boolean = false) {
+        // A day that ended while this screen was open still has its total sitting in today's
+        // counter until something files it away; do that before reading any of it back.
+        prefs.rollOverDayIfNeeded()
+
+        val personalGoal = prefs.getInt("personal_goal_ml", 0)
+        setupChart(loadHistory(), personalGoal, animate)
+        setupStats(prefs.loadAllHistory(), personalGoal)
+    }
+
+    // ─── Editing a day ────────────────────────────────────────────
+
+    /**
+     * The editable days as one tappable row each — only the six finished days of the week on show
+     * can be changed, so the whole choice fits without a date picker. A row is date, total, and a
+     * drop that fills in on days that reached the minimum: the chart's reading, one tap from the
+     * field that changes it.
+     */
+    private fun showDayPicker() {
+        // Cheap and idempotent, and this can open hours after the screen was drawn: the day may
+        // have turned over in between, which would shift what "the last six days" even means.
+        prefs.rollOverDayIfNeeded()
+
+        val palette = DayRowPalette(requireContext(), requireView())
+        val inflater = LayoutInflater.from(requireContext())
+        val pickerBinding = DialogPickListBinding.inflate(inflater)
+        pickerBinding.textHint.text = getString(R.string.analytics_pick_day_hint)
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle(getString(R.string.analytics_pick_day_title))
+            .setView(pickerBinding.root)
+            .setNegativeButton(getString(R.string.dialog_cancel), null)
+            .create()
+
+        editableHistoryDays().forEach { date ->
+            val row = ItemPickDayBinding.inflate(inflater, pickerBinding.containerItems, true)
+            bindDayRow(row, date, palette)
+            row.root.setOnClickListener {
+                dialog.dismiss()
+                showDayTotalDialog(date)
+            }
+        }
+        dialog.show()
+    }
+
+    /** An untracked day reads as 0, the same as a day that was tracked and simply came to nothing. */
+    private fun bindDayRow(row: ItemPickDayBinding, date: LocalDate, palette: DayRowPalette) {
+        val ml = prefs.dayTotal(date)
+        val goalMet = ml >= goalMl
+        val total = ml.fmt(unit)
+
+        row.textDayDate.text = date.format(dayFormatter)
+        row.textDayTotal.text = total
+        row.textDayTotal.setTextColor(if (ml > 0) palette.onSurface else palette.muted)
+        row.iconDayGoalMet.visibility = if (goalMet) View.VISIBLE else View.INVISIBLE
+
+        // Blue for a day that got there, pale blue for one that didn't, grey for an empty day.
+        row.iconDay.imageTintList = when {
+            goalMet -> palette.goalMetTint
+            ml > 0 -> palette.partialTint
+            else -> palette.mutedTint
+        }
+        // The tick has to be spoken here: a description on the row stops TalkBack reading its
+        // children, so an icon-only signal would be silent for anyone using a screen reader.
+        row.root.contentDescription = getString(
+            if (goalMet) R.string.analytics_pick_day_row_description_goal_met
+            else R.string.analytics_pick_day_row_description,
+            date.format(fullDayFormatter),
+            total
+        )
+    }
+
+    /** Total for one day: prefilled with what's stored, with a Clear button when there is a record. */
+    private fun showDayTotalDialog(date: LocalDate) {
+        val storedMl = prefs.storedDayTotal(date)
+        val editText = EditText(requireContext()).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER or
+                if (isDecimalUnit(unit)) InputType.TYPE_NUMBER_FLAG_DECIMAL else 0
+            hint = getString(R.string.analytics_edit_day_hint, unit, goalMl.toDisplay(unit))
+            setPadding(48, 32, 48, 32)
+            if (storedMl != null) { setText(storedMl.toDisplay(unit)); selectAll() }
+        }
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle(getString(R.string.analytics_edit_day_title, date.format(fullDayFormatter)))
+            .setView(editText)
+            .setPositiveButton(getString(R.string.dialog_save), null)
+            .apply {
+                if (storedMl != null) {
+                    setNeutralButton(getString(R.string.dialog_clear)) { _, _ -> clearDay(date) }
+                }
+            }
+            .setNegativeButton(getString(R.string.dialog_cancel), null)
+            .show()
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val ml = editText.text.toString().toValidDayTotalMl(unit)
+            if (ml == null) {
+                editText.error = getString(
+                    R.string.analytics_edit_day_error, 0.fmt(unit), DAY_TOTAL_MAX_ML.fmt(unit)
+                )
+            } else {
+                prefs.writeDayTotal(date, ml)
+                afterDayEdit(getString(
+                    R.string.analytics_day_saved, date.format(fullDayFormatter), ml.fmt(unit)
+                ))
+                dialog.dismiss()
+            }
+        }
+        editText.requestFocus()
+    }
+
+    private fun clearDay(date: LocalDate) {
+        prefs.removeDayTotal(date)
+        afterDayEdit(getString(R.string.analytics_day_cleared, date.format(fullDayFormatter)))
+    }
+
+    private fun afterDayEdit(message: String) {
+        // No BackupManager call here: MainActivity keeps a listener on water_prefs for the whole
+        // time it's started and reports every change, this one included.
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        render()
     }
 
     private fun shareWeeklyCard() {
         val view = binding.analyticsContent
         val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        canvas.drawColor(requireContext().getColor(R.color.page_background))
+        canvas.drawColor(MaterialColors.getColor(view, R.attr.pageBackground))
         view.draw(canvas)
 
         val shareDir = File(requireContext().cacheDir, "share")
@@ -89,25 +220,16 @@ class AnalyticsFragment : Fragment() {
     // ─── Data ─────────────────────────────────────────────────────
 
     private fun loadHistory(): List<Pair<LocalDate, Int>> {
-        val prefs = requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
         val today = LocalDate.now()
-
-        return (6 downTo 0).map { daysAgo ->
+        return (WEEKLY_HISTORY_DAYS - 1 downTo 0).map { daysAgo ->
             val date = today.minusDays(daysAgo.toLong())
-            val key = "history_${date}"
-            // Include today's live intake too
-            val ml = if (daysAgo == 0) {
-                prefs.getInt("intake_ml", 0)
-            } else {
-                prefs.getInt(key, 0)
-            }
-            Pair(date, ml)
+            date to prefs.dayTotal(date)   // today comes from the live counter, the rest from their records
         }
     }
 
     // ─── Chart ────────────────────────────────────────────────────
 
-    private fun setupChart(history: List<Pair<LocalDate, Int>>, personalGoal: Int) {
+    private fun setupChart(history: List<Pair<LocalDate, Int>>, personalGoal: Int, animate: Boolean) {
         val onSurface = MaterialColors.getColor(requireView(), com.google.android.material.R.attr.colorOnSurface)
         val chartGridColor = MaterialColors.getColor(requireView(), com.google.android.material.R.attr.colorOutlineVariant)
 
@@ -159,6 +281,7 @@ class AnalyticsFragment : Fragment() {
             val axisMax = maxOf(goalMl, personalGoal, maxIntake) * 1.2f
 
             axisLeft.apply {
+                removeAllLimitLines()   // render() runs again after an edit
                 addLimitLine(goalLine)
                 personalGoalLine?.let { addLimitLine(it) }
                 axisMinimum = 0f
@@ -184,7 +307,7 @@ class AnalyticsFragment : Fragment() {
                 }
             }
 
-            animateY(600)
+            if (animate) animateY(600)
             invalidate()
         }
     }
@@ -214,4 +337,16 @@ class AnalyticsFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+}
+
+/**
+ * Theme colours the day-picker rows need, resolved once per dialog instead of once per row — and
+ * per dialog rather than cached on the fragment, so a theme switch can't leave stale colours behind.
+ */
+private class DayRowPalette(context: Context, view: View) {
+    val onSurface = MaterialColors.getColor(view, com.google.android.material.R.attr.colorOnSurface)
+    val muted = MaterialColors.getColor(view, com.google.android.material.R.attr.colorOnSurfaceVariant)
+    val goalMetTint: ColorStateList = ColorStateList.valueOf(context.getColor(R.color.brand_blue))
+    val partialTint: ColorStateList = ColorStateList.valueOf(context.getColor(R.color.brand_blue_light))
+    val mutedTint: ColorStateList = ColorStateList.valueOf(muted)
 }

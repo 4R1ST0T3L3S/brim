@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fitsSystemWindows="true"
-        android:background="@color/toolbar_background"
+        android:background="?attr/toolbarBackground"
         app:liftOnScroll="false">
 
         <com.google.android.material.appbar.MaterialToolbar
@@ -25,37 +25,17 @@
 
     <include layout="@layout/content_main" />
 
-    <!-- Expanded mini FABs group (hidden by default) -->
-    <LinearLayout
-        android:id="@+id/fab_group"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="@dimen/fab_margin"
-        android:layout_marginBottom="80dp"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:visibility="gone"
-        tools:visibility="visible">
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_bell"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:fabSize="mini"
-            app:srcCompat="@drawable/ic_bell" />
-
-    </LinearLayout>
-
-    <!-- Main + FAB — bottom-right -->
+    <!-- Reminders FAB — bottom-right. Straight to the screen it opens: it used to be
+         a "+" that expanded into a single bell, which was one tap too many. -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab"
+        android:id="@+id/fab_reminders"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="@dimen/fab_margin"
         android:layout_marginBottom="16dp"
-        app:srcCompat="@android:drawable/ic_input_add" />
+        android:contentDescription="@string/fab_reminders_description"
+        app:srcCompat="@drawable/ic_bell" />
 
     <!-- Analytics FAB — bottom-left, always visible -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton

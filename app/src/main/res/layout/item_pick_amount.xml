@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The checkbox is non-interactive: the row owns the tap, so checking a fourth amount can
+     uncheck another one without a listener firing back at us mid-update. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:paddingHorizontal="24dp"
+    android:paddingVertical="12dp">
+
+    <ImageView
+        android:id="@+id/icon_amount"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/ic_water_drop"
+        android:tint="@color/brand_blue"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/text_amount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="14dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="16sp"
+        tools:text="200 ml" />
+
+    <CheckBox
+        android:id="@+id/check_amount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:clickable="false"
+        android:focusable="false" />
+
+</LinearLayout>

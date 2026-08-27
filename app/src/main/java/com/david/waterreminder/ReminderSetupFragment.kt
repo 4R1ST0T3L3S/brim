@@ -8,9 +8,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TimePicker
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -18,21 +16,18 @@ import com.david.waterreminder.databinding.FragmentReminderSetupBinding
 
 class ReminderSetupFragment : Fragment() {
 
-    companion object {
-        private const val DEFAULT_START_HOUR = 8
-        private const val DEFAULT_END_HOUR = 20
-    }
-
     private var _binding: FragmentReminderSetupBinding? = null
     private val binding get() = _binding!!
 
     private val prefs by lazy {
-        requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        requireContext().waterPrefs()
     }
 
-    private var isCustomWindow = false
-    private var dayBeginsHour = DEFAULT_START_HOUR
-    private var offToBedHour = DEFAULT_END_HOUR
+    private enum class Schedule { HOURLY, CUSTOM, NONE }
+
+    private var schedule = Schedule.HOURLY
+    private var dayBeginsHour = DEFAULT_REMINDER_START_HOUR
+    private var offToBedHour = DEFAULT_REMINDER_END_HOUR
     private var pendingReminder: Reminder? = null
 
     private val requestPermissionLauncher = registerForActivityResult(
@@ -52,15 +47,21 @@ class ReminderSetupFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.cardHourly.setOnClickListener { selectSchedule(custom = false) }
-        binding.cardCustom.setOnClickListener { selectSchedule(custom = true) }
-        selectSchedule(custom = false)
+        binding.cardHourly.setOnClickListener { selectSchedule(Schedule.HOURLY) }
+        binding.cardCustom.setOnClickListener { selectSchedule(Schedule.CUSTOM) }
+        binding.cardNone.setOnClickListener { selectSchedule(Schedule.NONE) }
+        selectSchedule(Schedule.HOURLY)
 
+        // Titled with the button's own label, so it's clear which end is being set.
         binding.buttonDayBegins.setOnClickListener {
-            showHourPicker(dayBeginsHour) { dayBeginsHour = it; updateWindowLabels() }
+            showHourPicker(binding.buttonDayBegins.text.toString(), dayBeginsHour) {
+                dayBeginsHour = it; updateWindowLabels()
+            }
         }
         binding.buttonOffToBed.setOnClickListener {
-            showHourPicker(offToBedHour) { offToBedHour = it; updateWindowLabels() }
+            showHourPicker(binding.buttonOffToBed.text.toString(), offToBedHour) {
+                offToBedHour = it; updateWindowLabels()
+            }
         }
         updateWindowLabels()
 
@@ -68,51 +69,48 @@ class ReminderSetupFragment : Fragment() {
         binding.fabReminderSetupDone.setOnClickListener { onDoneClicked() }
     }
 
-    private fun selectSchedule(custom: Boolean) {
-        isCustomWindow = custom
-        applyCardSelectionStyle(binding.cardHourly, binding.checkHourly, selected = !custom)
-        applyCardSelectionStyle(binding.cardCustom, binding.checkCustom, selected = custom)
-        binding.groupCustomWindow.visibility = if (custom) View.VISIBLE else View.GONE
+    private fun selectSchedule(choice: Schedule) {
+        schedule = choice
+        applyCardSelectionStyle(binding.cardHourly, binding.checkHourly, choice == Schedule.HOURLY)
+        applyCardSelectionStyle(binding.cardCustom, binding.checkCustom, choice == Schedule.CUSTOM)
+        applyCardSelectionStyle(binding.cardNone, binding.checkNone, choice == Schedule.NONE)
+        binding.groupCustomWindow.visibility =
+            if (choice == Schedule.CUSTOM) View.VISIBLE else View.GONE
     }
 
     private fun updateWindowLabels() {
         binding.buttonDayBegins.text =
-            getString(R.string.reminder_setup_day_begins, String.format("%02d:00", dayBeginsHour))
+            getString(R.string.reminder_setup_day_begins, dayBeginsHour.asHourLabel())
         binding.buttonOffToBed.text =
-            getString(R.string.reminder_setup_off_to_bed, String.format("%02d:00", offToBedHour))
-    }
-
-    private fun showHourPicker(currentHour: Int, onPicked: (Int) -> Unit) {
-        val timePicker = TimePicker(requireContext()).apply {
-            setIs24HourView(true)
-            hour = currentHour
-            minute = 0
-        }
-        AlertDialog.Builder(requireContext())
-            .setView(timePicker)
-            .setPositiveButton(getString(R.string.dialog_save)) { _, _ -> onPicked(timePicker.hour) }
-            .setNegativeButton(getString(R.string.dialog_cancel), null)
-            .show()
+            getString(R.string.reminder_setup_off_to_bed, offToBedHour.asHourLabel())
     }
 
     private fun onDoneClicked() {
-        val (startHour, endHour) = if (isCustomWindow) {
+        val (startHour, endHour) = if (schedule == Schedule.CUSTOM) {
             if (dayBeginsHour >= offToBedHour) {
-                AlertDialog.Builder(requireContext())
-                    .setTitle(getString(R.string.reminder_setup_error_window_title))
-                    .setMessage(getString(R.string.reminder_setup_error_window))
-                    .setPositiveButton(getString(R.string.dialog_save), null)
-                    .show()
+                showWindowError()
                 return
             }
             dayBeginsHour to offToBedHour
         } else {
-            DEFAULT_START_HOUR to DEFAULT_END_HOUR
+            DEFAULT_REMINDER_START_HOUR to DEFAULT_REMINDER_END_HOUR
         }
 
-        val reminder = Reminder(String.format("%02d:00", startHour), startHour, 0, "hourly", true, endHour)
-        prefs.edit().putStringSet("reminders_v3", setOf(reminder.toPrefsString())).apply()
+        // The window is its own pref — storing it on the reminder is what the old
+        // built-in hourly entry did, and it no longer has anywhere to put it.
+        prefs.setReminderWindow(startHour, endHour)
+
+        // The default entry is written either way: opting out only leaves the master
+        // toggle off, so turning notifications on later has a reminder to fire.
+        val reminder = Reminder.defaultReminder(startHour)
+        prefs.edit().putStringSet(REMINDERS_KEY, setOf(reminder.toPrefsString())).apply()
         pendingReminder = reminder
+
+        if (schedule == Schedule.NONE) {
+            prefs.edit().putBoolean("notifications_enabled", false).apply()
+            finishSetup()
+            return
+        }
 
         val needsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) !=

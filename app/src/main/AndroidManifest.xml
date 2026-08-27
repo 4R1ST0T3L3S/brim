@@ -28,9 +28,16 @@
             </intent-filter>
         </activity>
 
+        <!-- Both are fired only by PendingIntents this app created (an alarm, a notification
+             button), which run with our identity against an explicit component — so neither
+             needs to be reachable by anything else. -->
         <receiver
             android:name=".ReminderReceiver"
-            android:exported="true" />
+            android:exported="false" />
+
+        <receiver
+            android:name=".QuickLogReceiver"
+            android:exported="false" />
 
         <receiver
             android:name=".BootReceiver"

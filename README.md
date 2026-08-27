@@ -1,13 +1,13 @@
-# WaterReminder
+# FillMeUp!
 ![Platforms](https://img.shields.io/badge/platforms-Android-2ea44f)
 [![Latest release](https://img.shields.io/gitea/v/release/DavidCRicardo/WaterReminder?gitea_url=https://codeberg.org)](https://codeberg.org/DavidCRicardo/WaterReminder/releases/latest)
 [![F-Droid](https://img.shields.io/f-droid/v/com.david.waterreminder?label=F-Droid&logo=fdroid)](https://f-droid.org/pt/packages/com.david.waterreminder/)
 
-[<img src="./fastlane/metadata/android/en-US/images/icon.png" alt="WaterReminder logo" height="80">](./fastlane/metadata/android/en-US/images/icon.png)
+[<img src="./fastlane/metadata/android/en-US/images/icon.png" alt="FillMeUp! logo" height="80">](./fastlane/metadata/android/en-US/images/icon.png)
 
 Track your daily water intake and stay hydrated with reminders,
 
-WaterReminder helps you build a healthy hydration habit by tracking your daily water intake and sending you timely reminders throughout the day.
+FillMeUp! helps you build a healthy hydration habit by tracking your daily water intake and sending you timely reminders throughout the day.
 
 ## Features:
 - Log your water intake with a single tap
@@ -25,7 +25,7 @@ WaterReminder helps you build a healthy hydration habit by tracking your daily w
 
 ## Contributors
 
-Water Reminder is improved by community contributions. See [CONTRIBUTORS.md](CONTRIBUTORS.md) for acknowledgements.
+FillMeUp! is improved by community contributions. See [CONTRIBUTORS.md](CONTRIBUTORS.md) for acknowledgements.
 
 ## Installation
 <!--👨‍💻 Currenty under development.-->

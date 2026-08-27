@@ -1,10 +1,19 @@
 package com.david.waterreminder
 
+import android.content.Context
 import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatDelegate
 import java.time.LocalDate
 import java.util.Calendar
 import java.util.Locale
+
+/**
+ * The app's one preferences store. Every screen and receiver goes through here, so the file name
+ * is spelled once — a typo in a receiver would otherwise read an empty store and write to one
+ * nothing else reads, with no compile error and no crash.
+ */
+fun Context.waterPrefs(): SharedPreferences =
+    getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
 
 const val PREF_UNIT = "unit"
 const val UNIT_ML   = "ml"
@@ -51,10 +60,25 @@ fun recommendedGoalMl(ageYears: Int, weightKg: Double): Int {
     return (weightKg * TOTAL_WATER_ML_PER_KG * DRINKING_WATER_SHARE).toInt().coerceIn(GOAL_MIN_ML, GOAL_MAX_ML)
 }
 
+/**
+ * Tinted themes are not AppCompatDelegate night modes but are stored in the same preference, so
+ * they need values none of the MODE_NIGHT_* constants use (those range from -100 to 4). Number
+ * them from 100 up; the stored value is what a user's preference holds, so never reuse one.
+ */
+const val THEME_MODE_BLUE_DARK = 100
+const val THEME_MODE_BLUE_LIGHT = 101
+
+/**
+ * Display order for the theme picker — light before dark within each pair. Deliberately not the
+ * order the THEME_MODE_* values are numbered in: those are stored in users' preferences and are
+ * fixed, while this list is free to be reordered.
+ */
 val THEME_MODES = intArrayOf(
     AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
     AppCompatDelegate.MODE_NIGHT_NO,
-    AppCompatDelegate.MODE_NIGHT_YES
+    AppCompatDelegate.MODE_NIGHT_YES,
+    THEME_MODE_BLUE_LIGHT,
+    THEME_MODE_BLUE_DARK
 )
 
 fun themeModeDialogIndex(mode: Int): Int =
@@ -63,7 +87,23 @@ fun themeModeDialogIndex(mode: Int): Int =
 fun themeModeLabelRes(mode: Int): Int = when (mode) {
     AppCompatDelegate.MODE_NIGHT_NO -> R.string.theme_light
     AppCompatDelegate.MODE_NIGHT_YES -> R.string.theme_dark
+    THEME_MODE_BLUE_DARK -> R.string.theme_blue_dark
+    THEME_MODE_BLUE_LIGHT -> R.string.theme_blue_light
     else -> R.string.theme_system_default
+}
+
+/** The night mode to hand to AppCompatDelegate for a stored theme mode. */
+fun nightModeFor(mode: Int): Int = when (mode) {
+    THEME_MODE_BLUE_DARK -> AppCompatDelegate.MODE_NIGHT_YES
+    THEME_MODE_BLUE_LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
+    else -> mode
+}
+
+/** The activity theme to apply for a stored theme mode. */
+fun themeStyleRes(mode: Int): Int = when (mode) {
+    THEME_MODE_BLUE_DARK -> R.style.Theme_WaterReminder_BlueDark
+    THEME_MODE_BLUE_LIGHT -> R.style.Theme_WaterReminder_BlueLight
+    else -> R.style.Theme_WaterReminder
 }
 
 /** ml → display string in the active unit (no unit suffix; suitable for EditText). */
@@ -94,8 +134,183 @@ const val CUSTOM_MAX_ML = 5_000
 const val GOAL_MIN_ML   = 100
 const val GOAL_MAX_ML   = 10_000
 
+/** Quick add/remove amounts a fresh install ships with; the user can add to or remove from the set. */
+val DEFAULT_QUICK_AMOUNTS_ML = listOf(100, 200)
+
+/**
+ * Cap on how many amounts each home row holds — 6 add buttons and the 6 matching remove ones,
+ * which is what fits before the rows start wrapping into a wall of buttons.
+ */
+const val QUICK_AMOUNTS_MAX = 6
+
+const val PREF_QUICK_AMOUNTS_ML = "quick_amounts_ml"
+
+/** Pre-multi-amount pref: the single custom slot, folded into the list the first time it is read. */
+const val PREF_CUSTOM_QUICK_ML = "custom_quick_ml"
+
+/**
+ * Sanitized amount list — in-range values only, no duplicates, sorted, capped at
+ * [QUICK_AMOUNTS_MAX]. Applied to anything read from prefs, which can be hand-edited or imported.
+ */
+fun List<Int>.asQuickAmounts(): List<Int> =
+    filter { it in 1..CUSTOM_MAX_ML }.distinct().sorted().take(QUICK_AMOUNTS_MAX)
+
+fun List<Int>.encodeAmountCsv(): String = joinToString(",")
+
+/** CSV -> the numbers in it, unfiltered. Each list applies its own sanitizer on top. */
+fun String.decodeAmountCsv(): List<Int> = split(',').mapNotNull { it.trim().toIntOrNull() }
+
+
+/**
+ * The amounts both home rows are built from, given the [stored] pref and the legacy single custom
+ * slot. A null [stored] means an install from before the amounts became editable: it starts from
+ * the shipped defaults plus whatever custom value that user had. An empty [stored] is a real
+ * state, not a missing one — every button may be removed.
+ */
+fun quickAmountsFrom(stored: String?, legacyCustomMl: Int): List<Int> =
+    (stored?.decodeAmountCsv() ?: (DEFAULT_QUICK_AMOUNTS_ML + legacyCustomMl)).asQuickAmounts()
+
+fun SharedPreferences.quickAmounts(): List<Int> =
+    quickAmountsFrom(getString(PREF_QUICK_AMOUNTS_ML, null), getInt(PREF_CUSTOM_QUICK_ML, 0))
+
+/**
+ * Stores [amounts] sanitized and returns exactly what was stored, saving callers a re-read.
+ *
+ * A stored notification selection is re-filtered against the new list in the same commit, so a
+ * deleted amount can't linger as a phantom notification button. This is tidying, not the
+ * safeguard: prefs also arrive from an import, a cloud restore or a legacy install that never
+ * wrote this key at all, none of which come through here — [notificationAmounts] filters on
+ * every read for that reason.
+ */
+fun SharedPreferences.setQuickAmounts(amounts: List<Int>): List<Int> {
+    val stored = amounts.asQuickAmounts()
+    val previous = getString(PREF_NOTIFICATION_AMOUNTS_ML, null)?.decodeAmountCsv()
+    val pruned = previous?.asNotificationAmounts(stored)
+    edit()
+        .putString(PREF_QUICK_AMOUNTS_ML, stored.encodeAmountCsv())
+        .apply {
+            when {
+                // Never picked, so there is nothing to prune — leave it deriving.
+                pruned == null -> {}
+                // Everything the user had picked has just been edited or deleted away. Storing
+                // the empty list here would read back as "every button deliberately turned off"
+                // and never recover, so drop the key and let it derive again instead.
+                pruned.isEmpty() && previous.isNotEmpty() -> remove(PREF_NOTIFICATION_AMOUNTS_ML)
+                else -> putString(PREF_NOTIFICATION_AMOUNTS_ML, pruned.encodeAmountCsv())
+            }
+        }
+        .apply()
+    return stored
+}
+
+/**
+ * Cap on how many quick amounts get a button on the reminder notification. Three is also all
+ * the standard notification template will render, so the setting can't promise a fourth.
+ */
+const val NOTIFICATION_ACTIONS_MAX = 3
+
+const val PREF_NOTIFICATION_AMOUNTS_ML = "notification_amounts_ml"
+
+/**
+ * Sanitized notification selection: only amounts that still have a button on the home screen,
+ * no duplicates, sorted, capped at [NOTIFICATION_ACTIONS_MAX].
+ */
+fun List<Int>.asNotificationAmounts(available: List<Int>): List<Int> =
+    filter { it in available }.distinct().sorted().take(NOTIFICATION_ACTIONS_MAX)
+
+/**
+ * The amounts to draw as notification buttons, given what the home screen currently offers.
+ *
+ * An absent key — nobody has opened the picker — derives the first [NOTIFICATION_ACTIONS_MAX]
+ * available amounts rather than nothing: an empty default would ship the feature invisible to
+ * everyone who never goes looking for it. A *stored* empty list is a real state and is
+ * honoured, meaning the user turned every button off; [setQuickAmounts] is careful never to
+ * manufacture it by pruning.
+ */
+fun SharedPreferences.notificationAmounts(): List<Int> {
+    val available = quickAmounts()
+    return (getString(PREF_NOTIFICATION_AMOUNTS_ML, null)?.decodeAmountCsv() ?: available)
+        .asNotificationAmounts(available)
+}
+
+fun SharedPreferences.setNotificationAmounts(amounts: List<Int>) {
+    edit()
+        .putString(PREF_NOTIFICATION_AMOUNTS_ML, amounts.asNotificationAmounts(quickAmounts()).encodeAmountCsv())
+        .apply()
+}
+
+/**
+ * The selection with [ml] checked or unchecked. Checking past [NOTIFICATION_ACTIONS_MAX] drops
+ * the amount at the front rather than refusing the tap — the picker states the limit before the
+ * user gets there, so bouncing the tap back would only tell them they were wrong to try.
+ *
+ * The receiver is the picker's working list, which starts sorted (that is how the selection is
+ * stored) and grows by appending. So the amount dropped is whichever has been checked longest,
+ * and among the ones already checked when the dialog opened, the smallest.
+ */
+fun List<Int>.toggleNotificationAmount(ml: Int): List<Int> =
+    if (ml in this) this - ml else (this + ml).takeLast(NOTIFICATION_ACTIONS_MAX)
+
 /** The app's fixed recommended minimum, shown as the non-personalized default goal. */
 const val DEFAULT_DAILY_GOAL_ML = 1500
+
+/**
+ * Whether reaching a goal pops a congratulations dialog. On by default: the celebration is part of
+ * what the app is for, and only gets in the way for people who ask for it to stop.
+ */
+const val PREF_CELEBRATIONS_ENABLED = "celebrations_enabled"
+
+fun SharedPreferences.celebrationsEnabled(): Boolean =
+    getBoolean(PREF_CELEBRATIONS_ENABLED, true)
+
+/**
+ * Whether reminders keep firing once the day's goal is met. On by default — the reminder is
+ * still useful past the minimum, and going quiet unasked reads like the app broke.
+ *
+ * Backed by the legacy `stop_notifications_on_goal` key, inverted here: the row used to read
+ * "Pause when goal reached" and now reads "Display when goal reached", so the stored sense is
+ * the opposite of the shown one. Flipping the key itself would need a migration on every
+ * install — and on every exported backup — to buy nothing.
+ */
+const val PREF_STOP_NOTIFICATIONS_ON_GOAL = "stop_notifications_on_goal"
+
+fun SharedPreferences.showNotificationsAfterGoal(): Boolean =
+    !getBoolean(PREF_STOP_NOTIFICATIONS_ON_GOAL, false)
+
+fun SharedPreferences.setShowNotificationsAfterGoal(show: Boolean) {
+    edit().putBoolean(PREF_STOP_NOTIFICATIONS_ON_GOAL, !show).apply()
+}
+
+/** Water one bottle on the home row stands for — the goal decides how many bottles are shown. */
+const val ML_PER_BOTTLE = 500
+
+/** Fill steps a bottle icon can show, from empty (0) to full ([BOTTLE_FILL_STEPS]). */
+const val BOTTLE_FILL_STEPS = 5
+
+/**
+ * Bottles picturing [goalMl]: one per [ML_PER_BOTTLE], rounded up so the goal is always covered —
+ * 3 for the 1500 ml minimum, 20 for a [GOAL_MAX_ML] goal.
+ */
+fun bottleCount(goalMl: Int): Int {
+    val goal = goalMl.coerceAtLeast(1).toLong()
+    return ((goal + ML_PER_BOTTLE - 1) / ML_PER_BOTTLE).coerceIn(1, GOAL_MAX_ML.toLong()).toInt()
+}
+
+/**
+ * Fill step of every bottle for an intake of [currentMl] against [goalMl], from 0 (empty) to
+ * [BOTTLE_FILL_STEPS] (full). Each bottle holds [ML_PER_BOTTLE] except the last, which spans
+ * whatever is left of a goal that isn't a round number of bottles — so reaching the goal always
+ * fills the row and never leaves a bottle looking empty.
+ */
+fun bottleFillSteps(currentMl: Int, goalMl: Int): List<Int> {
+    val goal = goalMl.coerceAtLeast(1)
+    return (0 until bottleCount(goal)).map { index ->
+        val start = index.toLong() * ML_PER_BOTTLE
+        val span = (goal - start).coerceIn(1L, ML_PER_BOTTLE.toLong())
+        val fill = (currentMl - start).coerceIn(0L, span)
+        (fill * BOTTLE_FILL_STEPS / span).toInt()
+    }
+}
 
 /** Default reminder window, and where the default reminder is anchored. */
 const val DEFAULT_REMINDER_START_HOUR = 8
@@ -138,10 +353,13 @@ fun SharedPreferences.setReminderWindow(startHour: Int, endHour: Int) {
  * When an interval reminder anchored at [anchorHour]:[anchorMinute] and repeating every
  * [intervalHours] hours should next fire, given it is now [from].
  *
- * Repeats are confined to [windowStartHour]..[windowEndHour] and pick up again at the
- * anchor tomorrow, so an every-2-hours reminder doesn't ping at 03:30. The anchor itself
- * always fires even outside the window: the user chose that time explicitly, so only the
- * repeats are bounded.
+ * Fire times are confined to [windowStartHour]..[windowEndHour] and pick up again at the
+ * anchor tomorrow, so an every-2-hours reminder doesn't ping at 03:30.
+ *
+ * An anchor before the get-up hour is pulled forward to the first repeat inside the window
+ * — otherwise a reminder would fire at an hour the window says it shouldn't. An anchor past
+ * the go-to-bed hour still fires: only repeats are bounded at the top, so a deliberately
+ * late reminder isn't silently killed by a window it was never inside.
  */
 fun nextIntervalFireTime(
     from: Calendar,
@@ -152,19 +370,24 @@ fun nextIntervalFireTime(
     windowStartHour: Int = 0
 ): Calendar {
     val step = intervalHours.coerceAtLeast(1)
+
+    // The day's first fire: the anchor, or the first repeat that reaches the get-up hour.
+    // An anchor with no in-window slot left in the day keeps its own time rather than
+    // going silent.
+    var firstHour = anchorHour
+    while (firstHour < windowStartHour && firstHour + step <= 23) firstHour += step
+
     var repeat = 0
     while (true) {
-        val hour = anchorHour + repeat * step
+        val hour = firstHour + repeat * step
         if (hour > 23) break
         if (repeat > 0 && hour > windowEndHour) break
-        // Skipped, not stopped: with an early anchor the later repeats still land in window.
-        if (repeat == 0 || hour >= windowStartHour) {
-            val candidate = from.sameDayAt(hour, anchorMinute)
-            if (candidate.after(from)) return candidate
-        }
+        val candidate = from.sameDayAt(hour, anchorMinute)
+        if (candidate.after(from)) return candidate
         repeat++
     }
-    return from.sameDayAt(anchorHour, anchorMinute)
+    // Nothing left today — same first fire, tomorrow.
+    return from.sameDayAt(firstHour, anchorMinute)
         .apply { add(Calendar.DAY_OF_MONTH, 1) }
 }
 
@@ -187,21 +410,6 @@ fun String.toValidCustomMl(unit: String): Int? =
 
 fun String.toValidGoalMl(unit: String): Int? =
     toMl(unit)?.takeIf { it in GOAL_MIN_ML..GOAL_MAX_ML }
-
-fun SharedPreferences.loadAllHistory(): List<Pair<LocalDate, Int>> {
-    val today = LocalDate.now()
-    val fromHistory = all.keys
-        .filter { it.startsWith("history_") }
-        .mapNotNull { key ->
-            val dateStr = key.removePrefix("history_")
-            runCatching { LocalDate.parse(dateStr) }.getOrNull()
-                ?.let { date -> date to getInt(key, 0) }
-        }
-        .toMap()
-    val merged = fromHistory.toMutableMap()
-    merged[today] = getInt("intake_ml", 0)
-    return merged.entries.map { (date, ml) -> Pair(date, ml) }.sortedBy { it.first }
-}
 
 /** "kg" or "lb" depending on the active water unit — oz implies imperial, everything else metric. */
 fun weightUnitLabel(unit: String): String = if (isImperial(unit)) "lb" else "kg"

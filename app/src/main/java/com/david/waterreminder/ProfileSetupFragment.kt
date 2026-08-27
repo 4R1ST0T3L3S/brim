@@ -17,7 +17,7 @@ class ProfileSetupFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val prefs by lazy {
-        requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        requireContext().waterPrefs()
     }
     private val unit get() = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
 

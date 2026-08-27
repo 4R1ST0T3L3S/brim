@@ -34,7 +34,7 @@ object ReminderScheduler {
         if (!reminder.isInterval) return now.nextOccurrenceOf(reminder.hour, reminder.minute)
 
         val (windowStart, windowEnd) = context
-            .getSharedPreferences("water_prefs", Context.MODE_PRIVATE).reminderWindow()
+            .waterPrefs().reminderWindow()
         return nextIntervalFireTime(
             from = now,
             anchorHour = reminder.hour,

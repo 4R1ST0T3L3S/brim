@@ -1,7 +1,7 @@
 <resources>
-    <string name="app_name">WaterReminder</string>
-    <string name="share_weekly_progress_text">💧 My weekly hydration progress! #WaterReminder #StayHydrated</string>
-    <string name="share_all_history_text">💧 My full hydration history! #WaterReminder #StayHydrated</string>
+    <string name="app_name">FillMeUp!</string>
+    <string name="share_weekly_progress_text">💧 My weekly hydration progress! #FillMeUp #StayHydrated</string>
+    <string name="share_all_history_text">💧 My full hydration history! #FillMeUp #StayHydrated</string>
     <string name="share_chooser_title">Share your progress</string>
     <string name="action_about">About</string>
     <string name="action_settings">Settings</string>
@@ -11,7 +11,7 @@
     <string name="action_help">Help</string>
     <string name="settings_version">v%s</string>
     <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">WaterReminder</string>
+    <string name="first_fragment_label">FillMeUp!</string>
     <string name="second_fragment_label">Privacy Policy</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>
@@ -19,6 +19,8 @@
     <string name="theme_system_default">System default</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
+    <string name="theme_blue_dark">Dark Blue</string>
+    <string name="theme_blue_light">Light Blue</string>
 
     <string name="settings_section_data">Data</string>
     <string name="settings_export_data">Export Data</string>
@@ -30,7 +32,7 @@
     <string name="import_success">Data imported — restart the app to see all changes</string>
     <string name="import_failed">Import failed — invalid backup file</string>
 
-    <string name="home_title">Water Reminder 💧</string>
+    <string name="home_title">FillMeUp! 💧</string>
     <string name="home_intake_label">Today\'s intake</string>
     <string name="home_intake_amount">0 ml / 1500 ml</string>
     <string name="home_quick_add_label">Quick add</string>
@@ -52,14 +54,22 @@
 
     <!-- Settings rows -->
     <string name="settings_row_theme">Theme</string>
-    <string name="settings_row_reset_custom">Reset custom quick button</string>
+    <string name="settings_row_reset_amounts">Reset quick amounts</string>
     <string name="settings_row_unit">Measure unit</string>
     <string name="settings_row_profile">Age &amp; Weight</string>
     <string name="settings_profile_value">Age %1$d · %2$s</string>
     <string name="settings_row_personal_goal">Personal goal</string>
-    <string name="settings_row_stop_on_goal">Pause when goal reached</string>
-    <string name="settings_stop_on_goal_enabled">Enabled</string>
-    <string name="settings_stop_on_goal_disabled">Disabled</string>
+    <string name="settings_row_celebrations">Celebration popups</string>
+    <string name="settings_celebrations_enabled">Shown when you reach a goal</string>
+    <string name="settings_celebrations_disabled">Never shown</string>
+    <string name="settings_row_show_after_goal">Display when goal reached</string>
+    <string name="settings_show_after_goal_subtitle">Keep reminding you after you hit your daily goal</string>
+    <string name="settings_row_quick_log_actions">Quick log buttons</string>
+    <string name="settings_quick_log_actions_off">Off</string>
+    <string name="dialog_quick_log_actions_title">Quick log buttons</string>
+    <string name="dialog_quick_log_actions_hint">Buttons on the reminder notification, so you can log a drink without opening the app — including from a paired watch. Up to %1$d fit.</string>
+    <string name="dialog_quick_log_actions_empty">You have no quick amounts to choose from. Add one with + on the home screen first.</string>
+    <string name="notification_action_add">+%1$s</string>
     <string name="notification_channel_name">Water Reminders</string>
     <string name="notification_channel_description">Daily water intake reminders</string>
     <string name="notification_title">Time to drink water! 💧</string>
@@ -76,22 +86,39 @@
     </string-array>
     <string name="notification_body_goal_reached">Don\'t forget to stay hydrated!</string>
     <string name="settings_row_data_subtitle">Export or import your data</string>
-    <string name="settings_custom_value">Currently set to %s</string>
-    <string name="settings_no_custom_value">No custom value set</string>
     <string name="settings_personal_goal_value">%s per day</string>
     <string name="settings_not_set">Not set</string>
     <string name="unit_ml">Millilitres (ml)</string>
     <string name="unit_cl">Centilitres (cl)</string>
     <string name="unit_oz">Fluid ounces (oz)</string>
 
+    <!-- History — edit a past day of the week -->
+    <string name="analytics_edit_day_action">Edit a day</string>
+    <string name="analytics_pick_day_title">Pick a day to edit</string>
+    <string name="analytics_pick_day_hint">Tap a day to correct its total. Today is tracked on the home screen.</string>
+    <string name="analytics_pick_day_row_description">%1$s, %2$s</string>
+    <string name="analytics_pick_day_row_description_goal_met">%1$s, %2$s, daily minimum reached</string>
+    <string name="analytics_edit_day_title">Total for %1$s</string>
+    <string name="analytics_edit_day_hint">Total in %1$s (e.g. %2$s)</string>
+    <string name="analytics_edit_day_error">Enter a total between %1$s and %2$s</string>
+    <string name="analytics_day_saved">%1$s set to %2$s</string>
+    <string name="analytics_day_cleared">%1$s cleared</string>
+
     <!-- Dialogs -->
+    <string name="dialog_ok">OK</string>
     <string name="dialog_save">Save</string>
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_reset">Reset</string>
     <string name="dialog_reset_to_default">Reset to Default</string>
     <string name="dialog_clear">Clear</string>
-    <string name="dialog_reset_custom_title">Reset custom button</string>
-    <string name="dialog_reset_custom_message">Remove the custom %s quick button?</string>
+    <string name="dialog_remove">Remove</string>
+    <string name="dialog_add_amount_title">Add amount</string>
+    <string name="dialog_edit_amount_title">Edit amount</string>
+    <string name="dialog_amount_hint">Amount in %1$s (e.g. %2$s)</string>
+    <string name="dialog_reset_amounts_title">Reset quick amounts</string>
+    <string name="dialog_reset_amounts_message">Restore the default amounts? Amounts you added will be removed.</string>
+    <string name="error_amount_range">Enter a value between 1 and %s</string>
+    <string name="error_amount_duplicate">That amount is already on the row</string>
     <string name="dialog_import_title">Are you sure?</string>
     <string name="dialog_import_message">Recommended: export a backup before importing. This will overwrite all your current data.</string>
     <string name="dialog_import_confirm">Import</string>
@@ -109,11 +136,11 @@
 
     <!-- Notifications -->
     <string name="action_notifications">Notifications</string>
+    <string name="fab_reminders_description">Reminders</string>
     <string name="settings_section_notifications">Notifications</string>
     <string name="settings_row_notifications_subtitle">Manage reminder notifications</string>
     <string name="settings_row_enable_notifications">Enable notifications</string>
-    <string name="settings_notifications_enabled">Enabled</string>
-    <string name="settings_notifications_disabled">Disabled</string>
+    <string name="settings_notifications_subtitle">Reminders at the times you set</string>
     <string name="settings_section_reminder_schedule">Reminder schedule</string>
     <string name="settings_row_reminder_window">Reminder window</string>
     <string name="settings_reminder_window_value">Repeats between %1$s and %2$s</string>
@@ -145,7 +172,8 @@
     <string name="about_row_privacy_subtitle">How your data is handled</string>
     <string name="about_row_goal_formula_title">How your goal is calculated</string>
     <string name="about_row_goal_formula_subtitle">The math behind your recommended daily goal</string>
-    <string name="dialog_goal_formula_message">Your recommended daily goal is based on your weight: about 35 ml per kilogram of body weight for total water needs (drinks + food combined).\n\nSince roughly 20% of that typically comes from food, we set your drinking-water goal at about 80% of the total — around 28 ml per kilogram.\n\nThis is a general estimate, not medical advice. You can always set your own goal manually in Settings → Personal goal.</string>
+    <string name="dialog_goal_formula_message">Under 18: a fixed 1,500 ml/day — the app\'s standard recommended minimum. Growing bodies have their own age/sex-based targets that don\'t scale with weight the way adult estimates do, so we don\'t try to approximate that with a formula.\n\n18 and older: weight (kg) × 35 ml, then 80% of that total — about 28 ml per kilogram. The 35 ml/kg baseline and the 80/20 drinks-to-food split are both commonly attributed to the European Food Safety Authority\'s (EFSA) 2010 water guidelines.\n\nThis is a general estimate, not medical advice. You can always set your own goal manually in Settings → Personal goal.</string>
+    <string name="dialog_sources_button">Sources</string>
     <string name="about_row_support_title">Support the Dev</string>
     <string name="about_row_support_subtitle">Buy me a coffee ☕</string>
 
@@ -189,9 +217,11 @@
     <string name="reminder_setup_subtitle">We\'ll send friendly reminders to drink water throughout the day.</string>
     <string name="reminder_setup_choose_schedule">Choose a schedule</string>
     <string name="reminder_setup_hourly_title">Hourly reminders</string>
-    <string name="reminder_setup_hourly_subtitle">Every hour from 08:00 to 20:00 (recommended)</string>
+    <string name="reminder_setup_hourly_subtitle">Every hour from 08:00 to 20:00</string>
     <string name="reminder_setup_custom_title">Custom schedule</string>
     <string name="reminder_setup_custom_subtitle">Set your own wake-up and bedtime hours</string>
+    <string name="reminder_setup_none_title">No reminders</string>
+    <string name="reminder_setup_none_subtitle">I\'ll log my water on my own, without notifications</string>
     <string name="reminder_setup_day_begins">My day begins at %s</string>
     <string name="reminder_setup_off_to_bed">I\'m off to bed at %s</string>
     <string name="reminder_setup_error_window_title">Check your times</string>
@@ -202,66 +232,80 @@
 
     <string name="privacy_policy_text">
 1. Overview\n\n
-WaterReminder is a free, offline hydration-tracking application for Android. This Privacy Policy explains what information the App collects, how it is used, and your rights as a user.\n\n
-The App collects no personal data and sends nothing outside your device.\n\n
+FillMeUp! is a free, offline hydration-tracking application for Android. This Privacy Policy explains what information the App collects, how it is used, and your rights as a user.\n\n
+The App has no servers, no accounts and no analytics. Everything you enter stays in the App\'s private storage on this device. The only way any of it leaves the device is if you export a backup file yourself (section 6), or if you have Android\'s own system backup switched on (section 7) — both are under your control.\n\n
 ──────────────────────────────\n\n
 2. Information We Collect\n\n
 2.1 Data stored locally on your device\n\n
-The App stores the following information exclusively in your device. This data never leaves your device:\n\n
+The App stores the following information in your device\'s private app storage:\n\n
 • Daily water intake — track progress toward the daily goal\n
-• Historical daily intake — display the 7-day analytics chart\n
-• Daily goal and unit preference — personalise the experience\n
-• Personal goal — optional daily target set by the user\n
+• Historical daily intake — display the analytics chart and full history\n
+• Daily goal, personal goal and unit preference — personalise the experience\n
+• Age and body weight (optional) — calculate your recommended daily goal; the App works without them\n
 • Reminder schedule configuration — trigger notifications at chosen times\n
-• Notification preferences — including whether to pause reminders upon reaching the goal\n
+• Reminder time window — keep repeating reminders inside your waking hours\n
+• Quick add and remove amounts — remember the buttons you configured\n
+• Notification quick-log amounts — remember the buttons shown on a reminder\n
+• Notification preferences — on/off, and whether to pause reminders upon reaching the goal\n
+• Celebration animations preference — respect your choice for goal celebrations\n
+• Theme preference — remember your light / dark / colour choice\n
 • Streak counter — show consecutive days the goal was met\n
-• Custom quick-add button value — remember your personalised shortcut\n
-• Notification on/off flag — respect your notification preference\n
-• Tutorial completion flag — avoid showing the intro more than once\n\n
+• Setup and tutorial completion flags — avoid repeating the intro and profile setup\n\n
 2.2 Data we do NOT collect\n\n
-• No name, email address, or personally identifiable information\n
+• No name, email address, account or contact details\n
 • No location data\n
 • No device identifiers\n
 • No usage analytics or event telemetry\n
 • No crash or error reports\n
 • No camera, microphone, or contacts access\n
-• No data shared with third parties\n\n
+• No data sent to us or to any third party\n\n
+About age and weight: these are the only body-related values the App stores, they are optional, and they exist solely to compute a recommended daily goal on this device. They are never transmitted anywhere and are not linked to any identity, because the App has no notion of who you are. You can change or erase them at any time in Settings → Profile.\n\n
 ──────────────────────────────\n\n
 3. Internet and Network Access\n\n
-The App does not request Internet or network permissions. It is entirely offline by design. No data is ever transmitted to any server, cloud service, or third party.\n\n
+The App does not request the INTERNET permission. It cannot open a network connection, and it has no server, cloud service or third-party endpoint to talk to. It is entirely offline by design.\n\n
 ──────────────────────────────\n\n
 4. Third-Party Libraries\n\n
 The App uses open-source libraries that operate strictly on-device:\n\n
-• MPAndroidChart — renders the 7-day intake bar chart\n
+• MPAndroidChart — renders the intake bar chart\n
 • TapTargetView — displays the interactive first-launch tutorial\n
 • AndroidX / Material Components — standard UI components\n\n
-None of these libraries collect, transmit, or process personal data.\n\n
+None of these libraries collect, transmit or process personal data. The App ships no advertising, attribution or analytics SDK of any kind.\n\n
 ──────────────────────────────\n\n
 5. Notifications\n\n
-Reminders are delivered as local notifications generated entirely on your device using Android\'s AlarmManager. No notification content or delivery data is sent to any external service. You can disable notifications at any time from the Reminders screen or your device notification settings.\n\n
+Reminders are delivered as local notifications generated entirely on your device using Android\'s AlarmManager. A reminder may include quick-log buttons that record an amount straight from the notification shade without opening the App; this is handled entirely on-device. No notification content or delivery data is sent to any external service. You can disable notifications at any time from the Reminders screen or your device notification settings.\n\n
 ──────────────────────────────\n\n
 6. Data Export and Import\n\n
-The App allows you to export all locally stored data to a backup file at a location you choose on your device. You can also restore your data by importing a previously exported backup file. The exported file is saved wherever you select (such as your Downloads folder). The App never uploads or transmits this file to any server or third party.\n\n
+The App allows you to export everything it has stored to a backup file at a location you choose on your device, and to restore it later by importing that file. The file is plain-text JSON and contains the values listed in 2.1, including your age and weight if you entered them. The App never uploads or transmits it — where the file goes afterwards is up to you, so treat it like any other personal document if you copy it off the device or into cloud storage.\n\n
+Importing a backup replaces the App\'s current data with the contents of the file.\n\n
 ──────────────────────────────\n\n
-7. Permissions\n\n
+7. Android System Backup\n\n
+The App participates in Android\'s built-in backup mechanism. If system backup is enabled on the device (for example Backup by Google One, or another transport your device provides), Android copies the App\'s saved preferences — the data in 2.1, including age and weight if entered — into that backup and restores them when the App is reinstalled or the device is migrated.\n\n
+• This is performed by the Android operating system, not by the App. The App has no access to the backup and no server of its own.\n
+• The backup is stored under your own account with your backup provider and is governed by that provider\'s privacy policy. On current Android versions it is encrypted with your device credentials before leaving the device.\n
+• Devices without a backup transport never produce such a backup.\n
+• The first-launch tour flag is deliberately excluded, so the guide replays after a reinstall.\n
+• To opt out: turn off backup for the App in Device Settings → Google → Backup (or Settings → System → Backup). Existing backups can be deleted from the same screen.\n\n
+──────────────────────────────\n\n
+8. Permissions\n\n
 • Display hydration reminder notifications (Android 13+)\n
 • Reschedule reminders after a device reboot\n
-• Deliver reminders at the exact times you configured (Android 12+)\n
-• Reschedule reminders when the device exits airplane mode\n\n
-No other permissions are requested or used.\n\n
+• Deliver reminders at the exact times you configured (Android 12+)\n\n
+The App also reschedules reminders when the device leaves airplane mode or after an app update; neither requires an additional permission. No other permissions are requested or used.\n\n
 ──────────────────────────────\n\n
-8. Data Retention and Deletion\n\n
-All data is stored locally in your device\'s private storage and accessible only to the App. To delete all data:\n\n
-• Clear app data: Device Settings → Apps → WaterReminder → Storage → Clear Data\n
+9. Data Retention and Deletion\n\n
+All data is stored locally in your device\'s private storage and accessible only to the App. To delete it:\n\n
+• Clear your age and weight only: Settings → Profile inside the App\n
+• Clear everything: Device Settings → Apps → FillMeUp! → Storage → Clear Data\n
 • Or simply uninstall the App.\n\n
-There is no remote backup to delete because no data is ever uploaded.\n\n
+These actions do not touch copies outside the App\'s own storage: any backup file you exported yourself, and any Android system backup, must be deleted separately (sections 6 and 7).\n\n
 ──────────────────────────────\n\n
-9. Children\'s Privacy\n\n
-The App does not collect any personal information from anyone. It is safe for use by all ages.\n\n
+10. Children\'s Privacy\n\n
+The App is not directed at children and collects no personally identifiable information from anyone. If an age under 18 is entered, it is used only to select a fixed recommended minimum instead of the adult weight-based estimate, and it is stored locally exactly like every other setting.\n\n
 ──────────────────────────────\n\n
-10. Changes to This Policy\n\n
+11. Changes to This Policy\n\n
 If a future version of the App introduces features that change these data practices, this policy will be updated and the user will be notified.\n\n
 ──────────────────────────────\n\n
+Last updated: August 27, 2026\n
 David Ricardo\n
     </string>
 </resources>

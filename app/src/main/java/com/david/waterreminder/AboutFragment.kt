@@ -47,6 +47,11 @@ class AboutFragment : BaseMenuFragment() {
                 .setTitle(getString(R.string.about_row_goal_formula_title))
                 .setMessage(getString(R.string.dialog_goal_formula_message))
                 .setPositiveButton(android.R.string.ok, null)
+                .setNeutralButton(getString(R.string.dialog_sources_button)) { _, _ ->
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
+                        "https://www.efsa.europa.eu/sites/default/files/assets/DRV_Summary_tables_jan_17.pdf"
+                    )))
+                }
                 .show()
         }
 

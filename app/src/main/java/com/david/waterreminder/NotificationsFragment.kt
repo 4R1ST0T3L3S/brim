@@ -11,9 +11,10 @@ import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import com.david.waterreminder.databinding.DialogHourPickerBinding
+import com.david.waterreminder.databinding.DialogPickListBinding
 import com.david.waterreminder.databinding.DialogReminderWindowBinding
 import com.david.waterreminder.databinding.FragmentNotificationsBinding
+import com.david.waterreminder.databinding.ItemPickAmountBinding
 
 class NotificationsFragment : BaseMenuFragment() {
 
@@ -21,8 +22,9 @@ class NotificationsFragment : BaseMenuFragment() {
     private val binding get() = _binding!!
 
     private val prefs by lazy {
-        requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        requireContext().waterPrefs()
     }
+    private val unit get() = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -41,28 +43,42 @@ class NotificationsFragment : BaseMenuFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // The two boolean rows swap the chevron for a switch; the shared row layout ships
+        // with the switch hidden.
+        listOf(binding.rowEnableNotifications, binding.rowShowAfterGoal).forEach { row ->
+            row.rowSwitch.visibility = View.VISIBLE
+            row.rowChevron.visibility = View.GONE
+        }
+
         binding.rowEnableNotifications.rowIcon.setImageResource(R.drawable.ic_bell)
         binding.rowEnableNotifications.rowTitle.text =
             getString(R.string.settings_row_enable_notifications)
-        binding.rowEnableNotifications.rowChevron.visibility = View.GONE
+        binding.rowEnableNotifications.rowSubtitle.text =
+            getString(R.string.settings_notifications_subtitle)
         binding.rowEnableNotifications.rowContainer.setOnClickListener {
             if (prefs.getBoolean("notifications_enabled", false)) {
                 disableNotifications()
                 refreshRows()
             } else {
-                // May be async (permission prompt) — the launcher refreshes on its way back.
+                // May be async (permission prompt) — the launcher refreshes on its way back,
+                // and refreshRows puts the switch back if the prompt was denied.
                 requestNotificationPermission()
             }
         }
 
-        binding.rowStopOnGoal.rowIcon.setImageResource(android.R.drawable.ic_lock_silent_mode_off)
-        binding.rowStopOnGoal.rowTitle.text = getString(R.string.settings_row_stop_on_goal)
-        binding.rowStopOnGoal.rowChevron.visibility = View.GONE
-        binding.rowStopOnGoal.rowContainer.setOnClickListener {
-            val current = prefs.getBoolean("stop_notifications_on_goal", false)
-            prefs.edit().putBoolean("stop_notifications_on_goal", !current).apply()
+        binding.rowShowAfterGoal.rowIcon.setImageResource(android.R.drawable.ic_lock_silent_mode_off)
+        binding.rowShowAfterGoal.rowTitle.text = getString(R.string.settings_row_show_after_goal)
+        binding.rowShowAfterGoal.rowSubtitle.text =
+            getString(R.string.settings_show_after_goal_subtitle)
+        binding.rowShowAfterGoal.rowContainer.setOnClickListener {
+            prefs.setShowNotificationsAfterGoal(!prefs.showNotificationsAfterGoal())
             refreshRows()
         }
+
+        binding.rowQuickLogActions.rowIcon.setImageResource(R.drawable.ic_water_drop)
+        binding.rowQuickLogActions.rowTitle.text =
+            getString(R.string.settings_row_quick_log_actions)
+        binding.rowQuickLogActions.rowContainer.setOnClickListener { showQuickLogActionsDialog() }
 
         binding.rowReminderWindow.rowIcon.setImageResource(R.drawable.ic_clock)
         binding.rowReminderWindow.rowTitle.text = getString(R.string.settings_row_reminder_window)
@@ -91,18 +107,24 @@ class NotificationsFragment : BaseMenuFragment() {
 
     private fun refreshRows() {
         val enabled = prefs.getBoolean("notifications_enabled", false)
-        binding.rowEnableNotifications.rowSubtitle.text =
-            if (enabled) getString(R.string.settings_notifications_enabled)
-            else getString(R.string.settings_notifications_disabled)
+        // The switches carry no listener of their own — the row owns the tap — so the state
+        // can be written straight in without detaching anything first.
+        binding.rowEnableNotifications.rowSwitch.isChecked = enabled
 
-        binding.rowStopOnGoal.rowSubtitle.text =
-            if (prefs.getBoolean("stop_notifications_on_goal", false))
-                getString(R.string.settings_stop_on_goal_enabled)
-            else getString(R.string.settings_stop_on_goal_disabled)
+        binding.rowShowAfterGoal.rowSwitch.isChecked = prefs.showNotificationsAfterGoal()
 
-        // Pausing on goal is meaningless while notifications are off.
-        binding.rowStopOnGoal.root.alpha = if (enabled) 1f else 0.38f
-        binding.rowStopOnGoal.rowContainer.isEnabled = enabled
+        // What happens at the goal is moot while notifications are off.
+        binding.rowShowAfterGoal.root.alpha = if (enabled) 1f else 0.38f
+        binding.rowShowAfterGoal.rowContainer.isEnabled = enabled
+        binding.rowShowAfterGoal.rowSwitch.isEnabled = enabled
+
+        val actions = prefs.notificationAmounts()
+        val unit = unit
+        binding.rowQuickLogActions.rowSubtitle.text =
+            if (actions.isEmpty()) getString(R.string.settings_quick_log_actions_off)
+            else actions.joinToString(", ") { it.fmt(unit) }
+        binding.rowQuickLogActions.root.alpha = if (enabled) 1f else 0.38f
+        binding.rowQuickLogActions.rowContainer.isEnabled = enabled
 
         val (windowStart, windowEnd) = prefs.reminderWindow()
         binding.rowReminderWindow.rowSubtitle.text = getString(
@@ -110,6 +132,61 @@ class NotificationsFragment : BaseMenuFragment() {
             windowStart.asHourLabel(),
             windowEnd.asHourLabel()
         )
+    }
+
+    // ─── Quick log buttons ───────────────────────────────────────
+
+    /**
+     * Picks which quick amounts get a button on the notification. The list is the home screen's
+     * own amounts, so there is nothing new to invent here and nothing that can name an amount
+     * the user no longer has.
+     */
+    private fun showQuickLogActionsDialog() {
+        // One snapshot of what the home screen offers, shared by the rows, the seeded selection
+        // and the save — rather than three separate reads that could disagree.
+        val available = prefs.quickAmounts()
+        if (available.isEmpty()) {
+            AlertDialog.Builder(requireContext())
+                .setTitle(getString(R.string.dialog_quick_log_actions_title))
+                .setMessage(getString(R.string.dialog_quick_log_actions_empty))
+                .setPositiveButton(getString(R.string.dialog_ok), null)
+                .show()
+            return
+        }
+
+        val dialogBinding = DialogPickListBinding.inflate(layoutInflater)
+        dialogBinding.textHint.text =
+            getString(R.string.dialog_quick_log_actions_hint, NOTIFICATION_ACTIONS_MAX)
+
+        val unit = unit
+        var selection = prefs.notificationAmounts()
+
+        val rows = available.map { ml ->
+            ml to ItemPickAmountBinding.inflate(layoutInflater, dialogBinding.containerItems, true)
+                .also { it.textAmount.text = ml.fmt(unit) }
+        }
+
+        // Every row redraws on every tap, not just the one tapped: checking a fourth amount
+        // frees its slot by unchecking whichever has been checked longest.
+        fun redraw() = rows.forEach { (ml, row) -> row.checkAmount.isChecked = ml in selection }
+        redraw()
+
+        rows.forEach { (ml, row) ->
+            row.root.setOnClickListener {
+                selection = selection.toggleNotificationAmount(ml)
+                redraw()
+            }
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setTitle(getString(R.string.dialog_quick_log_actions_title))
+            .setView(dialogBinding.root)
+            .setPositiveButton(getString(R.string.dialog_save)) { _, _ ->
+                prefs.setNotificationAmounts(selection)
+                refreshRows()
+            }
+            .setNegativeButton(getString(R.string.dialog_cancel), null)
+            .show()
     }
 
     // ─── Reminder window ─────────────────────────────────────────
@@ -172,7 +249,7 @@ class NotificationsFragment : BaseMenuFragment() {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 // The hour pickers are unrestricted, so the window is validated here.
                 if (startHour >= endHour) {
-                    showWindowError(getString(R.string.reminder_setup_error_window))
+                    showWindowError()
                     return@setOnClickListener
                 }
                 saveReminderWindow(startHour, endHour)
@@ -181,35 +258,6 @@ class NotificationsFragment : BaseMenuFragment() {
             }
         }
         dialog.show()
-    }
-
-    // Reminders always fire at the top of the hour, so there is no minute to choose: an
-    // hours-only wheel instead of a TimePicker, whose minute column can't be hidden
-    // through public API and whose value would be discarded anyway.
-    // displayedValues (rather than setFormatter) so the labels render before any scroll.
-    private fun showHourPicker(title: String, initialHour: Int, onPicked: (Int) -> Unit) {
-        val pickerBinding = DialogHourPickerBinding.inflate(layoutInflater)
-        val picker = pickerBinding.pickerHour.apply {
-            minValue = 0
-            maxValue = 23
-            displayedValues = Array(24) { it.asHourLabel() }
-            value = initialHour
-            wrapSelectorWheel = true
-        }
-        AlertDialog.Builder(requireContext())
-            .setTitle(title)
-            .setView(pickerBinding.root)
-            .setPositiveButton(getString(R.string.dialog_save)) { _, _ -> onPicked(picker.value) }
-            .setNegativeButton(getString(R.string.dialog_cancel), null)
-            .show()
-    }
-
-    private fun showWindowError(message: String) {
-        AlertDialog.Builder(requireContext())
-            .setTitle(getString(R.string.reminder_setup_error_window_title))
-            .setMessage(message)
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
     }
 
     /**
@@ -258,7 +306,7 @@ class NotificationsFragment : BaseMenuFragment() {
     }
 
     private fun rescheduleEnabledReminders() {
-        prefs.getStringSet("reminders_v3", emptySet())
+        prefs.getStringSet(REMINDERS_KEY, emptySet())
             ?.mapNotNull { Reminder.fromPrefsString(it) }
             ?.filter { it.enabled }
             ?.forEach { ReminderScheduler.schedule(requireContext(), it) }

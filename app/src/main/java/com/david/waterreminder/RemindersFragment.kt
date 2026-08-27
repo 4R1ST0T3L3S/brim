@@ -16,6 +16,9 @@ import androidx.navigation.fragment.findNavController
 import com.david.waterreminder.databinding.FragmentRemindersBinding
 import com.david.waterreminder.databinding.ItemReminderBinding
 
+/** Where the reminder list is stored — the one place that spelling is decided. */
+const val REMINDERS_KEY = "reminders_v3"
+
 data class Reminder(
     val time: String,
     val hour: Int,
@@ -29,6 +32,18 @@ data class Reminder(
 
     /** Fires once and stays off, so it is never rescheduled. */
     val isOneTime get() = type == TYPE_ONETIME
+
+    /**
+     * True when a repeating reminder's alarm was delivered outside the window it's meant
+     * to be bounded by — Android can delay delivery by hours under aggressive battery
+     * management, so a reminder scheduled for 19:00 can still land well past bedtime. An
+     * anchor placed outside the window on purpose is exempt: that's the reminder working
+     * as configured, not staleness.
+     */
+    fun firedOutsideWindow(currentHour: Int, windowStart: Int, windowEnd: Int): Boolean {
+        if (!isInterval || hour !in windowStart..windowEnd) return false
+        return currentHour !in windowStart..windowEnd
+    }
 
     // Positional format, so a trailing field can only be added: 3 fields, plus a 5th for
     // the repeat interval. Field 4 held the old hourly reminder's window end — written as
@@ -89,7 +104,7 @@ data class Reminder(
          */
         fun migrateLegacyHourly(prefs: SharedPreferences) {
             if (prefs.contains(PREF_WINDOW_END_HOUR)) return
-            legacyHourlyWindow(prefs.getStringSet("reminders_v3", null))
+            legacyHourlyWindow(prefs.getStringSet(REMINDERS_KEY, null))
                 ?.let { (start, end) -> prefs.setReminderWindow(start, end) }
         }
     }
@@ -103,7 +118,7 @@ class RemindersFragment : Fragment() {
     private val reminders = mutableListOf<Reminder>()
 
     private val prefs by lazy {
-        requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        requireContext().waterPrefs()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -153,7 +168,7 @@ class RemindersFragment : Fragment() {
         // once (e.g. returning from Notifications). Start clean or rows pile up.
         reminders.clear()
 
-        val saved = prefs.getStringSet("reminders_v3", null)
+        val saved = prefs.getStringSet(REMINDERS_KEY, null)
         if (saved == null) {
             addDefaultReminder()   // First launch
         } else {
@@ -182,7 +197,7 @@ class RemindersFragment : Fragment() {
 
     private fun saveAllReminders() {
         val set = reminders.map { it.toPrefsString() }.toSet()
-        prefs.edit().putStringSet("reminders_v3", set).apply()
+        prefs.edit().putStringSet(REMINDERS_KEY, set).apply()
     }
 
     // ─── UI ───────────────────────────────────────────────────────
@@ -199,11 +214,15 @@ class RemindersFragment : Fragment() {
             LayoutInflater.from(requireContext()), container, false
         )
 
-        // A repeating reminder reads as a range, ending at the go-to-bed hour.
+        // A repeating reminder reads as a range. The start is where it actually begins
+        // firing, which the window pulls forward when the reminder is anchored earlier —
+        // showing the raw anchor would contradict the window shown in Notifications.
         rowBinding.textReminderTime.text =
-            if (reminder.isInterval)
-                "🔔  ${reminder.time}–${prefs.reminderWindow().second.asHourLabel()}"
-            else "🔔  ${reminder.time}"
+            if (reminder.isInterval) {
+                val (windowStart, windowEnd) = prefs.reminderWindow()
+                val start = maxOf(reminder.hour, windowStart).asHourLabel()
+                "🔔  $start–${windowEnd.asHourLabel()}"
+            } else "🔔  ${reminder.time}"
         rowBinding.switchReminderEnabled.isChecked = reminder.enabled
 
         applyTypeChip(rowBinding, reminder)

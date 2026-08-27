@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/page_background"
+    android:background="?attr/pageBackground"
     tools:context=".FirstFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -36,54 +36,19 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/title_water_reminder" />
 
-        <!-- 4 dynamic bottles — filled based on current intake -->
+        <!-- One 500 ml bottle per 500 ml of the goal, filled based on current intake.
+             Rows are built in code (see FirstFragment.updateBottlesUI) because the count
+             follows the goal — 3 bottles at the 1500 ml minimum, 20 at a 10 000 ml goal. -->
         <LinearLayout
             android:id="@+id/container_bottles"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:gravity="center"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/text_intake_label">
-
-            <ImageView
-                android:id="@+id/bottle_1"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:layout_marginEnd="12dp"
-                android:src="@drawable/ic_bottle_empty"
-                android:importantForAccessibility="no"
-                app:tint="@color/brand_blue" />
-
-            <ImageView
-                android:id="@+id/bottle_2"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:layout_marginEnd="12dp"
-                android:src="@drawable/ic_bottle_empty"
-                android:importantForAccessibility="no"
-                app:tint="@color/brand_blue" />
-
-            <ImageView
-                android:id="@+id/bottle_3"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:layout_marginEnd="12dp"
-                android:src="@drawable/ic_bottle_empty"
-                android:importantForAccessibility="no"
-                app:tint="@color/brand_blue" />
-
-            <ImageView
-                android:id="@+id/bottle_4"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:src="@drawable/ic_bottle_empty"
-                android:importantForAccessibility="no"
-                app:tint="@color/brand_blue" />
-
-        </LinearLayout>
+            app:layout_constraintTop_toBottomOf="@id/text_intake_label" />
 
         <ProgressBar
             android:id="@+id/progress_water"
@@ -162,7 +127,7 @@
             android:id="@+id/text_goal_reached"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="12dp"
             android:gravity="center"
             android:lineSpacingMultiplier="1.4"
             android:text="@string/home_goal_reached"

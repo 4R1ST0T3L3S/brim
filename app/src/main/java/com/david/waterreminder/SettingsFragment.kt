@@ -19,7 +19,7 @@ class SettingsFragment : BaseMenuFragment() {
     private val binding get() = _binding!!
 
     private val prefs by lazy {
-        requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        requireContext().waterPrefs()
     }
     private val unit get() = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
 
@@ -36,9 +36,12 @@ class SettingsFragment : BaseMenuFragment() {
         binding.rowSetTheme.rowIcon.setImageResource(android.R.drawable.ic_menu_manage)
         binding.rowSetTheme.rowTitle.text = getString(R.string.settings_row_theme)
 
-        binding.rowResetCustom.rowIcon.setImageResource(R.drawable.ic_water_drop)
-        binding.rowResetCustom.rowTitle.text = getString(R.string.settings_row_reset_custom)
-        binding.rowResetCustom.rowChevron.setImageResource(android.R.drawable.ic_menu_delete)
+        binding.rowResetQuickAmounts.rowIcon.setImageResource(R.drawable.ic_water_drop)
+        binding.rowResetQuickAmounts.rowTitle.text = getString(R.string.settings_row_reset_amounts)
+        binding.rowResetQuickAmounts.rowChevron.setImageResource(android.R.drawable.ic_menu_delete)
+        // Title only: the row does one thing, and listing the current amounts here would just
+        // duplicate the home screen.
+        binding.rowResetQuickAmounts.rowSubtitle.visibility = View.GONE
 
         binding.rowSetUnit.rowIcon.setImageResource(R.drawable.ic_water_drop)
         binding.rowSetUnit.rowTitle.text = getString(R.string.settings_row_unit)
@@ -49,20 +52,26 @@ class SettingsFragment : BaseMenuFragment() {
         binding.rowSetPersonalGoal.rowIcon.setImageResource(R.drawable.ic_bottle_full)
         binding.rowSetPersonalGoal.rowTitle.text = getString(R.string.settings_row_personal_goal)
 
+        binding.rowCelebrations.rowIcon.setImageResource(R.drawable.ic_check)
+        binding.rowCelebrations.rowTitle.text = getString(R.string.settings_row_celebrations)
+        // Swaps the chevron for a switch; the shared row layout ships with the switch hidden.
+        binding.rowCelebrations.rowChevron.visibility = View.GONE
+        binding.rowCelebrations.rowSwitch.visibility = View.VISIBLE
+
         refreshRows()
 
         binding.rowSetTheme.rowContainer.setOnClickListener { showThemeDialog() }
 
-        binding.rowResetCustom.rowContainer.setOnClickListener {
-            val current = prefs.getInt("custom_quick_ml", 0)
-            if (current == 0) return@setOnClickListener
+        binding.rowResetQuickAmounts.rowContainer.setOnClickListener {
+            // Already the shipped set — nothing a reset would change.
+            if (prefs.quickAmounts() == DEFAULT_QUICK_AMOUNTS_ML) return@setOnClickListener
             AlertDialog.Builder(requireContext())
-                .setTitle(getString(R.string.dialog_reset_custom_title))
-                .setMessage(getString(R.string.dialog_reset_custom_message, current.fmt(unit)))
+                .setTitle(getString(R.string.dialog_reset_amounts_title))
+                .setMessage(getString(R.string.dialog_reset_amounts_message))
                 .setPositiveButton(getString(R.string.dialog_reset)) { _, _ ->
-                    prefs.edit().putInt("custom_quick_ml", 0).apply()
+                    prefs.setQuickAmounts(DEFAULT_QUICK_AMOUNTS_ML)
                     refreshRows()
-                    firstFragment()?.applyCustomQuickMl(0)
+                    firstFragment()?.onQuickAmountsChanged()
                 }
                 .setNegativeButton(getString(R.string.dialog_cancel), null)
                 .show()
@@ -73,6 +82,14 @@ class SettingsFragment : BaseMenuFragment() {
         binding.rowProfile.rowContainer.setOnClickListener { showProfileDialog() }
 
         binding.rowSetPersonalGoal.rowContainer.setOnClickListener { showPersonalGoalDialog() }
+
+        binding.rowCelebrations.rowContainer.setOnClickListener {
+            // Only the popups are silenced — the streak and the home banner still track the goal.
+            prefs.edit()
+                .putBoolean(PREF_CELEBRATIONS_ENABLED, !prefs.celebrationsEnabled())
+                .apply()
+            refreshRows()
+        }
 
         binding.rowNotifications.rowIcon.setImageResource(R.drawable.ic_bell)
         binding.rowNotifications.rowTitle.text = getString(R.string.action_notifications)
@@ -109,10 +126,14 @@ class SettingsFragment : BaseMenuFragment() {
         AlertDialog.Builder(requireContext())
             .setTitle(getString(R.string.settings_row_theme))
             .setSingleChoiceItems(options, currentIndex) { dialog, which ->
-                prefs.edit().putInt(PREF_THEME_MODE, THEME_MODES[which]).apply()
-                AppCompatDelegate.setDefaultNightMode(THEME_MODES[which])
-                refreshRows()
+                val selected = THEME_MODES[which]
                 dialog.dismiss()
+                if (selected == current) return@setSingleChoiceItems
+                prefs.edit().putInt(PREF_THEME_MODE, selected).apply()
+                AppCompatDelegate.setDefaultNightMode(nightModeFor(selected))
+                // Dark and Blue share a night mode, so switching between them produces no uiMode
+                // change for AppCompat to react to; recreating is what actually swaps the theme.
+                requireActivity().recreate()
             }
             .setNegativeButton(getString(R.string.dialog_cancel), null)
             .show()
@@ -237,11 +258,6 @@ class SettingsFragment : BaseMenuFragment() {
         binding.rowSetTheme.rowSubtitle.text =
             getString(themeModeLabelRes(prefs.getInt(PREF_THEME_MODE, DEFAULT_THEME_MODE)))
 
-        val customMl = prefs.getInt("custom_quick_ml", 0)
-        binding.rowResetCustom.rowSubtitle.text =
-            if (customMl > 0) getString(R.string.settings_custom_value, customMl.fmt(unit))
-            else getString(R.string.settings_no_custom_value)
-
         binding.rowSetUnit.rowSubtitle.text = when (unit) {
             UNIT_CL -> getString(R.string.unit_cl)
             UNIT_OZ -> getString(R.string.unit_oz)
@@ -262,6 +278,14 @@ class SettingsFragment : BaseMenuFragment() {
         binding.rowSetPersonalGoal.rowSubtitle.text =
             if (personalMl > 0) getString(R.string.settings_personal_goal_value, personalMl.fmt(unit))
             else getString(R.string.settings_not_set)
+
+        // The switch says on or off; the subtitle says what that actually does to the app, so
+        // the consequence of flipping it is readable without trying it.
+        val celebrations = prefs.celebrationsEnabled()
+        binding.rowCelebrations.rowSwitch.isChecked = celebrations
+        binding.rowCelebrations.rowSubtitle.text =
+            if (celebrations) getString(R.string.settings_celebrations_enabled)
+            else getString(R.string.settings_celebrations_disabled)
     }
 
     // ─── Helpers ─────────────────────────────────────────────────

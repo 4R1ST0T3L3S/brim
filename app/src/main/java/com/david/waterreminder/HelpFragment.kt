@@ -19,7 +19,7 @@ class HelpFragment : BaseMenuFragment() {
         requireContext().getSharedPreferences("tour_prefs", Context.MODE_PRIVATE)
     }
     private val prefs by lazy {
-        requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        requireContext().waterPrefs()
     }
 
     override fun onCreateView(

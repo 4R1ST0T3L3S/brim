@@ -1,8 +1,11 @@
 package com.david.waterreminder
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 import java.util.Calendar
 import java.util.Locale
 
@@ -150,6 +153,170 @@ class UnitsTest {
     @Test
     fun toValidGoalMl_empty_returnsNull() {
         assertNull("".toValidGoalMl(UNIT_ML))
+    }
+
+    // ─── toValidDayTotalMl ────────────────────────────────────────
+
+    @Test
+    fun toValidDayTotalMl_validTotal() {
+        assertEquals(2200, "2200".toValidDayTotalMl(UNIT_ML))
+    }
+
+    @Test
+    fun toValidDayTotalMl_zero_isAllowed() {
+        assertEquals(0, "0".toValidDayTotalMl(UNIT_ML))
+    }
+
+    @Test
+    fun toValidDayTotalMl_oz() {
+        assertEquals(2957, "100".toValidDayTotalMl(UNIT_OZ))
+    }
+
+    @Test
+    fun toValidDayTotalMl_atMax() {
+        assertEquals(10_000, DAY_TOTAL_MAX_ML)
+        assertEquals(DAY_TOTAL_MAX_ML, "$DAY_TOTAL_MAX_ML".toValidDayTotalMl(UNIT_ML))
+    }
+
+    @Test
+    fun toValidDayTotalMl_aboveMax_returnsNull() {
+        assertNull("${DAY_TOTAL_MAX_ML + 1}".toValidDayTotalMl(UNIT_ML))
+    }
+
+    @Test
+    fun toValidDayTotalMl_negative_returnsNull() {
+        assertNull("-1".toValidDayTotalMl(UNIT_ML))
+    }
+
+    @Test
+    fun toValidDayTotalMl_empty_returnsNull() {
+        assertNull("".toValidDayTotalMl(UNIT_ML))
+    }
+
+    // ─── asDayIntake ──────────────────────────────────────────────
+
+    @Test
+    fun asDayIntake_ordinaryTotal_untouched() {
+        assertEquals(1_800, 1_800.asDayIntake())
+    }
+
+    @Test
+    fun asDayIntake_atCeiling() {
+        assertEquals(1_000_000, INTAKE_MAX_ML)
+        assertEquals(INTAKE_MAX_ML, INTAKE_MAX_ML.asDayIntake())
+    }
+
+    @Test
+    fun asDayIntake_aboveCeiling_clamped() {
+        assertEquals(INTAKE_MAX_ML, (INTAKE_MAX_ML + 1).asDayIntake())
+        assertEquals(INTAKE_MAX_ML, Int.MAX_VALUE.asDayIntake())
+    }
+
+    /** A clamped day times 100 is the progress-bar maths in FirstFragment — it must stay in Int. */
+    @Test
+    fun asDayIntake_leavesHeadroomForProgressMath() {
+        assertTrue(INTAKE_MAX_ML.toLong() * 100 < Int.MAX_VALUE)
+    }
+
+    @Test
+    fun asDayIntake_negative_clampedToZero() {
+        assertEquals(0, (-50).asDayIntake())
+    }
+
+    // ─── editableHistoryDays ──────────────────────────────────────
+
+    @Test
+    fun editableHistoryDays_coversTheWeekWithoutToday() {
+        val today = LocalDate.now()
+        val days = editableHistoryDays()
+
+        assertEquals(WEEKLY_HISTORY_DAYS - 1, days.size)
+        assertFalse(days.contains(today))
+        assertEquals(today.minusDays((WEEKLY_HISTORY_DAYS - 1).toLong()), days.first())
+        assertEquals(today.minusDays(1), days.last())
+    }
+
+    @Test
+    fun editableHistoryDays_oldestFirst() {
+        assertEquals(editableHistoryDays().sorted(), editableHistoryDays())
+    }
+
+    // ─── bottle row ───────────────────────────────────────────────
+
+    @Test
+    fun bottleCount_oneBottlePer500Ml() {
+        assertEquals(1, bottleCount(ML_PER_BOTTLE))
+        assertEquals(2, bottleCount(1000))
+        assertEquals(3, bottleCount(DEFAULT_DAILY_GOAL_ML))
+        assertEquals(20, bottleCount(GOAL_MAX_ML))
+    }
+
+    @Test
+    fun bottleCount_partialBottleRoundsUp() {
+        assertEquals(1, bottleCount(GOAL_MIN_ML))
+        assertEquals(3, bottleCount(1200))
+        assertEquals(4, bottleCount(1501))
+    }
+
+    @Test
+    fun bottleFillSteps_emptyAtZeroIntake() {
+        assertEquals(listOf(0, 0, 0), bottleFillSteps(0, DEFAULT_DAILY_GOAL_ML))
+    }
+
+    /** The reported bug: at the default goal every bottle must read full, none left empty. */
+    @Test
+    fun bottleFillSteps_allFullAtGoal() {
+        assertEquals(
+            List(3) { BOTTLE_FILL_STEPS },
+            bottleFillSteps(DEFAULT_DAILY_GOAL_ML, DEFAULT_DAILY_GOAL_ML)
+        )
+    }
+
+    @Test
+    fun bottleFillSteps_allFullAtGoalForEveryGoalInRange() {
+        for (goal in GOAL_MIN_ML..GOAL_MAX_ML) {
+            val steps = bottleFillSteps(goal, goal)
+            assertEquals("goal $goal", bottleCount(goal), steps.size)
+            assertTrue("goal $goal filled $steps", steps.all { it == BOTTLE_FILL_STEPS })
+        }
+    }
+
+    @Test
+    fun bottleFillSteps_fillsLeftToRight() {
+        // 700 ml fills the first 500 ml bottle and reaches 40% of the second.
+        assertEquals(listOf(BOTTLE_FILL_STEPS, 2, 0), bottleFillSteps(700, DEFAULT_DAILY_GOAL_ML))
+    }
+
+    @Test
+    fun bottleFillSteps_bottlesStay500MlWhateverTheGoal() {
+        // Same intake, different goals → the filled bottles look identical; only the row length grows.
+        val small = bottleFillSteps(1200, DEFAULT_DAILY_GOAL_ML)
+        val large = bottleFillSteps(1200, GOAL_MAX_ML)
+        assertEquals(listOf(BOTTLE_FILL_STEPS, BOTTLE_FILL_STEPS, 2), small)
+        assertEquals(small, large.take(small.size))
+        assertEquals(20, large.size)
+        assertTrue(large.drop(3).all { it == 0 })
+    }
+
+    /** A goal that isn't a round number of bottles: the last bottle spans only the remainder. */
+    @Test
+    fun bottleFillSteps_lastBottleCoversTheRemainder() {
+        assertEquals(listOf(BOTTLE_FILL_STEPS, BOTTLE_FILL_STEPS, 0), bottleFillSteps(1000, 1300))
+        assertEquals(listOf(BOTTLE_FILL_STEPS, BOTTLE_FILL_STEPS, 2), bottleFillSteps(1120, 1300))
+    }
+
+    @Test
+    fun bottleFillSteps_intakePastGoalStaysFull() {
+        assertEquals(
+            List(3) { BOTTLE_FILL_STEPS },
+            bottleFillSteps(DEFAULT_DAILY_GOAL_ML * 3, DEFAULT_DAILY_GOAL_ML)
+        )
+    }
+
+    @Test
+    fun bottleFillSteps_nonsenseGoalStillYieldsOneBottle() {
+        assertEquals(listOf(BOTTLE_FILL_STEPS), bottleFillSteps(100, 0))
+        assertEquals(listOf(BOTTLE_FILL_STEPS), bottleFillSteps(100, -500))
     }
 
     // ─── asHourLabel ──────────────────────────────────────────────
@@ -309,11 +476,40 @@ class UnitsTest {
         assertEquals("08:00", nextIntervalFireTime(at(5, 30), 5, 0, 1, 20, windowStartHour = 8).hhmm())
     }
 
+    // An early anchor is pulled forward to the window rather than firing outside it —
+    // otherwise resetting the window leaves the pre-populated reminder firing at its old
+    // hour, contradicting the window shown in Notifications.
     @Test
-    fun nextInterval_anchorBeforeWindowStart_stillFiresAtAnchor() {
+    fun nextInterval_anchorBeforeWindowStart_isPulledIntoTheWindow() {
         val next = nextIntervalFireTime(at(4, 0), 5, 0, 1, 20, windowStartHour = 8)
-        assertEquals("05:00", next.hhmm())
+        assertEquals("08:00", next.hhmm())
         assertEquals(14, next.dayOfMonth())
+    }
+
+    // The roll-to-tomorrow path has to use the same pulled-forward hour, or the first
+    // fire of the next day lands back outside the window.
+    @Test
+    fun nextInterval_anchorBeforeWindowStart_rollsToTomorrowInsideTheWindow() {
+        val next = nextIntervalFireTime(at(21, 0), 5, 0, 1, 20, windowStartHour = 8)
+        assertEquals("08:00", next.hhmm())
+        assertEquals(15, next.dayOfMonth())
+    }
+
+    // A late anchor keeps firing: only repeats are bounded at the top, so a deliberately
+    // late reminder isn't silently killed by a window it was never inside.
+    @Test
+    fun nextInterval_anchorAfterWindowEnd_stillFiresAtAnchor() {
+        val next = nextIntervalFireTime(at(21, 0), 22, 0, 2, 20, windowStartHour = 8)
+        assertEquals("22:00", next.hhmm())
+        assertEquals(14, next.dayOfMonth())
+    }
+
+    // No in-window slot left in the day (the step overshoots midnight) — fire at the
+    // anchor rather than not at all.
+    @Test
+    fun nextInterval_noSlotReachesWindow_fallsBackToAnchor() {
+        val next = nextIntervalFireTime(at(4, 0), 5, 0, 20, 20, windowStartHour = 8)
+        assertEquals("05:00", next.hhmm())
     }
 
     // The default reminder is anchored at the get-up hour, so it never skips anything.
@@ -361,5 +557,172 @@ class UnitsTest {
     fun usableWindow_outOfRangeHour_readsAsDefaults() {
         assertEquals(defaultWindow, usableWindow(-1, 20))
         assertEquals(defaultWindow, usableWindow(8, 24))
+    }
+
+    // ─── Quick amounts ──────────────────────────────
+
+    @Test
+    fun asQuickAmounts_sortsAndDeduplicates() {
+        assertEquals(listOf(100, 250, 500), listOf(500, 250, 100, 250).asQuickAmounts())
+    }
+
+    @Test
+    fun asQuickAmounts_dropsOutOfRangeValues() {
+        assertEquals(
+            listOf(1, CUSTOM_MAX_ML),
+            listOf(0, -50, 1, CUSTOM_MAX_ML, CUSTOM_MAX_ML + 1).asQuickAmounts()
+        )
+    }
+
+    @Test
+    fun asQuickAmounts_capsAtLimit() {
+        val tooMany = (1..QUICK_AMOUNTS_MAX + 5).map { it * 10 }
+        assertEquals(QUICK_AMOUNTS_MAX, tooMany.asQuickAmounts().size)
+        assertEquals(tooMany.take(QUICK_AMOUNTS_MAX), tooMany.asQuickAmounts())
+    }
+
+    @Test
+    fun quickAmounts_encodeDecode_roundTrips() {
+        assertEquals(
+            DEFAULT_QUICK_AMOUNTS_ML,
+            DEFAULT_QUICK_AMOUNTS_ML.encodeAmountCsv().decodeAmountCsv().asQuickAmounts()
+        )
+    }
+
+    // Removing every button is a real state, and it has to survive a round trip as one.
+    @Test
+    fun quickAmounts_emptyList_roundTripsAsEmpty() {
+        assertEquals(emptyList<Int>(), emptyList<Int>().encodeAmountCsv().decodeAmountCsv().asQuickAmounts())
+    }
+
+    // No pref yet: an install from before the amounts were editable keeps its custom value.
+    @Test
+    fun quickAmountsFrom_noPref_defaultsPlusLegacyCustom() {
+        assertEquals(listOf(100, 180, 200), quickAmountsFrom(null, 180))
+    }
+
+    @Test
+    fun quickAmountsFrom_noPref_noLegacyCustom_isDefaults() {
+        assertEquals(DEFAULT_QUICK_AMOUNTS_ML, quickAmountsFrom(null, 0))
+    }
+
+    // An empty pref means the user removed them all, not that nothing is stored yet.
+    @Test
+    fun quickAmountsFrom_emptyPref_isEmptyAndIgnoresLegacyCustom() {
+        assertEquals(emptyList<Int>(), quickAmountsFrom("", 180))
+    }
+
+    @Test
+    fun quickAmountsFrom_storedPref_winsOverLegacyCustom() {
+        assertEquals(listOf(150, 400), quickAmountsFrom("400,150", 180))
+    }
+
+    @Test
+    fun decodeAmountCsv_skipsGarbage() {
+        assertEquals(listOf(100, 330), " 100 , oops, , 330 ".decodeAmountCsv().asQuickAmounts())
+    }
+
+    // ─── Notification quick-log selection ─────────────────────────
+
+    private val available = listOf(100, 200, 350, 500)
+
+    @Test
+    fun asNotificationAmounts_dropsAmountsNoLongerOnTheHomeRow() {
+        assertEquals(listOf(100, 200), listOf(100, 200, 750).asNotificationAmounts(available))
+    }
+
+    @Test
+    fun asNotificationAmounts_capsSortsAndDedups() {
+        assertEquals(
+            listOf(100, 200, 350),
+            listOf(500, 200, 200, 100, 350).asNotificationAmounts(available)
+        )
+    }
+
+    @Test
+    fun asNotificationAmounts_emptyIsAllowed() {
+        assertEquals(emptyList<Int>(), emptyList<Int>().asNotificationAmounts(available))
+    }
+
+    private fun prefsWith(quick: String, notifications: String? = null) = FakePrefs(
+        buildMap {
+            put(PREF_QUICK_AMOUNTS_ML, quick)
+            notifications?.let { put(PREF_NOTIFICATION_AMOUNTS_ML, it) }
+        }
+    )
+
+    @Test
+    fun notificationAmounts_neverPicked_fallsBackToTheFirstThree() {
+        assertEquals(listOf(100, 200, 350), prefsWith("100,200,350,500").notificationAmounts())
+    }
+
+    @Test
+    fun notificationAmounts_emptyStored_meansEveryButtonTurnedOff() {
+        assertEquals(emptyList<Int>(), prefsWith("100,200,350,500", "").notificationAmounts())
+    }
+
+    @Test
+    fun notificationAmounts_deletedAmountIsFilteredOnRead() {
+        // Picked, then removed from the home screen by an import or a restore that never went
+        // through setQuickAmounts — so the filter has to happen on the way out, every time.
+        assertEquals(listOf(100), prefsWith("100,200,350,500", "100,750").notificationAmounts())
+    }
+
+    /**
+     * Editing a selected amount must not read back as "the user turned every button off".
+     * Selecting only 250 and then changing that button to 260 used to store an empty CSV, which
+     * is indistinguishable from a deliberate opt-out — silently killing the feature for good.
+     */
+    @Test
+    fun setQuickAmounts_editingTheOnlySelectedAmount_doesNotTurnEveryButtonOff() {
+        val prefs = prefsWith("100,200,250", "250")
+        prefs.setQuickAmounts(listOf(100, 200, 260))
+
+        assertFalse(prefs.contains(PREF_NOTIFICATION_AMOUNTS_ML))
+        assertEquals(listOf(100, 200, 260), prefs.notificationAmounts())
+    }
+
+    @Test
+    fun setQuickAmounts_deletingOneOfSeveralSelected_keepsTheRest() {
+        val prefs = prefsWith("100,200,350", "200,350")
+        prefs.setQuickAmounts(listOf(100, 200))
+        assertEquals(listOf(200), prefs.notificationAmounts())
+    }
+
+    @Test
+    fun setQuickAmounts_neverPicked_leavesTheSelectionDeriving() {
+        val prefs = prefsWith("100,200,350")
+        prefs.setQuickAmounts(listOf(100, 200))
+        assertFalse(prefs.contains(PREF_NOTIFICATION_AMOUNTS_ML))
+    }
+
+    @Test
+    fun setQuickAmounts_deliberateOptOutSurvivesAnEdit() {
+        val prefs = prefsWith("100,200", "")
+        prefs.setQuickAmounts(listOf(100, 200, 350))
+        assertEquals(emptyList<Int>(), prefs.notificationAmounts())
+    }
+
+    @Test
+    fun toggleNotificationAmount_unchecks() {
+        assertEquals(listOf(100), listOf(100, 200).toggleNotificationAmount(200))
+    }
+
+    @Test
+    fun toggleNotificationAmount_checksBelowTheCap() {
+        assertEquals(listOf(100, 200), listOf(100).toggleNotificationAmount(200))
+    }
+
+    /** Front of the list is whichever has been checked longest; a fresh dialog seeds it sorted. */
+    @Test
+    fun toggleNotificationAmount_atTheCap_dropsTheOneCheckedLongest() {
+        assertEquals(listOf(200, 350, 500), listOf(100, 200, 350).toggleNotificationAmount(500))
+        // Order is insertion, not size: 500 was checked before 350, so 500 goes first.
+        assertEquals(listOf(350, 200, 100), listOf(500, 350, 200).toggleNotificationAmount(100))
+    }
+
+    @Test
+    fun toggleNotificationAmount_atTheCap_stillUnchecks() {
+        assertEquals(listOf(100, 350), listOf(100, 200, 350).toggleNotificationAmount(200))
     }
 }
