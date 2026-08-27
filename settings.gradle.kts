@@ -20,6 +20,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "WaterReminder"
+rootProject.name = "FillMeUp"
 include(":app")
  

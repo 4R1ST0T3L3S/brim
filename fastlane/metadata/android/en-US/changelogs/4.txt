@@ -1,0 +1,9 @@
+• Renamed to FillMeUp!
+• Added guided first-launch setup — profile, units, and reminder schedule
+• Added recommended daily goal based on your age and weight
+• Added new ounces units
+• Added reminders every 1, 2, 3 or 4 hours, and a wake/sleep window
+• Added quick-log buttons on reminder notifications
+• Added editing of past days in Analytics
+• Added Light Blue and Dark Blue themes
+• Updated Privacy Policy

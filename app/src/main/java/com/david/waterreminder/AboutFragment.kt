@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.navigation.fragment.findNavController
 import com.david.waterreminder.databinding.FragmentAboutBinding
 
@@ -36,6 +37,22 @@ class AboutFragment : BaseMenuFragment() {
         binding.rowChangelog.rowSubtitle.text = getString(R.string.changelog_row_subtitle)
         binding.rowChangelog.rowContainer.setOnClickListener {
             findNavController().navigate(R.id.action_AboutFragment_to_ChangelogFragment)
+        }
+
+        binding.rowGoalFormula.rowIcon.setImageResource(R.drawable.ic_bottle_full)
+        binding.rowGoalFormula.rowTitle.text = getString(R.string.about_row_goal_formula_title)
+        binding.rowGoalFormula.rowSubtitle.text = getString(R.string.about_row_goal_formula_subtitle)
+        binding.rowGoalFormula.rowContainer.setOnClickListener {
+            AlertDialog.Builder(requireContext())
+                .setTitle(getString(R.string.about_row_goal_formula_title))
+                .setMessage(getString(R.string.dialog_goal_formula_message))
+                .setPositiveButton(android.R.string.ok, null)
+                .setNeutralButton(getString(R.string.dialog_sources_button)) { _, _ ->
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
+                        "https://www.efsa.europa.eu/sites/default/files/assets/DRV_Summary_tables_jan_17.pdf"
+                    )))
+                }
+                .show()
         }
 
         binding.rowSupportDev.rowIcon.setImageResource(android.R.drawable.ic_menu_agenda)

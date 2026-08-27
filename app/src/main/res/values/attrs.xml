@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Surface colors that differ per app theme. Light and Dark resolve through the values /
+      values-night colors; a tinted theme such as Dark Blue overrides them in its own style.
+      Accent colors (brand_blue, brand_red, brand_orange) are semantic and stay theme-independent.
+    -->
+    <attr name="pageBackground" format="color" />
+    <attr name="toolbarBackground" format="color" />
+    <attr name="iconBackdrop" format="color" />
+
+    <!--
+      The home screen's quick add / remove chips. They are built in code rather than in a layout,
+      so they read these instead of a color resource. The remove chip is a pale fill on a pale
+      page, so a theme that tints the page has to deepen the chip with it or the row disappears.
+    -->
+    <attr name="quickAddBackground" format="color" />
+    <attr name="quickAddForeground" format="color" />
+    <attr name="quickRemoveBackground" format="color" />
+    <attr name="quickRemoveForeground" format="color" />
+</resources>

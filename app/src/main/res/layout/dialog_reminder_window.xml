@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_get_up"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:textColor="?attr/colorOnSurface"
+        app:cornerRadius="24dp"
+        app:strokeColor="?attr/colorOutline" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_go_to_bed"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="?attr/colorOnSurface"
+        app:cornerRadius="24dp"
+        app:strokeColor="?attr/colorOutline" />
+
+    <!-- Borderless so it reads as a secondary action, and so the dialog keeps just
+         Cancel / Save at the bottom instead of three cramped buttons. -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_reset_window"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="-8dp"
+        android:textSize="12sp"
+        android:textColor="@color/brand_blue"
+        android:visibility="invisible" />
+
+    <TextView
+        android:id="@+id/text_window_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/dialog_reminder_window_hint"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="12sp" />
+
+</LinearLayout>

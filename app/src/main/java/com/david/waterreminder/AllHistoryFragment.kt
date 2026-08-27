@@ -16,6 +16,7 @@ import androidx.fragment.app.Fragment
 import java.io.File
 import java.io.FileOutputStream
 import com.david.waterreminder.databinding.FragmentAllHistoryBinding
+import com.google.android.material.color.MaterialColors
 import com.github.mikephil.charting.components.LimitLine
 import com.github.mikephil.charting.components.MarkerView
 import com.github.mikephil.charting.components.XAxis
@@ -35,7 +36,7 @@ class AllHistoryFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val prefs by lazy {
-        requireContext().getSharedPreferences("water_prefs", Context.MODE_PRIVATE)
+        requireContext().waterPrefs()
     }
 
     private val unit get() = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
@@ -73,7 +74,7 @@ class AllHistoryFragment : Fragment() {
         val view = binding.allHistoryContent
         val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        canvas.drawColor(requireContext().getColor(R.color.page_background))
+        canvas.drawColor(MaterialColors.getColor(view, R.attr.pageBackground))
         view.draw(canvas)
 
         val shareDir = File(requireContext().cacheDir, "share")

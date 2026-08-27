@@ -1,4 +1,4 @@
-Water Reminder helps you build a healthy hydration habit by tracking your daily water intake and sending you timely reminders throughout the day.
+FillMeUp! helps you build a healthy hydration habit by tracking your daily water intake and sending you timely reminders throughout the day.
 
 Features:
 • Log your water intake with a single tap

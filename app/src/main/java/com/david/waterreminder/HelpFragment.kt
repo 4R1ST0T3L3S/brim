@@ -18,6 +18,9 @@ class HelpFragment : BaseMenuFragment() {
     private val tourPrefs by lazy {
         requireContext().getSharedPreferences("tour_prefs", Context.MODE_PRIVATE)
     }
+    private val prefs by lazy {
+        requireContext().waterPrefs()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -37,11 +40,19 @@ class HelpFragment : BaseMenuFragment() {
             findNavController().popBackStack(R.id.FirstFragment, false)
         }
 
+        binding.rowReplayOnboarding.rowIcon.setImageResource(R.drawable.ic_person)
+        binding.rowReplayOnboarding.rowTitle.text = getString(R.string.help_row_replay_onboarding_title)
+        binding.rowReplayOnboarding.rowSubtitle.text = getString(R.string.help_row_replay_onboarding_subtitle)
+        binding.rowReplayOnboarding.rowContainer.setOnClickListener {
+            prefs.edit().putBoolean(PREF_PROFILE_SETUP_DONE, false).apply()
+            findNavController().navigate(R.id.ProfileSetupFragment)
+        }
+
         binding.rowReportProblem.rowIcon.setImageResource(android.R.drawable.ic_menu_send)
         binding.rowReportProblem.rowTitle.text = getString(R.string.help_section_report)
         binding.rowReportProblem.rowSubtitle.text = getString(R.string.help_row_report_subtitle)
         binding.rowReportProblem.rowContainer.setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://codeberg.org/DavidCRicardo/WaterReminder/issues")))
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://codeberg.org/DavidCRicardo/FillMeUp/issues")))
         }
 
     }
