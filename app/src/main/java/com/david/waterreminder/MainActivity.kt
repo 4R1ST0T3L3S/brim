@@ -117,6 +117,8 @@ R.id.action_help -> {
         super.onStart()
         waterPrefs()
             .registerOnSharedPreferenceChangeListener(prefsListener)
+        // Repair the chain: a reminder the system dropped used to stay silent for good.
+        ReminderScheduler.rescheduleAll(this)
     }
 
     override fun onStop() {

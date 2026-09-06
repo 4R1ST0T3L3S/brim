@@ -20,6 +20,18 @@ object ReminderScheduler {
         )
     }
 
+    /**
+     * Re-arms every enabled reminder. The chain only repairs itself while it is alive — each
+     * firing schedules the next — so one dropped alarm silences the rest of the day.
+     */
+    fun rescheduleAll(context: Context) {
+        val prefs = context.waterPrefs()
+        if (!prefs.getBoolean("notifications_enabled", false)) return
+        Reminder.parseAll(prefs.getStringSet(REMINDERS_KEY, emptySet()))
+            .filter { it.enabled }
+            .forEach { schedule(context, it) }
+    }
+
     fun cancel(context: Context, reminder: Reminder) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         alarmManager.cancel(buildPendingIntent(context, reminder))

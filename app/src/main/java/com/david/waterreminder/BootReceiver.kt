@@ -17,12 +17,5 @@ class BootReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun rescheduleAll(context: Context) {
-        val prefs = context.waterPrefs()
-        if (!prefs.getBoolean("notifications_enabled", false)) return
-        val saved = prefs.getStringSet(REMINDERS_KEY, emptySet()) ?: return
-        saved.mapNotNull { Reminder.fromPrefsString(it) }
-            .filter { it.enabled }
-            .forEach { ReminderScheduler.schedule(context, it) }
-    }
+    private fun rescheduleAll(context: Context) = ReminderScheduler.rescheduleAll(context)
 }

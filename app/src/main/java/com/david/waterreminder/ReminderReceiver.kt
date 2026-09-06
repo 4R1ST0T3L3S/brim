@@ -34,17 +34,18 @@ class ReminderReceiver : BroadcastReceiver() {
         saved.filter { it !== reminder && it.enabled && !it.isOneTime }
             .forEach { ReminderScheduler.schedule(context, it) }
 
-        // A late delivery is rescheduled above like any other fire; only the notification for
-        // this stale one is skipped. A one-time reminder is likewise left armed rather than
-        // being spent on a notification that never showed.
-        if (!postReminderNotification(context, prefs, reminder)) return
-
+        // Retired before the notification decision, not after: this delivery spends the
+        // alarm either way and nothing above reschedules a one-time, so leaving it enabled
+        // would show it as on with nothing behind it — and re-arm it for the wrong day.
         if (reminder.isOneTime) {
-            // Mark as disabled in prefs so the UI shows it as off
             val updated = saved.map { if (it === reminder) it.copy(enabled = false) else it }
             prefs.edit()
                 .putStringSet(REMINDERS_KEY, updated.map { it.toPrefsString() }.toSet())
                 .apply()
         }
+
+        // A late delivery is rescheduled above like any other fire; only the notification for
+        // this stale one is skipped.
+        postReminderNotification(context, prefs, reminder)
     }
 }
