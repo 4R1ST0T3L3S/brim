@@ -72,19 +72,16 @@
     <string name="notification_action_add">+%1$s</string>
     <string name="notification_channel_name">Water Reminders</string>
     <string name="notification_channel_description">Daily water intake reminders</string>
-    <string name="notification_title">Time to drink water! 💧</string>
+    <!-- The reminder card. The numbers are the title so the collapsed row can't cut them off;
+         the body carries what's left to drink plus one of the encouragements below. -->
+    <string name="notification_title_progress">%1$s / %2$s · %3$d%%</string>
+    <string name="notification_body_progress">%1$s to go — %2$s</string>
     <string-array name="notification_bodies">
         <item>Stay hydrated!</item>
         <item>Keep it up!</item>
         <item>You\'re doing great!</item>
     </string-array>
-    <string-array name="notification_titles">
-        <item>Time to drink water! 💧</item>
-        <item>Hydration check! 💧</item>
-        <item>Water break! 💧</item>
-        <item>Don\'t forget to hydrate! 💧</item>
-    </string-array>
-    <string name="notification_body_goal_reached">Don\'t forget to stay hydrated!</string>
+    <string name="notification_body_goal_reached">Goal reached — keep sipping to stay hydrated!</string>
     <string name="settings_row_data_subtitle">Export or import your data</string>
     <string name="settings_personal_goal_value">%s per day</string>
     <string name="settings_not_set">Not set</string>

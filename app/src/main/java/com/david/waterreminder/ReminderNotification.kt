@@ -48,6 +48,12 @@ fun SharedPreferences.todayIntake(): Int =
 /** Today's total and the goal the notification reports against. */
 data class NotificationProgress(val intakeMl: Int, val goalMl: Int) {
     val goalReached: Boolean get() = goalMl > 0 && intakeMl >= goalMl
+
+    /** Whole percent of the goal, floored and capped: the card never claims more than 100%. */
+    val percent: Int get() = if (goalMl <= 0) 0 else (intakeMl * 100 / goalMl).coerceAtMost(100)
+
+    /** What's still owed on the goal, in ml. Zero once it's met, never negative. */
+    val remainingMl: Int get() = (goalMl - intakeMl).coerceAtLeast(0)
 }
 
 fun SharedPreferences.notificationProgress(): NotificationProgress {
@@ -156,22 +162,7 @@ private fun buildReminderNotification(
         .setAutoCancel(true)
         .setOnlyAlertOnce(onlyAlertOnce)
 
-    // No buttons here: this card congratulates, it doesn't ask for more.
-    if (progress.goalReached) return builder
-        .setContentTitle(context.getString(R.string.notification_title))
-        .setContentText(context.getString(R.string.notification_body_goal_reached))
-        .build()
-
     val unit = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
-    // Seeded per reminder per day rather than rolled fresh, because a quick-log tap rebuilds
-    // this card: the wording must not change under the user's finger.
-    val rng = Random(reminderTime.hashCode() + LocalDate.now().toEpochDay())
-
-    builder
-        .setContentTitle(context.resources.getStringArray(R.array.notification_titles).random(rng))
-        .setContentText(context.resources.getStringArray(R.array.notification_bodies).random(rng))
-        .setSubText("${progress.intakeMl.fmt(unit)} / ${progress.goalMl.fmt(unit)}")
-        .setProgress(progress.goalMl, progress.intakeMl.coerceAtMost(progress.goalMl), false)
 
     // Phones ignore the action icon; watches draw it.
     prefs.notificationAmounts().forEach { ml ->
@@ -184,8 +175,44 @@ private fun buildReminderNotification(
         )
     }
 
+    // Same title as every other card, so the numbers are on the collapsed row here too. The
+    // buttons stay — a drink after the goal should still log from the card — but no progress
+    // bar: a bar is what makes an OEM phone drop the body, which is the whole message here.
+    if (progress.goalReached) return builder
+        .setContentTitle(progressTitle(context, progress, unit))
+        .setContentText(context.getString(R.string.notification_body_goal_reached))
+        .build()
+
+    // Seeded per reminder per day rather than rolled fresh, because a quick-log tap rebuilds
+    // this card: the wording must not change under the user's finger.
+    val rng = Random(reminderTime.hashCode() + LocalDate.now().toEpochDay())
+
+    builder
+        .setContentTitle(progressTitle(context, progress, unit))
+        .setContentText(
+            context.getString(
+                R.string.notification_body_progress,
+                progress.remainingMl.fmt(unit),
+                context.resources.getStringArray(R.array.notification_bodies).random(rng),
+            )
+        )
+        .setProgress(progress.goalMl, progress.intakeMl.coerceAtMost(progress.goalMl), false)
+
     return builder.build()
 }
+
+/**
+ * The one line every reminder card leads with — today's total against the goal, in the user's
+ * unit. It's the title rather than the subtext because the collapsed row spends its width on the
+ * title first: as a subtext the numbers were the part that got cut ("1000 ml / 1…").
+ */
+private fun progressTitle(context: Context, progress: NotificationProgress, unit: String): String =
+    context.getString(
+        R.string.notification_title_progress,
+        progress.intakeMl.toDisplay(unit),
+        progress.goalMl.fmt(unit),
+        progress.percent,
+    )
 
 /**
  * Every button targets the same receiver, so they need distinguishing or the system hands all

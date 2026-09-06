@@ -1,5 +1,6 @@
 package com.david.waterreminder
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -104,5 +105,37 @@ class ReminderNotificationTest {
             "intake_ml" to DEFAULT_DAILY_GOAL_ML,
         )
         assertFalse(stale.notificationProgress().goalReached)
+    }
+
+    // ─── What the card reports ──────────────────────────
+
+    @Test
+    fun percentAndRemaining_describeTheWayToTheGoal() {
+        val progress = NotificationProgress(intakeMl = 1_000, goalMl = 1_600)
+        assertEquals(62, progress.percent)
+        assertEquals(600, progress.remainingMl)
+    }
+
+    /**
+     * Every number on the card converts, not just the quick-log buttons: someone on ounces must
+     * not read "33.8 / 1600 ml".
+     */
+    @Test
+    fun theCardsNumbersFollowTheChosenUnit() {
+        val progress = NotificationProgress(intakeMl = 1_000, goalMl = 1_600)
+        assertEquals("33.8", progress.intakeMl.toDisplay(UNIT_OZ))
+        assertEquals("54.1 oz", progress.goalMl.fmt(UNIT_OZ))
+        assertEquals("20.3 oz", progress.remainingMl.fmt(UNIT_OZ))
+    }
+
+    /**
+     * Over the goal the card says 100% and nothing left to drink — never 112% or a negative
+     * amount to go. Only reachable with "Display when goal reached" on.
+     */
+    @Test
+    fun percentAndRemaining_dontOvershootPastTheGoal() {
+        val progress = NotificationProgress(intakeMl = 1_800, goalMl = 1_600)
+        assertEquals(100, progress.percent)
+        assertEquals(0, progress.remainingMl)
     }
 }
