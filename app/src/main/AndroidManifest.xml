@@ -28,7 +28,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Both are fired only by PendingIntents this app created (an alarm, a notification
+        <!-- All three are fired only by PendingIntents this app created (an alarm, a notification
              button), which run with our identity against an explicit component — so neither
              needs to be reachable by anything else. -->
         <receiver
@@ -40,6 +40,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".IdleReminderReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".BootReceiver"
             android:exported="true">
             <intent-filter>
@@ -47,6 +51,10 @@
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="android.intent.action.AIRPLANE_MODE_CHANGED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <!-- Both are exempt from the implicit-broadcast limits, and both invalidate every
+                     RTC fire time already armed. -->
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
 

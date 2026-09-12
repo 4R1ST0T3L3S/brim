@@ -65,6 +65,19 @@
     <string name="settings_row_show_after_goal">Display when goal reached</string>
     <string name="settings_show_after_goal_subtitle">Keep reminding you after you hit your daily goal</string>
     <string name="settings_row_quick_log_actions">Quick log buttons</string>
+    <string name="settings_row_idle_reminder">Remind me after a gap</string>
+    <string name="settings_idle_reminder_off">Off</string>
+    <string name="settings_idle_reminder_value">After %1$s without a drink</string>
+    <string name="dialog_idle_reminder_title">Remind me after a gap</string>
+    <string name="dialog_idle_reminder_off">Off</string>
+    <plurals name="idle_reminder_minutes">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+    <plurals name="idle_reminder_hours">
+        <item quantity="one">%d hour</item>
+        <item quantity="other">%d hours</item>
+    </plurals>
     <string name="settings_quick_log_actions_off">Off</string>
     <string name="dialog_quick_log_actions_title">Quick log buttons</string>
     <string name="dialog_quick_log_actions_hint">Buttons on the reminder notification, so you can log a drink without opening the app — including from a paired watch. Up to %1$d fit.</string>
@@ -82,6 +95,9 @@
         <item>You\'re doing great!</item>
     </string-array>
     <string name="notification_body_goal_reached">Goal reached — keep sipping to stay hydrated!</string>
+    <!-- Stands in for one of the encouragements above on an idle card. The numbers own the
+         title on every card, so what makes this one different has to live in the body. -->
+    <string name="notification_body_idle">It\'s been a while since your last drink</string>
     <string name="settings_row_data_subtitle">Export or import your data</string>
     <string name="settings_personal_goal_value">%s per day</string>
     <string name="settings_not_set">Not set</string>
@@ -244,6 +260,7 @@ The App stores the following information in your device\'s private app storage:\
 • Quick add and remove amounts — remember the buttons you configured\n
 • Notification quick-log amounts — remember the buttons shown on a reminder\n
 • Notification preferences — on/off, and whether to pause reminders upon reaching the goal\n
+• Inactivity reminder — the gap you chose, and when you last logged a drink so that gap can be measured\n
 • Celebration animations preference — respect your choice for goal celebrations\n
 • Theme preference — remember your light / dark / colour choice\n
 • Streak counter — show consecutive days the goal was met\n

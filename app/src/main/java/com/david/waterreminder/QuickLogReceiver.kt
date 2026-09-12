@@ -29,6 +29,14 @@ class QuickLogReceiver : BroadcastReceiver() {
         // Crossing the goal from here is deliberately quiet: the congratulation is a dialog and
         // there is no screen to put it on. The card changing to its goal-reached wording — or
         // being taken away — is the feedback, and the streak is waiting in the app.
-        refreshReminderNotification(context, prefs, reminderTime)
+        //
+        // The idle card is the exception: it has no reminder behind it to rebuild, and the tap
+        // has just answered the only thing it had to say. onIntakeLogged takes it away.
+        if (reminderTime != IDLE_REMINDER_KEY) {
+            refreshReminderNotification(context, prefs, reminderTime)
+        }
+
+        // Restarts the idle countdown from this drink, whichever card the button was on.
+        onIntakeLogged(context)
     }
 }

@@ -25,6 +25,13 @@ const val EXTRA_LOG_ML = "log_ml"
 const val EXTRA_LOG_REMINDER_TIME = "log_reminder_time"
 
 /**
+ * Stands in for a reminder time on the idle card, which has none — it is about a gap, not a
+ * clock. Every key on a real reminder is an "HH:MM" label, so this can never name one, and it
+ * gives the idle card a notification id and quick-log buttons of its own for free.
+ */
+const val IDLE_REMINDER_KEY = "idle"
+
+/**
  * One notification per reminder time, so a rebuild after a quick-log tap replaces the card the
  * button was on rather than stacking a second one beside it.
  */
@@ -75,7 +82,51 @@ fun postReminderNotification(
     context: Context,
     prefs: SharedPreferences,
     reminder: Reminder,
-): Boolean = updateReminderNotification(context, prefs, reminder, reminder.time, onlyAlertOnce = false)
+): Boolean {
+    val posted = updateReminderNotification(context, prefs, reminder, reminder.time, onlyAlertOnce = false)
+    if (posted) {
+        // The idle card says the same thing in other words, so it doesn't get to sit beside this
+        // one. The timestamp keeps an idle alarm landing on the same minute quiet as well —
+        // which of the two is delivered first isn't ours to decide. See shouldShowIdleReminder.
+        prefs.edit().putLong(PREF_LAST_REMINDER_POST_AT, System.currentTimeMillis()).apply()
+        cancelIdleReminderNotification(context)
+    }
+    return posted
+}
+
+/**
+ * Posts the idle card, or takes it away if the gap it was about has since been answered.
+ * Returns whether it was posted.
+ *
+ * Always alerts, for the same reason [postReminderNotification] does: the card is reposted to
+ * one id every time the gap elapses again, so alerting once would mute every nudge after the
+ * first.
+ */
+fun postIdleReminderNotification(context: Context, prefs: SharedPreferences): Boolean {
+    val notificationManager =
+        context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    val progress = prefs.notificationProgress()
+
+    if (!shouldShowIdleReminder(prefs, progress)) {
+        cancelIdleReminderNotification(context)
+        return false
+    }
+
+    notificationManager.notify(
+        reminderNotificationId(IDLE_REMINDER_KEY),
+        buildReminderNotification(
+            context, prefs, IDLE_REMINDER_KEY, progress, onlyAlertOnce = false,
+            encouragementOverride = context.getString(R.string.notification_body_idle),
+        )
+    )
+    return true
+}
+
+/** Takes the idle card away — because water was logged, or because a reminder card replaced it. */
+fun cancelIdleReminderNotification(context: Context) {
+    (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+        .cancel(reminderNotificationId(IDLE_REMINDER_KEY))
+}
 
 /**
  * Rebuilds the card a quick-log button was on so it shows the new total and can be tapped again,
@@ -140,12 +191,21 @@ internal fun shouldShowReminder(
     return !(progress.goalReached && !prefs.showNotificationsAfterGoal())
 }
 
+/**
+ * [encouragementOverride] is how the idle card gets its own voice while sharing everything else.
+ * It takes the place of the random encouragement in the body and leaves the title alone on
+ * purpose: the title is where the numbers live precisely because the collapsed row cuts
+ * everything after it, and an idle card that spent that space on wording would undo the reason
+ * [progressTitle] exists. Nothing to override on the goal-reached card — "it's been a while"
+ * has nothing to add once the day is already won.
+ */
 private fun buildReminderNotification(
     context: Context,
     prefs: SharedPreferences,
     reminderTime: String,
     progress: NotificationProgress,
     onlyAlertOnce: Boolean,
+    encouragementOverride: String? = null,
 ): Notification {
     val openAppIntent = Intent(context, MainActivity::class.java).apply {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -193,7 +253,8 @@ private fun buildReminderNotification(
             context.getString(
                 R.string.notification_body_progress,
                 progress.remainingMl.fmt(unit),
-                context.resources.getStringArray(R.array.notification_bodies).random(rng),
+                encouragementOverride
+                    ?: context.resources.getStringArray(R.array.notification_bodies).random(rng),
             )
         )
         .setProgress(progress.goalMl, progress.intakeMl.coerceAtMost(progress.goalMl), false)

@@ -33,6 +33,9 @@ class ReminderReceiver : BroadcastReceiver() {
         if (reminder.enabled && !reminder.isOneTime) ReminderScheduler.schedule(context, reminder)
         saved.filter { it !== reminder && it.enabled && !it.isOneTime }
             .forEach { ReminderScheduler.schedule(context, it) }
+        // The idle alarm is a single one with no sibling to repair it, so it rides along here as
+        // well — otherwise a dropped one would stay dropped until someone opened Settings.
+        IdleReminderScheduler.schedule(context)
 
         // Retired before the notification decision, not after: this delivery spends the
         // alarm either way and nothing above reschedules a one-time, so leaving it enabled

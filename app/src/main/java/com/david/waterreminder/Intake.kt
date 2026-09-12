@@ -177,11 +177,19 @@ fun intakeAfter(
  * counter of its own: whoever writes last still adds to the real number instead of overwriting
  * it with a stale one.
  *
+ * A positive [ml] also stamps [PREF_LAST_INTAKE_AT], which is what the idle reminder counts
+ * from. The rescheduling that has to follow needs a Context and so stays with the callers —
+ * see [onIntakeLogged].
+ *
  * [rollOverDayIfNeeded] runs first, so an amount logged after midnight starts a fresh day
  * instead of being added to yesterday's total — which also fixes the case of a screen left
  * open across midnight, since until now nothing rolled the day over without the app in front.
  */
-fun SharedPreferences.logIntake(ml: Int, now: LocalDate = LocalDate.now()): IntakeResult {
+fun SharedPreferences.logIntake(
+    ml: Int,
+    now: LocalDate = LocalDate.now(),
+    nowMillis: Long = System.currentTimeMillis(),
+): IntakeResult {
     rollOverDayIfNeeded(now)
 
     val result = intakeAfter(
@@ -196,6 +204,10 @@ fun SharedPreferences.logIntake(ml: Int, now: LocalDate = LocalDate.now()): Inta
         // Always mirrored under the dated key so the day survives a reinstall or a restore.
         .putInt(historyKey(now), result.newTotal)
         .apply {
+            // Only adding water counts as a drink. Taking some back is undoing a mistaken tap,
+            // and letting that restart the idle countdown would push the reminder away from the
+            // user who most needs it. See [IdleReminderScheduler].
+            if (ml > 0) putLong(PREF_LAST_INTAKE_AT, nowMillis)
             // Left alone unless the goal line was actually crossed, so a plain top-up can
             // never rewrite a streak it has nothing to say about.
             if (result.crossedDailyGoal || result.fellBelowDailyGoal) {

@@ -119,6 +119,9 @@ R.id.action_help -> {
             .registerOnSharedPreferenceChangeListener(prefsListener)
         // Repair the chain: a reminder the system dropped used to stay silent for good.
         ReminderScheduler.rescheduleAll(this)
+        // The idle alarm has no chain of its own to repair it, so it leans on this one. Both are
+        // idempotent — see nextIdleFireTime — which is what makes onStart safe to hang them on.
+        IdleReminderScheduler.schedule(this)
     }
 
     override fun onStop() {

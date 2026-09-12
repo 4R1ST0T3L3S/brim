@@ -131,6 +131,7 @@ class FirstFragment : Fragment() {
         // No BackupManager call: MainActivity keeps a listener on water_prefs for as long as it
         // is started, and a resumed fragment is always inside that window.
         currentMl = result.newTotal
+        onIntakeLogged(requireContext())
 
         if (result.crossedDailyGoal) showGoalReachedPopup(result.streak)
         if (result.crossedPersonalGoal) {

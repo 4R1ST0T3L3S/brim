@@ -75,6 +75,10 @@ class NotificationsFragment : BaseMenuFragment() {
             refreshRows()
         }
 
+        binding.rowIdleReminder.rowIcon.setImageResource(R.drawable.ic_clock)
+        binding.rowIdleReminder.rowTitle.text = getString(R.string.settings_row_idle_reminder)
+        binding.rowIdleReminder.rowContainer.setOnClickListener { showIdleReminderDialog() }
+
         binding.rowQuickLogActions.rowIcon.setImageResource(R.drawable.ic_water_drop)
         binding.rowQuickLogActions.rowTitle.text =
             getString(R.string.settings_row_quick_log_actions)
@@ -118,6 +122,13 @@ class NotificationsFragment : BaseMenuFragment() {
         binding.rowShowAfterGoal.rowContainer.isEnabled = enabled
         binding.rowShowAfterGoal.rowSwitch.isEnabled = enabled
 
+        val idleMinutes = prefs.idleReminderMinutes()
+        binding.rowIdleReminder.rowSubtitle.text =
+            if (idleMinutes <= 0) getString(R.string.settings_idle_reminder_off)
+            else getString(R.string.settings_idle_reminder_value, idleReminderLabel(idleMinutes))
+        binding.rowIdleReminder.root.alpha = if (enabled) 1f else 0.38f
+        binding.rowIdleReminder.rowContainer.isEnabled = enabled
+
         val actions = prefs.notificationAmounts()
         val unit = unit
         binding.rowQuickLogActions.rowSubtitle.text =
@@ -132,6 +143,54 @@ class NotificationsFragment : BaseMenuFragment() {
             windowStart.asHourLabel(),
             windowEnd.asHourLabel()
         )
+    }
+
+    // ─── Idle reminder ───────────────────────────────────────────
+
+    /** "Off", "90 minutes", "2 hours" — whole hours read as hours, everything else as minutes. */
+    private fun idleReminderLabel(minutes: Int): String = when {
+        minutes <= 0 -> getString(R.string.dialog_idle_reminder_off)
+        minutes % 60 == 0 -> resources.getQuantityString(
+            R.plurals.idle_reminder_hours, minutes / 60, minutes / 60
+        )
+        else -> resources.getQuantityString(R.plurals.idle_reminder_minutes, minutes, minutes)
+    }
+
+    /**
+     * Picks how long a gap earns a nudge. Applies on pick and closes, as the trigger and hour
+     * lists elsewhere do — there is one value and nothing to confirm.
+     */
+    private fun showIdleReminderDialog() {
+        val labels = IDLE_REMINDER_CHOICES_MINUTES.map { idleReminderLabel(it) }.toTypedArray()
+        val current = idleReminderChoiceIndex(prefs.idleReminderMinutes())
+
+        AlertDialog.Builder(requireContext())
+            .setTitle(getString(R.string.dialog_idle_reminder_title))
+            .setSingleChoiceItems(labels, current) { dialog, which ->
+                saveIdleReminder(IDLE_REMINDER_CHOICES_MINUTES[which])
+                refreshRows()
+                dialog.dismiss()
+            }
+            .setNegativeButton(getString(R.string.dialog_cancel), null)
+            .show()
+    }
+
+    /**
+     * Switching it off takes the alarm and any card already in the shade away. Switching it on
+     * needs the same exact-alarm permission the reminders do; onResume reschedules once a
+     * deferred grant comes back, so a prompt left unanswered costs nothing but the delay.
+     */
+    private fun saveIdleReminder(minutes: Int) {
+        prefs.setIdleReminderMinutes(minutes)
+
+        if (minutes <= 0) {
+            IdleReminderScheduler.cancel(requireContext())
+            cancelIdleReminderNotification(requireContext())
+            return
+        }
+        if (!prefs.getBoolean("notifications_enabled", false)) return
+        if (!ensureExactAlarmPermission()) return
+        IdleReminderScheduler.schedule(requireContext())
     }
 
     // ─── Quick log buttons ───────────────────────────────────────
@@ -267,6 +326,9 @@ class NotificationsFragment : BaseMenuFragment() {
      */
     private fun saveReminderWindow(startHour: Int, endHour: Int) {
         prefs.setReminderWindow(startHour, endHour)
+        // The idle alarm is bounded by the window too, and unlike the reminders it is one alarm
+        // whose fire time the new hours can move on their own.
+        IdleReminderScheduler.schedule(requireContext())
 
         if (prefs.getBoolean("notifications_enabled", false)) {
             // onResume reschedules again once a deferred exact-alarm grant comes back.
@@ -303,12 +365,15 @@ class NotificationsFragment : BaseMenuFragment() {
     private fun disableNotifications() {
         // Alarms keep firing and rescheduling; ReminderReceiver checks this flag before posting.
         prefs.edit().putBoolean("notifications_enabled", false).apply()
+        // The idle alarm is the exception: there is nothing to keep it warm, so it is dropped
+        // outright and rebuilt by enableNotifications. Its card goes with it.
+        IdleReminderScheduler.cancel(requireContext())
+        cancelIdleReminderNotification(requireContext())
     }
 
+    /** Every alarm the app owns, re-armed. Both calls check the notifications toggle themselves. */
     private fun rescheduleEnabledReminders() {
-        prefs.getStringSet(REMINDERS_KEY, emptySet())
-            ?.mapNotNull { Reminder.fromPrefsString(it) }
-            ?.filter { it.enabled }
-            ?.forEach { ReminderScheduler.schedule(requireContext(), it) }
+        ReminderScheduler.rescheduleAll(requireContext())
+        IdleReminderScheduler.schedule(requireContext())
     }
 }

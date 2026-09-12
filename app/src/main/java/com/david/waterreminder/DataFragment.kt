@@ -99,6 +99,10 @@ class DataFragment : BaseMenuFragment() {
             }
             editor.apply()
 
+            // The imported file decides both the setting and the last drink it counts from, so
+            // the alarm has to be recomputed rather than left on whatever this device had.
+            IdleReminderScheduler.schedule(requireContext())
+
             Toast.makeText(requireContext(), getString(R.string.import_success), Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             Toast.makeText(requireContext(), getString(R.string.import_failed), Toast.LENGTH_SHORT).show()

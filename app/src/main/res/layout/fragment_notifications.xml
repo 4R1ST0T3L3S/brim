@@ -44,6 +44,13 @@
                 android:layout_marginBottom="4dp" />
 
             <include
+                android:id="@+id/row_idle_reminder"
+                layout="@layout/item_settings_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp" />
+
+            <include
                 android:id="@+id/row_quick_log_actions"
                 layout="@layout/item_settings_row"
                 android:layout_width="match_parent"

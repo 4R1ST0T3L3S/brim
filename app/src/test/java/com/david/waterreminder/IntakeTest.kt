@@ -114,6 +114,24 @@ class IntakeTest {
     }
 
     @Test
+    fun logIntake_stampsWhenTheDrinkHappened() {
+        val prefs = prefsOnDay("intake_ml" to 300)
+        prefs.logIntake(200, today, nowMillis = 1_700_000_000_000L)
+        assertEquals(1_700_000_000_000L, prefs.getLong(PREF_LAST_INTAKE_AT, 0L))
+    }
+
+    /**
+     * Taking water back is undoing a mistaken tap, not a drink. Letting it restart the idle
+     * countdown would push the reminder away from the user who most needs it.
+     */
+    @Test
+    fun logIntake_negativeLeavesTheLastDrinkAlone() {
+        val prefs = prefsOnDay("intake_ml" to 500, PREF_LAST_INTAKE_AT to 1_700_000_000_000L)
+        prefs.logIntake(-200, today, nowMillis = 1_700_009_999_999L)
+        assertEquals(1_700_000_000_000L, prefs.getLong(PREF_LAST_INTAKE_AT, 0L))
+    }
+
+    @Test
     fun logIntake_writesStreakOnlyWhenTheGoalLineIsCrossed() {
         val prefs = prefsOnDay(
             "intake_ml" to DEFAULT_DAILY_GOAL_ML,
