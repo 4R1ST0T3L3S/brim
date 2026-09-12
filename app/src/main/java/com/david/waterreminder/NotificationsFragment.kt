@@ -148,13 +148,9 @@ class NotificationsFragment : BaseMenuFragment() {
     // ─── Idle reminder ───────────────────────────────────────────
 
     /** "Off", "90 minutes", "2 hours" — whole hours read as hours, everything else as minutes. */
-    private fun idleReminderLabel(minutes: Int): String = when {
-        minutes <= 0 -> getString(R.string.dialog_idle_reminder_off)
-        minutes % 60 == 0 -> resources.getQuantityString(
-            R.plurals.idle_reminder_hours, minutes / 60, minutes / 60
-        )
-        else -> resources.getQuantityString(R.plurals.idle_reminder_minutes, minutes, minutes)
-    }
+    private fun idleReminderLabel(minutes: Int): String =
+        if (minutes <= 0) getString(R.string.dialog_idle_reminder_off)
+        else requireContext().durationLabel(minutes)
 
     /**
      * Picks how long a gap earns a nudge. Applies on pick and closes, as the trigger and hour
@@ -371,9 +367,5 @@ class NotificationsFragment : BaseMenuFragment() {
         cancelIdleReminderNotification(requireContext())
     }
 
-    /** Every alarm the app owns, re-armed. Both calls check the notifications toggle themselves. */
-    private fun rescheduleEnabledReminders() {
-        ReminderScheduler.rescheduleAll(requireContext())
-        IdleReminderScheduler.schedule(requireContext())
-    }
+    private fun rescheduleEnabledReminders() = rescheduleAllAlarms(requireContext())
 }

@@ -14,18 +14,10 @@ class BootReceiver : BroadcastReceiver() {
                 if (!airplaneModeOn) rescheduleAll(context)
             }
             Intent.ACTION_MY_PACKAGE_REPLACED,
-            // RTC alarms survive a clock or timezone change but keep their old wall time, so
-            // every fire time has to be recomputed against the new one.
             Intent.ACTION_TIME_CHANGED,
             Intent.ACTION_TIMEZONE_CHANGED -> rescheduleAll(context)
         }
     }
 
-    private fun rescheduleAll(context: Context) {
-        ReminderScheduler.rescheduleAll(context)
-        // Beside it rather than inside it: the idle alarm is independent of the reminder list,
-        // so someone who deleted every reminder still gets it back. Both calls check the
-        // notifications toggle themselves.
-        IdleReminderScheduler.schedule(context)
-    }
+    private fun rescheduleAll(context: Context) = rescheduleAllAlarms(context)
 }

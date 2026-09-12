@@ -36,6 +36,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         Reminder.migrateLegacyHourly(prefs)
+        // Briefly written to the main store before it moved to transientPrefs, so it would
+        // otherwise ride along in exported backups. Removable once no install has it.
+        if (prefs.contains(PREF_LAST_REMINDER_POST_AT)) {
+            prefs.edit().remove(PREF_LAST_REMINDER_POST_AT).apply()
+        }
 
         createNotificationChannel()
 
@@ -117,11 +122,10 @@ R.id.action_help -> {
         super.onStart()
         waterPrefs()
             .registerOnSharedPreferenceChangeListener(prefsListener)
-        // Repair the chain: a reminder the system dropped used to stay silent for good.
-        ReminderScheduler.rescheduleAll(this)
-        // The idle alarm has no chain of its own to repair it, so it leans on this one. Both are
-        // idempotent — see nextIdleFireTime — which is what makes onStart safe to hang them on.
-        IdleReminderScheduler.schedule(this)
+        // Repair the chain: a reminder the system dropped used to stay silent for good, and the
+        // idle alarm has no chain of its own at all. Both are idempotent — see nextIdleFireTime
+        // — which is what makes onStart safe to hang them on.
+        rescheduleAllAlarms(this)
     }
 
     override fun onStop() {

@@ -85,29 +85,28 @@ fun postReminderNotification(
 ): Boolean {
     val posted = updateReminderNotification(context, prefs, reminder, reminder.time, onlyAlertOnce = false)
     if (posted) {
-        // The idle card says the same thing in other words, so it doesn't get to sit beside this
-        // one. The timestamp keeps an idle alarm landing on the same minute quiet as well —
-        // which of the two is delivered first isn't ours to decide. See shouldShowIdleReminder.
-        prefs.edit().putLong(PREF_LAST_REMINDER_POST_AT, System.currentTimeMillis()).apply()
+        // Recorded rather than inferred from the schedule: a reminder due but never delivered
+        // must not silence the idle nudge. The cancel covers the opposite ordering.
+        context.transientPrefs().edit()
+            .putLong(PREF_LAST_REMINDER_POST_AT, System.currentTimeMillis()).apply()
         cancelIdleReminderNotification(context)
     }
     return posted
 }
 
 /**
- * Posts the idle card, or takes it away if the gap it was about has since been answered.
- * Returns whether it was posted.
- *
- * Always alerts, for the same reason [postReminderNotification] does: the card is reposted to
- * one id every time the gap elapses again, so alerting once would mute every nudge after the
- * first.
+ * Posts the idle card, or takes it away if the gap has since been answered. Always alerts, for
+ * the same reason [postReminderNotification] does — one id, reposted every time the gap elapses.
  */
 fun postIdleReminderNotification(context: Context, prefs: SharedPreferences): Boolean {
     val notificationManager =
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     val progress = prefs.notificationProgress()
+    // One clock reading for the decision and for the number on the card, so they can't disagree.
+    val now = Calendar.getInstance()
 
-    if (!shouldShowIdleReminder(prefs, progress)) {
+    val lastReminderPost = context.transientPrefs().lastReminderPostAt(now.timeInMillis)
+    if (!shouldShowIdleReminder(prefs, progress, now, lastReminderPost)) {
         cancelIdleReminderNotification(context)
         return false
     }
@@ -116,10 +115,44 @@ fun postIdleReminderNotification(context: Context, prefs: SharedPreferences): Bo
         reminderNotificationId(IDLE_REMINDER_KEY),
         buildReminderNotification(
             context, prefs, IDLE_REMINDER_KEY, progress, onlyAlertOnce = false,
-            encouragementOverride = context.getString(R.string.notification_body_idle),
+            encouragementOverride = idleBody(context, prefs, now.timeInMillis),
         )
     )
     return true
+}
+
+/**
+ * How long it has actually been, which is not always the gap that was set — a delivery delayed by
+ * battery management makes it longer. Falls back to the vaguer wording when there is no last
+ * drink to measure from, which is the first idle card of a day that started with nothing logged.
+ */
+private fun idleBody(context: Context, prefs: SharedPreferences, nowMillis: Long): String {
+    val elapsed = idleElapsedMinutes(nowMillis, prefs.lastIntakeAt(nowMillis))
+    return if (elapsed >= 5) {
+        context.getString(R.string.notification_body_idle_elapsed, context.durationLabel(elapsed))
+    } else {
+        context.getString(R.string.notification_body_idle)
+    }
+}
+
+/**
+ * Rebuilds the idle card after a quick-log tap, as [refreshReminderNotification] does for a
+ * reminder card. The idle wording goes with the rebuild — the tap has just made it false — so
+ * what is left is an ordinary card. Never re-alerts: the user is looking at it.
+ */
+fun refreshIdleReminderNotification(context: Context, prefs: SharedPreferences) {
+    val progress = prefs.notificationProgress()
+    // Every rule except the gap, which this very tap just answered — that is what makes this a
+    // rebuild rather than a cancel.
+    if (!idleCardAllowed(prefs, progress)) {
+        cancelIdleReminderNotification(context)
+        return
+    }
+
+    (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(
+        reminderNotificationId(IDLE_REMINDER_KEY),
+        buildReminderNotification(context, prefs, IDLE_REMINDER_KEY, progress, onlyAlertOnce = true)
+    )
 }
 
 /** Takes the idle card away — because water was logged, or because a reminder card replaced it. */

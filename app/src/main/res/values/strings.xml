@@ -97,6 +97,7 @@
     <string name="notification_body_goal_reached">Goal reached — keep sipping to stay hydrated!</string>
     <!-- Stands in for one of the encouragements above on an idle card. The numbers own the
          title on every card, so what makes this one different has to live in the body. -->
+    <string name="notification_body_idle_elapsed">%1$s since your last drink</string>
     <string name="notification_body_idle">It\'s been a while since your last drink</string>
     <string name="settings_row_data_subtitle">Export or import your data</string>
     <string name="settings_personal_goal_value">%s per day</string>

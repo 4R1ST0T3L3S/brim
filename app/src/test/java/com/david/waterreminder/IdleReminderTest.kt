@@ -125,6 +125,31 @@ class IdleReminderTest {
         assertEquals(0L, prefs.lastIntakeAt(nowMillis = at(10).timeInMillis))
     }
 
+    // ─── how long it has been ─────────────────────────────────────
+
+    private fun elapsed(now: Calendar, lastIntake: Calendar?) =
+        idleElapsedMinutes(now.timeInMillis, lastIntake?.timeInMillis ?: 0L)
+
+    @Test
+    fun elapsed_readsInWholeFiveMinuteSteps() {
+        assertEquals(120, elapsed(at(12), at(10)))
+        assertEquals(45, elapsed(at(12), at(11, 15)))
+    }
+
+    /** Rounded down, so a delivery running late never reports more than has really passed. */
+    @Test
+    fun elapsed_roundsDownRatherThanReportingAnOddNumber() {
+        assertEquals(60, elapsed(at(12, 3), at(11)))
+        assertEquals(90, elapsed(at(12, 4), at(10, 30)))
+    }
+
+    /** Nothing to measure from: the card falls back to its vaguer wording. */
+    @Test
+    fun elapsed_isZeroWithoutALastDrink() {
+        assertEquals(0, elapsed(at(12), null))
+        assertEquals(0, elapsed(at(12), at(18)))
+    }
+
     // ─── shouldShowIdleReminder ───────────────────────────────────
 
     private fun prefs(vararg entries: Pair<String, Any>) = FakePrefs(
@@ -137,8 +162,11 @@ class IdleReminderTest {
         )
     )
 
-    private fun FakePrefs.shows(now: Calendar = at(12)) =
-        shouldShowIdleReminder(this, notificationProgress(), now.timeInMillis, now.get(Calendar.HOUR_OF_DAY))
+    private fun FakePrefs.shows(now: Calendar = at(12), lastReminderPost: Calendar? = null) =
+        shouldShowIdleReminder(
+            this, notificationProgress(), now, lastReminderPost?.timeInMillis ?: 0L
+        )
+
 
     @Test
     fun shown_whenTheGapHasRunOutAndNothingObjects() {
@@ -178,15 +206,67 @@ class IdleReminderTest {
         assertTrue(prefs(PREF_LAST_INTAKE_AT to at(11).timeInMillis).shows())
     }
 
+// ─── the reminder the user configured wins ────────────────────
+
     /** A reminder card just said the same thing; two of them is a fault, not a nudge. */
     @Test
     fun hidden_rightAfterAReminderCard() {
-        assertFalse(prefs(PREF_LAST_REMINDER_POST_AT to at(11, 59).timeInMillis).shows())
+        assertFalse(prefs().shows(lastReminderPost = at(11, 59)))
     }
 
     @Test
     fun shown_onceThatReminderCardIsOldNews() {
-        assertTrue(prefs(PREF_LAST_REMINDER_POST_AT to at(11, 50).timeInMillis).shows())
+        assertTrue(prefs().shows(lastReminderPost = at(11, 50)))
+    }
+
+    /**
+     * The regression this test exists for: suppressing on the reminder *schedule* rather than on
+     * a card actually posted.
+     *
+     * An every-hour reminder anchored at the get-up hour is due at 12:00, and a 1-hour gap whose
+     * countdown floored to that same hour lands there too — so on a day with nothing logged the
+     * two collide on every single fire. If the reminder's alarm chain has been dropped it never
+     * posts, and the nudge that exists to cover exactly that must still arrive. Only a real post
+     * silences it.
+     */
+    @Test
+    fun shown_whenAReminderWasDueButNeverPosted() {
+        val everyHourFromGetUp = Reminder(
+            time = "08:00", hour = 8, minute = 0,
+            type = Reminder.TYPE_DAILY, enabled = true, intervalHours = 1,
+        )
+        val prefs = prefs(REMINDERS_KEY to mutableSetOf(everyHourFromGetUp.toPrefsString()))
+        assertTrue(prefs.shows())
+    }
+
+    /** A post stamped in the future — the clock was set back — is not a reason to go quiet. */
+    @Test
+    fun aReminderPostInTheFuture_isIgnored() {
+        val prefs = FakePrefs(mapOf(PREF_LAST_REMINDER_POST_AT to at(18).timeInMillis))
+        assertEquals(0L, prefs.lastReminderPostAt(nowMillis = at(12).timeInMillis))
+    }
+
+    // ─── rebuilding a card that is already up ─────────────────────
+
+    private fun FakePrefs.allows(now: Calendar = at(12)) =
+        idleCardAllowed(this, notificationProgress(), now)
+
+    /** The gap is not asked, so a drink a moment ago still leaves the card welcome. */
+    @Test
+    fun rebuild_isAllowedEvenThoughTheGapWasJustAnswered() {
+        assertTrue(prefs(PREF_LAST_INTAKE_AT to at(11, 59).timeInMillis).allows())
+    }
+
+    /** But a card tapped long past bedtime goes, exactly as a reminder card would. */
+    @Test
+    fun rebuild_isRefusedOutsideTheWindow() {
+        assertFalse(prefs().allows(now = at(23, 30)))
+    }
+
+    /** An import can switch the feature off while a card is still in the shade. */
+    @Test
+    fun rebuild_isRefusedOnceTheFeatureIsOff() {
+        assertFalse(prefs(PREF_IDLE_REMINDER_MINUTES to 0).allows())
     }
 
     @Test

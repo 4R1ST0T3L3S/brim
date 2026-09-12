@@ -11,42 +11,46 @@ import java.util.Calendar
 import kotlin.math.ceil
 
 /**
- * The idle reminder: a nudge once nothing has been logged for a chosen stretch of time.
- *
- * Unlike everything in [Reminder], this one is not anchored to a clock time the user picked —
- * it is anchored to their last drink, so it moves every time they log one. That makes it a
- * single alarm of its own rather than another row on the Reminders screen, and it is why the
- * arithmetic lives here instead of in [nextIntervalFireTime].
+ * The idle reminder: a nudge once nothing has been logged for a chosen stretch of time. Anchored
+ * to the last drink rather than to a clock time, so it is a single alarm of its own rather than
+ * another row on the Reminders screen.
  */
 
 // ─── Preferences ──────────────────────────────────────────────────
 
-/** When the user last *added* water, in epoch millis. 0 means never — see [lastIntakeAt]. */
+/** When the user last *added* water, in epoch millis. 0 means never. */
 const val PREF_LAST_INTAKE_AT = "last_intake_at"
 
-/** How long a gap earns a nudge, in minutes. 0 is the feature switched off, and the default. */
+/** How long a gap earns a nudge, in minutes. 0 is off, and the default. */
 const val PREF_IDLE_REMINDER_MINUTES = "idle_reminder_minutes"
 
-/** When a reminder card was last put on screen, in epoch millis — read only by [shouldShowIdleReminder]. */
+/** When a reminder card was last put on screen, in epoch millis. Lives in [transientPrefs]. */
 const val PREF_LAST_REMINDER_POST_AT = "last_reminder_post_at"
 
 /**
- * A gap longer than a day is not a reminder setting any more, so it reads as off. The picker
- * can't produce one; an imported or hand-edited prefs file can.
+ * Bookkeeping about this device and this moment, never the user's data — a separate file so
+ * [buildBackupJson], which serialises the main store wholesale, can't see it.
  */
+fun Context.transientPrefs(): SharedPreferences =
+    getSharedPreferences("transient_prefs", Context.MODE_PRIVATE)
+
+/** A time in the future reads as 0: the clock was set back. */
+fun SharedPreferences.lastReminderPostAt(nowMillis: Long = System.currentTimeMillis()): Long =
+    getLong(PREF_LAST_REMINDER_POST_AT, 0L).takeIf { it in 1..nowMillis } ?: 0L
+
+/** Past this, the setting reads as off. The picker can't produce it; an imported file can. */
 const val IDLE_REMINDER_MAX_MINUTES = 24 * 60
 
 /** What the picker offers, in minutes. The leading 0 is the "Off" entry. */
 val IDLE_REMINDER_CHOICES_MINUTES = listOf(0, 30, 60, 90, 120, 180, 240)
 
 /**
- * A regular reminder and an idle one can land on the same minute — an every-hour reminder and a
- * 1-hour gap both fire on the hour once a day starts with nothing logged. Two cards saying the
- * same thing is a fault, so within this much of a regular card the idle one stands down.
+ * How soon after a reminder card the idle one stands down. The two collide on the same minute all
+ * day once nothing has been logged, and the reminder the user configured is the one that wins.
  */
 const val IDLE_REMINDER_DEDUPE_MS = 2 * 60 * 1000L
 
-/** The chosen gap in minutes, or 0 when off. Sanitized on every read: prefs can be imported. */
+/** The chosen gap, or 0 when off. Sanitized on every read: prefs can be imported. */
 fun SharedPreferences.idleReminderMinutes(): Int =
     getInt(PREF_IDLE_REMINDER_MINUTES, 0).takeIf { it in 1..IDLE_REMINDER_MAX_MINUTES } ?: 0
 
@@ -58,13 +62,32 @@ fun SharedPreferences.setIdleReminderMinutes(minutes: Int) {
 }
 
 /**
- * When water was last added, or 0 if that is unknown. A stored value in the future is treated as
- * unknown rather than trusted — it can only come from a clock that has since been set back, or
- * from a backup taken on a device whose clock was wrong, and counting a gap from it would park
- * the reminder indefinitely.
+ * When water was last added, or 0 if unknown — including a time in the future, which means the
+ * clock was set back and would otherwise park the reminder indefinitely.
  */
 fun SharedPreferences.lastIntakeAt(nowMillis: Long = System.currentTimeMillis()): Long =
     getLong(PREF_LAST_INTAKE_AT, 0L).takeIf { it in 1..nowMillis } ?: 0L
+
+/**
+ * Whole minutes since the last drink, rounded down to five so the card never overstates the gap
+ * and never reports an odd number a late delivery happened to produce. 0 when there is nothing
+ * to measure from.
+ */
+fun idleElapsedMinutes(nowMillis: Long, lastIntakeMillis: Long): Int {
+    if (lastIntakeMillis <= 0 || lastIntakeMillis > nowMillis) return 0
+    val minutes = (nowMillis - lastIntakeMillis) / 60_000L
+    return (minutes - minutes % 5).toInt()
+}
+
+/**
+ * "45 minutes", "1 hour", "90 minutes" — whole hours read as hours, everything else as minutes.
+ * Shared by the picker and the card so the setting and the notification say it the same way.
+ */
+fun Context.durationLabel(minutes: Int): String =
+    if (minutes >= 60 && minutes % 60 == 0)
+        resources.getQuantityString(R.plurals.idle_reminder_hours, minutes / 60, minutes / 60)
+    else
+        resources.getQuantityString(R.plurals.idle_reminder_minutes, minutes, minutes)
 
 /** Index of the stored gap in [IDLE_REMINDER_CHOICES_MINUTES], falling back to Off. */
 fun idleReminderChoiceIndex(minutes: Int): Int =
@@ -73,31 +96,20 @@ fun idleReminderChoiceIndex(minutes: Int): Int =
 // ─── When it should fire ──────────────────────────────────────────
 
 /**
- * The moment the countdown runs from: the last drink, or the start of today if that was longer
- * ago than this morning.
- *
- * The floor matters because the gap is meant to read as "you haven't had a drink all morning",
- * not "you haven't had one since last night" — without it, someone who last drank at 21:00 would
- * be nudged the instant their day opened, having done nothing wrong. The floor is deliberately
- * allowed to sit in the future: before the window opens, the countdown has not started yet.
+ * Where the countdown runs from: the last drink, or the start of today if that was longer ago —
+ * without the floor, someone who last drank at 21:00 is nudged the instant their day opens. May
+ * sit in the future: before the window opens, the countdown has not started.
  */
 internal fun idleCountdownAnchor(now: Calendar, lastIntakeMillis: Long, windowStartHour: Int): Long =
     maxOf(lastIntakeMillis, now.atHour(windowStartHour).timeInMillis)
 
 /**
- * When the idle alarm should next go off, or null when the feature is switched off.
+ * When the idle alarm should next go off, or null when the feature is off. Held inside the
+ * reminder window, as repeating reminders are.
  *
- * The result depends only on [now] and the anchor — never on how many times this has been called
- * — because the alarm is rescheduled from half a dozen places, and a rule that pushed the fire
- * time out by another gap on every call would let a user postpone the reminder forever just by
- * opening the Notifications screen. The answer is always the first anchor + n × gap strictly
- * after [now], so a late delivery or a reboot resumes the original cadence instead of drifting
- * off it.
- *
- * Fire times are held inside the reminder window, as repeating reminders are: a time before the
- * get-up hour waits for it, and a time past the go-to-bed hour waits for tomorrow's. Landing on
- * the get-up hour exactly is correct rather than premature — the anchor is floored to the same
- * hour, so a full gap is still measured from the moment the day opens.
+ * Always the first anchor + n × gap strictly after [now], so the answer never depends on how
+ * often this is called — the alarm is rescheduled from half a dozen places, and a rule that
+ * pushed the fire time out each time would let the user postpone it forever by opening Settings.
  */
 fun nextIdleFireTime(
     now: Calendar,
@@ -111,18 +123,16 @@ fun nextIdleFireTime(
     val gapMs = idleMinutes * 60_000L
     val anchor = idleCountdownAnchor(now, lastIntakeMillis, windowStartHour)
 
-    // ceil of a non-positive elapsed is 0 or less — an anchor at or ahead of now still owes a
-    // full gap, hence the floor of one step.
+    // An anchor at or ahead of now still owes a full gap, hence the floor of one step.
     val steps = ceil((now.timeInMillis - anchor).toDouble() / gapMs).toLong().coerceAtLeast(1L)
     var targetMs = anchor + steps * gapMs
-    // An elapsed time that is an exact multiple of the gap lands the target on now itself.
     if (targetMs <= now.timeInMillis) targetMs += gapMs
 
     val target = (now.clone() as Calendar).apply { timeInMillis = targetMs }
     val hour = target.get(Calendar.HOUR_OF_DAY)
     return when {
         hour < windowStartHour -> target.atHour(windowStartHour)
-        // The window end is an hour, not an instant: 20:45 is still inside a 20:00 bedtime — the
+        // The window end is an hour, not an instant: 20:45 is still inside a 20:00 bedtime, the
         // same reading nextIntervalFireTime and Reminder.firedOutsideWindow take.
         hour > windowEndHour ->
             target.atHour(windowStartHour).apply { add(Calendar.DAY_OF_MONTH, 1) }
@@ -141,60 +151,61 @@ private fun Calendar.atHour(hour: Int): Calendar = (clone() as Calendar).apply {
 // ─── Whether it should be shown ───────────────────────────────────
 
 /**
- * Every reason not to put the idle card on screen. Separate from [shouldShowReminder] because
- * the two answer different questions, but they share the rules that are about notifications as a
- * whole — the master switch, the window, and what happens once the goal is met.
- *
- * The gap here is measured from the raw last drink, not from [idleCountdownAnchor]: the
- * scheduler floors the anchor to the start of the day so the *countdown* restarts each morning,
- * but by the time the alarm lands, what the card claims has to be literally true.
+ * The rules about idle cards in general — everything except whether the gap has run out, which is
+ * what separates posting a card from rebuilding one already up. The window is rechecked here
+ * because Android can deliver an alarm hours late.
  */
-// internal rather than private only so the tests can reach it — production callers go through
-// postIdleReminderNotification, which applies it for you.
-internal fun shouldShowIdleReminder(
+internal fun idleCardAllowed(
     prefs: SharedPreferences,
     progress: NotificationProgress,
-    nowMillis: Long = System.currentTimeMillis(),
-    currentHour: Int = Calendar.getInstance().get(Calendar.HOUR_OF_DAY),
+    now: Calendar = Calendar.getInstance(),
 ): Boolean {
     if (!prefs.getBoolean("notifications_enabled", false)) return false
+    if (prefs.idleReminderMinutes() <= 0) return false
 
-    val idleMinutes = prefs.idleReminderMinutes()
-    if (idleMinutes <= 0) return false
-
-    // Android can deliver an alarm hours late under battery management, so the window is checked
-    // again on arrival and not only when the alarm was set.
     val (windowStart, windowEnd) = prefs.reminderWindow()
-    if (currentHour !in windowStart..windowEnd) return false
-
-    // A drink logged between the alarm being set and it being delivered answers the card before
-    // it appears.
-    val lastIntake = prefs.lastIntakeAt(nowMillis)
-    if (lastIntake > 0 && nowMillis - lastIntake < idleMinutes * 60_000L) return false
-
-    // A regular reminder has just said the same thing.
-    val lastPost = prefs.getLong(PREF_LAST_REMINDER_POST_AT, 0L)
-    if (lastPost in 1..nowMillis && nowMillis - lastPost < IDLE_REMINDER_DEDUPE_MS) return false
+    if (now.get(Calendar.HOUR_OF_DAY) !in windowStart..windowEnd) return false
 
     return !(progress.goalReached && !prefs.showNotificationsAfterGoal())
 }
 
+/**
+ * Every reason not to put the idle card on screen.
+ *
+ * The gap is measured from the raw last drink, not from [idleCountdownAnchor]: the scheduler
+ * floors the anchor so the countdown restarts each morning, but what the card claims has to be
+ * true by the time it lands.
+ *
+ * [lastReminderPostAt] is when a reminder card was really posted, not when one was scheduled — a
+ * reminder due but never delivered must not silence the nudge that covers exactly that.
+ */
+// internal only so the tests can reach it; production goes through postIdleReminderNotification.
+internal fun shouldShowIdleReminder(
+    prefs: SharedPreferences,
+    progress: NotificationProgress,
+    now: Calendar = Calendar.getInstance(),
+    lastReminderPostAt: Long = 0L,
+): Boolean {
+    if (!idleCardAllowed(prefs, progress, now)) return false
+
+    // A drink logged between the alarm being set and delivered answers the card before it appears.
+    val lastIntake = prefs.lastIntakeAt(now.timeInMillis)
+    if (lastIntake > 0 && now.timeInMillis - lastIntake < prefs.idleReminderMinutes() * 60_000L) {
+        return false
+    }
+
+    // A reminder card has just said the same thing, and it takes precedence.
+    return now.timeInMillis - lastReminderPostAt >= IDLE_REMINDER_DEDUPE_MS
+}
+
 // ─── The alarm ────────────────────────────────────────────────────
 
-/**
- * The one idle alarm. There is only ever a single one — it is about the gap since the last
- * drink, and there is only one of those — so it needs no key and carries no extras:
- * [IdleReminderReceiver] reads everything back out of prefs.
- */
+/** The one idle alarm. No key, no extras: [IdleReminderReceiver] reads everything from prefs. */
 object IdleReminderScheduler {
 
     private const val REQUEST_CODE = 0x1D1E
 
-    /**
-     * Arms the alarm for its next fire time, or takes it away when there is nothing to fire.
-     * Safe and cheap to call from anywhere at any time — see [nextIdleFireTime] for why calling
-     * it repeatedly can't push the reminder away.
-     */
+    /** Arms the alarm, or takes it away when there is nothing to fire. Safe to call anywhere. */
     fun schedule(context: Context) {
         val prefs = context.waterPrefs()
         val next = if (prefs.getBoolean("notifications_enabled", false)) {
@@ -223,7 +234,7 @@ object IdleReminderScheduler {
         )
     }
 
-    /** Deliberately not gated on the exact-alarm permission — taking an alarm away always works. */
+    /** Not gated on the exact-alarm permission — taking an alarm away always works. */
     fun cancel(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         alarmManager.cancel(buildPendingIntent(context))
@@ -240,20 +251,25 @@ object IdleReminderScheduler {
 class IdleReminderReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        // Rearming first: this is a single alarm with no sibling to repair it the way the
-        // reminder alarms repair each other, so the chain must not depend on what follows.
+        // Rearming first: no sibling alarm repairs this one.
         IdleReminderScheduler.schedule(context)
         postIdleReminderNotification(context, context.waterPrefs())
     }
 }
 
 /**
- * Everything that has to happen after water is logged, beyond the logging itself: the countdown
- * restarts, and any standing idle card has just been answered.
- *
- * Kept out of [logIntake] so that stays free of Android plumbing and testable on the JVM.
+ * What follows a drink, beyond the logging: the countdown restarts and a standing card has been
+ * answered. Kept out of [logIntake] so that stays free of Android plumbing. The early return
+ * keeps two binder calls off every add-button tap while the feature is off, which is the default.
  */
 fun onIntakeLogged(context: Context) {
+    if (context.waterPrefs().idleReminderMinutes() <= 0) return
     cancelIdleReminderNotification(context)
+    IdleReminderScheduler.schedule(context)
+}
+
+/** Every alarm the app owns, re-armed. Both calls check the notifications toggle themselves. */
+fun rescheduleAllAlarms(context: Context) {
+    ReminderScheduler.rescheduleAll(context)
     IdleReminderScheduler.schedule(context)
 }
