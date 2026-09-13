@@ -69,14 +69,14 @@ fun SharedPreferences.lastIntakeAt(nowMillis: Long = System.currentTimeMillis())
     getLong(PREF_LAST_INTAKE_AT, 0L).takeIf { it in 1..nowMillis } ?: 0L
 
 /**
- * Whole minutes since the last drink, rounded down to five so the card never overstates the gap
- * and never reports an odd number a late delivery happened to produce. 0 when there is nothing
- * to measure from.
+ * Minutes since the last drink, rounded down to the half-hour — every gap the picker offers is a
+ * multiple of 30, so an on-time delivery is unchanged by this, and a late one reads as "2 hours"
+ * rather than "125 minutes". 0 when there is nothing to measure from.
  */
 fun idleElapsedMinutes(nowMillis: Long, lastIntakeMillis: Long): Int {
     if (lastIntakeMillis <= 0 || lastIntakeMillis > nowMillis) return 0
     val minutes = (nowMillis - lastIntakeMillis) / 60_000L
-    return (minutes - minutes % 5).toInt()
+    return (minutes - minutes % 30).toInt()
 }
 
 /**
@@ -96,16 +96,17 @@ fun idleReminderChoiceIndex(minutes: Int): Int =
 // ─── When it should fire ──────────────────────────────────────────
 
 /**
- * Where the countdown runs from: the last drink, or the start of today if that was longer ago —
- * without the floor, someone who last drank at 21:00 is nudged the instant their day opens. May
- * sit in the future: before the window opens, the countdown has not started.
+ * Where the countdown runs from: the last drink, but only when it happened today. Null otherwise,
+ * which stops the clock entirely until the day's first glass — a night's sleep is not a gap
+ * between drinks, and counting through it would have the app open every morning with a reproach.
  */
-internal fun idleCountdownAnchor(now: Calendar, lastIntakeMillis: Long, windowStartHour: Int): Long =
-    maxOf(lastIntakeMillis, now.atHour(windowStartHour).timeInMillis)
+internal fun idleCountdownAnchor(now: Calendar, lastIntakeMillis: Long): Long? =
+    lastIntakeMillis.takeIf { it in now.atHour(0).timeInMillis..now.timeInMillis }
 
 /**
- * When the idle alarm should next go off, or null when the feature is off. Held inside the
- * reminder window, as repeating reminders are.
+ * When the idle alarm should next go off. Null when the feature is off, when nothing has been
+ * logged today yet, or when the next fire would land past bedtime — the countdown does not
+ * survive the night, and tomorrow's starts from tomorrow's first drink.
  *
  * Always the first anchor + n × gap strictly after [now], so the answer never depends on how
  * often this is called — the alarm is rescheduled from half a dozen places, and a rule that
@@ -121,21 +122,21 @@ fun nextIdleFireTime(
     if (idleMinutes <= 0) return null
 
     val gapMs = idleMinutes * 60_000L
-    val anchor = idleCountdownAnchor(now, lastIntakeMillis, windowStartHour)
+    val anchor = idleCountdownAnchor(now, lastIntakeMillis) ?: return null
 
     // An anchor at or ahead of now still owes a full gap, hence the floor of one step.
     val steps = ceil((now.timeInMillis - anchor).toDouble() / gapMs).toLong().coerceAtLeast(1L)
     var targetMs = anchor + steps * gapMs
     if (targetMs <= now.timeInMillis) targetMs += gapMs
 
+    val tomorrow = now.atHour(0).apply { add(Calendar.DAY_OF_MONTH, 1) }.timeInMillis
     val target = (now.clone() as Calendar).apply { timeInMillis = targetMs }
     val hour = target.get(Calendar.HOUR_OF_DAY)
     return when {
+        targetMs >= tomorrow -> null
+        hour > windowEndHour -> null
+        // A drink before the window opened still counts; the nudge for it waits for the hour.
         hour < windowStartHour -> target.atHour(windowStartHour)
-        // The window end is an hour, not an instant: 20:45 is still inside a 20:00 bedtime, the
-        // same reading nextIntervalFireTime and Reminder.firedOutsideWindow take.
-        hour > windowEndHour ->
-            target.atHour(windowStartHour).apply { add(Calendar.DAY_OF_MONTH, 1) }
         else -> target
     }
 }
@@ -172,10 +173,6 @@ internal fun idleCardAllowed(
 /**
  * Every reason not to put the idle card on screen.
  *
- * The gap is measured from the raw last drink, not from [idleCountdownAnchor]: the scheduler
- * floors the anchor so the countdown restarts each morning, but what the card claims has to be
- * true by the time it lands.
- *
  * [lastReminderPostAt] is when a reminder card was really posted, not when one was scheduled — a
  * reminder due but never delivered must not silence the nudge that covers exactly that.
  */
@@ -188,11 +185,11 @@ internal fun shouldShowIdleReminder(
 ): Boolean {
     if (!idleCardAllowed(prefs, progress, now)) return false
 
-    // A drink logged between the alarm being set and delivered answers the card before it appears.
-    val lastIntake = prefs.lastIntakeAt(now.timeInMillis)
-    if (lastIntake > 0 && now.timeInMillis - lastIntake < prefs.idleReminderMinutes() * 60_000L) {
-        return false
-    }
+    // Nothing logged today: the countdown has not started, so there is no gap to report. Also
+    // catches a drink logged between the alarm being set and delivered, which answers the card
+    // before it appears.
+    val anchor = idleCountdownAnchor(now, prefs.lastIntakeAt(now.timeInMillis)) ?: return false
+    if (now.timeInMillis - anchor < prefs.idleReminderMinutes() * 60_000L) return false
 
     // A reminder card has just said the same thing, and it takes precedence.
     return now.timeInMillis - lastReminderPostAt >= IDLE_REMINDER_DEDUPE_MS

@@ -8,7 +8,7 @@ import org.junit.Test
 import java.time.LocalDate
 import java.util.Calendar
 
-/**
+    /**
  * The idle reminder's two decisions: when its single alarm should next go off, and whether the
  * card belongs on screen once it does.
  *
@@ -86,17 +86,30 @@ class IdleReminderTest {
     }
 
     /**
-     * Nobody drinks in their sleep, so the countdown restarts with the day rather than running
-     * from last night — otherwise the first thing the app did each morning was scold.
+     * Nobody drinks in their sleep, so a night is not a gap between drinks. The clock stops
+     * entirely until the day's first glass rather than counting from last night's.
      */
     @Test
-    fun theCountdownRestartsAtTheGetUpHour() {
-        assertFiresAt(at(9), nextFire(at(8, 30), at(21, dayOffset = -1), gapMinutes = 60))
+    fun lastNightsDrinkStartsNoCountdown() {
+        assertNull(nextFire(at(8, 30), at(21, dayOffset = -1), gapMinutes = 60))
+        assertNull(nextFire(at(6), at(21, dayOffset = -1), gapMinutes = 60))
     }
 
     @Test
-    fun beforeTheWindowOpens_theGapIsMeasuredFromTheGetUpHour() {
-        assertFiresAt(at(9), nextFire(at(6), at(21, dayOffset = -1), gapMinutes = 60))
+    fun nothingLoggedAtAll_hasNothingToSchedule() {
+        assertNull(nextFire(at(12), null, gapMinutes = 60))
+    }
+
+    /** The day's first drink is what starts it. */
+    @Test
+    fun theDaysFirstDrinkStartsTheCountdown() {
+        assertFiresAt(at(10, 30), nextFire(at(9, 40), at(9, 30), gapMinutes = 60))
+    }
+
+    /** A drink before the window opened counts; the nudge for it waits for the get-up hour. */
+    @Test
+    fun aDrinkBeforeTheWindowOpens_waitsForTheGetUpHour() {
+        assertFiresAt(at(8), nextFire(at(6, 40), at(6, 30), gapMinutes = 60))
     }
 
     /** The window end is an hour, not an instant — 20:30 is still inside a 20:00 bedtime. */
@@ -105,14 +118,15 @@ class IdleReminderTest {
         assertFiresAt(at(20, 30), nextFire(at(19, 45), at(19, 30), gapMinutes = 60))
     }
 
+    /** Past bedtime there is nothing to arm: tomorrow starts from tomorrow's first drink. */
     @Test
-    fun pastBedtime_waitsForTheNextGetUpHour() {
-        assertFiresAt(at(8, dayOffset = 1), nextFire(at(20, 40), at(20, 30), gapMinutes = 60))
+    fun pastBedtime_thereIsNothingLeftToFire() {
+        assertNull(nextFire(at(20, 40), at(20, 30), gapMinutes = 60))
     }
 
     @Test
-    fun aFireTimeThatRollsPastMidnight_waitsForTheNextGetUpHour() {
-        assertFiresAt(at(8, dayOffset = 1), nextFire(at(22), at(21, 30), gapMinutes = 240))
+    fun aFireTimeThatWouldRollPastMidnight_isDropped() {
+        assertNull(nextFire(at(22), at(21, 30), gapMinutes = 240))
     }
 
     /**
@@ -130,17 +144,24 @@ class IdleReminderTest {
     private fun elapsed(now: Calendar, lastIntake: Calendar?) =
         idleElapsedMinutes(now.timeInMillis, lastIntake?.timeInMillis ?: 0L)
 
+    /** Every gap the picker offers is a multiple of 30, so an on-time delivery is exact. */
     @Test
-    fun elapsed_readsInWholeFiveMinuteSteps() {
+    fun elapsed_reportsTheGapExactlyWhenDeliveredOnTime() {
+        assertEquals(30, elapsed(at(12), at(11, 30)))
+        assertEquals(60, elapsed(at(12), at(11)))
+        assertEquals(90, elapsed(at(12), at(10, 30)))
         assertEquals(120, elapsed(at(12), at(10)))
-        assertEquals(45, elapsed(at(12), at(11, 15)))
     }
 
-    /** Rounded down, so a delivery running late never reports more than has really passed. */
+    /**
+     * A late delivery is the only way an odd total arises. Rounded down to the half-hour, so it
+     * reads as "2 hours" rather than "125 minutes" and never claims more than has passed.
+     */
     @Test
-    fun elapsed_roundsDownRatherThanReportingAnOddNumber() {
-        assertEquals(60, elapsed(at(12, 3), at(11)))
-        assertEquals(90, elapsed(at(12, 4), at(10, 30)))
+    fun elapsed_roundsALateDeliveryDownToTheHalfHour() {
+        assertEquals(120, elapsed(at(12, 5), at(10)))
+        assertEquals(120, elapsed(at(12, 29), at(10)))
+        assertEquals(150, elapsed(at(12, 35), at(10)))
     }
 
     /** Nothing to measure from: the card falls back to its vaguer wording. */
@@ -201,12 +222,18 @@ class IdleReminderTest {
         assertFalse(prefs(PREF_LAST_INTAKE_AT to at(11, 30).timeInMillis).shows())
     }
 
+    /** The clock has not started, so there is no gap to report. */
+    @Test
+    fun hidden_whenNothingHasBeenLoggedToday() {
+        assertFalse(prefs(PREF_LAST_INTAKE_AT to at(21, dayOffset = -1).timeInMillis).shows())
+    }
+
     @Test
     fun shown_whenTheGapHasElapsedExactly() {
         assertTrue(prefs(PREF_LAST_INTAKE_AT to at(11).timeInMillis).shows())
     }
 
-// ─── the reminder the user configured wins ────────────────────
+    // ─── the reminder the user configured wins ────────────────────
 
     /** A reminder card just said the same thing; two of them is a fault, not a nudge. */
     @Test
