@@ -240,18 +240,10 @@ private fun buildReminderNotification(
     onlyAlertOnce: Boolean,
     encouragementOverride: String? = null,
 ): Notification {
-    val openAppIntent = Intent(context, MainActivity::class.java).apply {
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-    }
-    val contentIntent = PendingIntent.getActivity(
-        context, 0, openAppIntent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-
     val builder = NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
         .setSmallIcon(R.drawable.ic_water_drop)
         .setPriority(NotificationCompat.PRIORITY_HIGH)
-        .setContentIntent(contentIntent)
+        .setContentIntent(openAppPendingIntent(context))
         .setAutoCancel(true)
         .setOnlyAlertOnce(onlyAlertOnce)
 
@@ -307,6 +299,20 @@ private fun progressTitle(context: Context, progress: NotificationProgress, unit
         progress.goalMl.fmt(unit),
         progress.percent,
     )
+
+/**
+ * Opens the app. Shared with the widget's header rather than built twice: same component and same
+ * request code make one PendingIntent, and FLAG_UPDATE_CURRENT would let whichever was built last
+ * rewrite the other.
+ */
+fun openAppPendingIntent(context: Context): PendingIntent = PendingIntent.getActivity(
+    context,
+    0,
+    Intent(context, MainActivity::class.java).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+    },
+    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+)
 
 /**
  * Every button targets the same receiver, so they need distinguishing or the system hands all

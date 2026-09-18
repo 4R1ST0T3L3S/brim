@@ -1,3 +1,13 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
+
+    <!--
+      Widget corner radii. Each is used by more than one shape — the card by one drawable per
+      theme, the chip by its ripple mask as well as its fill, the bar by its track as well as its
+      progress — and a radius that differs between a mask and what it masks, or between two themes
+      of the same card, is the kind of thing nobody sees until it ships.
+    -->
+    <dimen name="widget_card_radius">20dp</dimen>
+    <dimen name="widget_chip_radius">14dp</dimen>
+    <dimen name="widget_bar_radius">6dp</dimen>
 </resources>

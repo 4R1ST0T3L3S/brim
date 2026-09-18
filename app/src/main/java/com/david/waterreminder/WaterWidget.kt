@@ -5,67 +5,56 @@ import android.content.SharedPreferences
 import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatDelegate
 
-/**
- * Everything about the home-screen widget that can be decided without a RemoteViews in hand —
- * which amounts get a button, which colours it is drawn in, and what the numbers on it are.
- * Kept apart from [WaterWidgetProvider] so all of it is reachable from a JVM test.
- */
+// What the widget decides before a RemoteViews is involved, kept apart from WaterWidgetProvider
+// so all of it is reachable from a JVM test.
 
-/** The width at which three chips stop fitting. Derived in [widgetSizeBand]. */
+/** Width three "+100 ml" chips need, with their gaps and the card's padding. */
 const val THREE_CHIP_MIN_WIDTH_DP = 224
 
 /**
- * How much of the card a given width buys. One band carrying every setting rather than a function
- * per setting, so they can't turn over at different widths — and it is the only thing a redraw
- * varies over, which is what lets two widgets in the same band share one RemoteViews.
+ * How much of the card a width buys. One band rather than a function per setting, so they can't
+ * turn over at different widths — and it is all a redraw varies over, which lets two widgets in
+ * the same band share one RemoteViews.
  */
 enum class WidgetSizeBand(
-    /** Chips to draw, if the user has picked that many. */
     val chips: Int,
-    /** Chip text size in sp. */
+    /** Must match the size in `Widget.WaterReminder.WidgetChip`, which the layout starts from. */
     val chipTextSp: Float,
     /**
      * Whether a met goal is announced beside the total. The percentage is on the goal line at
-     * every size — beside a total that can read "2030 ml" and never yields, it was what got cut —
-     * which leaves the header for this, on the cards with room for it.
+     * every size: beside a total that can read "2030 ml" and never yields, it was what got cut.
      */
     val spellsOutGoalReached: Boolean,
 ) {
-    /** Room for three chips at the size the layout asks for. */
     WIDE(chips = 3, chipTextSp = 13f, spellsOutGoalReached = true),
 
     /**
-     * A narrow card: one chip fewer, and smaller type rather than a label stripped of its unit.
-     * Two chips on two cells are about 64dp each, where "+1500 ml" wants 55dp at 13sp and 47 at
-     * 11 — the margin a long oz label needs. Still sp, so a large font scale can outgrow it;
-     * overriding an accessibility setting would be the worse answer.
+     * Smaller type rather than a label stripped of its unit: two chips on two cells are ~64dp
+     * each, and "+1500 ml" wants 55dp at 13sp against 47 at 11 — the margin a long oz label
+     * needs. Still sp, so a large font scale can outgrow it; overriding that would be worse.
      */
     COMPACT(chips = 2, chipTextSp = 11f, spellsOutGoalReached = false),
 }
 
 /**
- * The band a card [widthDp] across falls in. Three "+100 ml" chips want 60dp each plus gaps and
- * padding — [THREE_CHIP_MIN_WIDTH_DP] in all. A width test rather than a cell count, because
- * `OPTION_APPWIDGET_MIN_WIDTH` reports the dp a launcher really hands over and real cells are
- * wider than the 70n − 30 the provider declares its bounds in.
+ * A width test rather than a cell count: `OPTION_APPWIDGET_MIN_WIDTH` reports the dp a launcher
+ * really hands over, and real cells are wider than the 70n − 30 the provider declares bounds in.
  */
 fun widgetSizeBand(widthDp: Int): WidgetSizeBand =
     if (widthDp >= THREE_CHIP_MIN_WIDTH_DP) WidgetSizeBand.WIDE else WidgetSizeBand.COMPACT
 
 /**
- * The amounts the widget puts buttons on — the **Quick log buttons** selection, trimmed to what a
- * card in [band] holds. Shared with the reminder card because both answer the same question, and
- * a second picker for one decision would only be somewhere for them to disagree. The trim is the
- * widget's own: narrowing drops a chip without touching the setting, so widening brings it back.
+ * The **Quick log buttons** selection, trimmed to what [band] holds. Shared with the reminder card
+ * because both answer the same question; a second picker would only be somewhere to disagree. The
+ * trim is the widget's own — narrowing drops a chip without touching the setting.
  */
 fun SharedPreferences.widgetAmounts(band: WidgetSizeBand): List<Int> =
     notificationAmounts().take(band.chips)
 
 /**
- * The widget's colours: each theme's own page background and the text that sits on it. A widget is
- * drawn by the launcher and can't read theme attributes, so these name concrete resources and
- * [widgetPaletteFor] picks the set. No chip colour here — `quickAddBackground` is set once on the
- * base theme and no tinted theme overrides it, so the chip is fixed in its style.
+ * Each theme's page background and the text that sits on it. A widget is drawn by the launcher and
+ * can't read theme attributes, so these name concrete resources. No chip colour: that one is fixed
+ * in `Widget.WaterReminder.WidgetChip`.
  */
 enum class WidgetPalette(
     val backgroundRes: Int,
@@ -95,9 +84,8 @@ enum class WidgetPalette(
 }
 
 /**
- * The palette for a stored [themeMode]. "Follow system" — and any unrecognised value, since prefs
- * can arrive from an import — resolves against [systemIsNight], which is the *launcher's* night
- * mode: that is the surface the widget sits on.
+ * "Follow system" — and any unrecognised value, since prefs can arrive from an import — resolves
+ * against [systemIsNight], the *launcher's* night mode: that is the surface the widget sits on.
  */
 fun widgetPaletteFor(themeMode: Int, systemIsNight: Boolean): WidgetPalette = when (themeMode) {
     THEME_MODE_BLUE_LIGHT -> WidgetPalette.BLUE_LIGHT
@@ -107,31 +95,25 @@ fun widgetPaletteFor(themeMode: Int, systemIsNight: Boolean): WidgetPalette = wh
     else -> if (systemIsNight) WidgetPalette.DARK else WidgetPalette.LIGHT
 }
 
-/** Whether the configuration the widget is being drawn under is in night mode. */
-private fun Context.isNightMode(): Boolean =
-    (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-        Configuration.UI_MODE_NIGHT_YES
+fun Context.widgetPalette(prefs: SharedPreferences): WidgetPalette = widgetPaletteFor(
+    prefs.getInt(PREF_THEME_MODE, DEFAULT_THEME_MODE),
+    systemIsNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+        Configuration.UI_MODE_NIGHT_YES,
+)
 
-fun Context.widgetPalette(prefs: SharedPreferences): WidgetPalette =
-    widgetPaletteFor(prefs.getInt(PREF_THEME_MODE, DEFAULT_THEME_MODE), isNightMode())
-
-/** Everything the widget draws, read in one pass so its numbers can't disagree with each other. */
+/** What the card is handed to draw, apart from its colours. */
 data class WidgetState(
     val progress: NotificationProgress,
     val unit: String,
     val amountsMl: List<Int>,
-    val palette: WidgetPalette,
 )
 
 /**
- * The widget's reading of the day. Through [notificationProgress] rather than [dayTotal] for the
- * reason the reminder card is: nothing has rolled the stored day over out here, so yesterday's
- * total must not be drawn as today's.
+ * Through [notificationProgress] rather than [dayTotal]: nothing has rolled the stored day over
+ * out here, so yesterday's total must not be drawn as today's.
  */
-fun SharedPreferences.widgetState(palette: WidgetPalette, band: WidgetSizeBand): WidgetState =
-    WidgetState(
-        progress = notificationProgress(),
-        unit = getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML,
-        amountsMl = widgetAmounts(band),
-        palette = palette,
-    )
+fun SharedPreferences.widgetState(band: WidgetSizeBand): WidgetState = WidgetState(
+    progress = notificationProgress(),
+    unit = getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML,
+    amountsMl = widgetAmounts(band),
+)

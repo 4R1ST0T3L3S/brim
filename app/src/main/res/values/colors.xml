@@ -57,11 +57,8 @@
     <!-- Chart marker -->
     <color name="marker_value_text">#90CAF9</color>
 
-    <!-- Home-screen widget. The launcher draws it, so it can't reach the app's theme
-         attributes: WidgetPalette names one concrete set of these per theme instead. The two
-         below are @color/page_background's day and night values written out, because a
-         values-night qualifier would follow the launcher's mode rather than the theme the user
-         picked in the app. The tinted themes point straight at their own page colours. -->
+    <!-- @color/page_background's day and night values written out: a values-night qualifier
+         would follow the launcher's mode rather than the theme picked in the app. -->
     <color name="widget_surface_light">#FFFFFF</color>
     <color name="widget_text_light">#1A2535</color>
     <color name="widget_text_variant_light">#5A6B7D</color>

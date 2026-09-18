@@ -95,13 +95,11 @@
     <string name="widget_of_goal_percent">of %1$s · %2$d%%</string>
     <string name="widget_goal_reached">Goal reached</string>
     <string name="widget_action_add">+%1$s</string>
-    <!-- Sample values, drawn only by the widget picker's preview — nothing fills the layout
-         in there. Real ones come from WaterWidgetProvider the moment the widget is placed. -->
+    <!-- Sample values, drawn only by the widget picker. -->
     <string name="widget_preview_total">750 ml</string>
     <string name="widget_preview_goal">of 1500 ml · 50%</string>
     <string name="widget_preview_add_small">+100 ml</string>
     <string name="widget_preview_add_medium">+200 ml</string>
-    <string name="widget_preview_add_large">+500 ml</string>
     <string name="notification_channel_name">Water Reminders</string>
     <string name="notification_channel_description">Daily water intake reminders</string>
     <!-- The reminder card. The numbers are the title so the collapsed row can't cut them off;

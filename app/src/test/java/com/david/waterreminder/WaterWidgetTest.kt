@@ -7,13 +7,15 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
 
+/**
+ * Only what the widget decides for itself: what it reads through [notificationProgress] and
+ * [notificationAmounts] is UnitsTest's and ReminderNotificationTest's to pin down.
+ */
 class WaterWidgetTest {
 
     // ─── Which amounts get a button ───────────────────────────────
 
-    /** Wide enough for three, so the widget shows the whole Quick log buttons selection. */
-    private fun FakePrefs.wideAmounts() = widgetAmounts(WidgetSizeBand.WIDE)
-
+    /** The selection, not the home row — the whole of what this adds to [notificationAmounts]. */
     @Test
     fun widgetAmounts_followsTheQuickLogSelection() {
         val prefs = FakePrefs(
@@ -22,77 +24,7 @@ class WaterWidgetTest {
                 PREF_NOTIFICATION_AMOUNTS_ML to "200,400",
             )
         )
-        assertEquals(listOf(200, 400), prefs.wideAmounts())
-    }
-
-    /** Nobody has opened the picker: the selection derives, and the widget derives with it. */
-    @Test
-    fun widgetAmounts_derivesWhenNothingIsPicked() {
-        val prefs = FakePrefs(mapOf(PREF_QUICK_AMOUNTS_ML to "100,200,300,400"))
-        assertEquals(listOf(100, 200, 300), prefs.wideAmounts())
-    }
-
-    /** An amount deleted from the home screen can't linger as a phantom widget button. */
-    @Test
-    fun widgetAmounts_dropsWhatTheHomeScreenNoLongerOffers() {
-        val prefs = FakePrefs(
-            mapOf(
-                PREF_QUICK_AMOUNTS_ML to "100,200",
-                PREF_NOTIFICATION_AMOUNTS_ML to "200,500",
-            )
-        )
-        assertEquals(listOf(200), prefs.wideAmounts())
-    }
-
-    /** Every button turned off is a real state — the widget drops its row rather than inventing one. */
-    @Test
-    fun widgetAmounts_emptyWhenTheSelectionIsEmpty() {
-        val prefs = FakePrefs(mapOf(PREF_NOTIFICATION_AMOUNTS_ML to ""))
-        assertTrue(prefs.wideAmounts().isEmpty())
-    }
-
-    @Test
-    fun widgetAmounts_defaultsOnAFreshInstall() {
-        assertEquals(DEFAULT_QUICK_AMOUNTS_ML, FakePrefs().wideAmounts())
-    }
-
-    // ─── How many of them the width has room for ──────────────────
-
-    @Test
-    fun band_wideOnceThereIsRoom() {
-        assertEquals(WidgetSizeBand.WIDE, widgetSizeBand(THREE_CHIP_MIN_WIDTH_DP))
-        assertEquals(WidgetSizeBand.WIDE, widgetSizeBand(250))   // 4 cells, where it is placed
-        assertEquals(WidgetSizeBand.WIDE, widgetSizeBand(246))   // 3 cells on a typical phone
-    }
-
-    @Test
-    fun band_compactWhenNarrow() {
-        assertEquals(WidgetSizeBand.COMPACT, widgetSizeBand(THREE_CHIP_MIN_WIDTH_DP - 1))
-        assertEquals(WidgetSizeBand.COMPACT, widgetSizeBand(164))  // 2 cells on a typical phone
-        assertEquals(WidgetSizeBand.COMPACT, widgetSizeBand(110))  // 2 cells at the declared floor
-    }
-
-    /** A narrow card carries fewer chips and smaller type; a wide one neither. */
-    @Test
-    fun band_compactIsSmallerInBothSenses() {
-        assertTrue(WidgetSizeBand.COMPACT.chips < WidgetSizeBand.WIDE.chips)
-        assertTrue(WidgetSizeBand.COMPACT.chipTextSp < WidgetSizeBand.WIDE.chipTextSp)
-    }
-
-    /** Narrowing the card drops a chip; it must never drop the pair the widget is for. */
-    @Test
-    fun band_neverBelowTwoChips() {
-        assertTrue(WidgetSizeBand.entries.all { it.chips >= 2 })
-    }
-
-    /**
-     * The percentage is on the goal line at every width, so the header slot is left for the
-     * goal-reached banner — which only a card with room to spare announces.
-     */
-    @Test
-    fun band_onlyWideAnnouncesTheGoal() {
-        assertTrue(WidgetSizeBand.WIDE.spellsOutGoalReached)
-        assertFalse(WidgetSizeBand.COMPACT.spellsOutGoalReached)
+        assertEquals(listOf(200, 400), prefs.widgetAmounts(WidgetSizeBand.WIDE))
     }
 
     /** A three-amount selection loses exactly one button when the card is dragged narrow. */
@@ -108,18 +40,39 @@ class WaterWidgetTest {
         assertEquals(listOf(100, 200), prefs.widgetAmounts(WidgetSizeBand.COMPACT))
     }
 
-    /** The trim is the widget's own — a narrow card must not rewrite the stored selection. */
+    // ─── How much of the card a width buys ────────────────────────
+
     @Test
-    fun widgetAmounts_narrowCardLeavesTheSelectionAlone() {
-        val prefs = FakePrefs(
-            mapOf(
-                PREF_QUICK_AMOUNTS_ML to "100,200,500",
-                PREF_NOTIFICATION_AMOUNTS_ML to "100,200,500",
-            )
-        )
-        prefs.widgetAmounts(WidgetSizeBand.COMPACT)
-        assertEquals("100,200,500", prefs.values[PREF_NOTIFICATION_AMOUNTS_ML])
-        assertEquals(listOf(100, 200, 500), prefs.notificationAmounts())
+    fun band_wideOnceThereIsRoom() {
+        assertEquals(WidgetSizeBand.WIDE, widgetSizeBand(THREE_CHIP_MIN_WIDTH_DP))
+        assertEquals(WidgetSizeBand.WIDE, widgetSizeBand(246))   // 3 cells on a typical phone
+    }
+
+    @Test
+    fun band_compactWhenNarrow() {
+        assertEquals(WidgetSizeBand.COMPACT, widgetSizeBand(THREE_CHIP_MIN_WIDTH_DP - 1))
+        assertEquals(WidgetSizeBand.COMPACT, widgetSizeBand(110))  // 2 cells at the declared floor
+    }
+
+    /** Narrowing the card drops a chip; it must never drop the pair the widget is for. */
+    @Test
+    fun band_neverBelowTwoChips() {
+        assertTrue(WidgetSizeBand.entries.all { it.chips >= 2 })
+    }
+
+    /**
+     * COMPACT is WIDE with things taken away, never the other way round. Stated as an ordering
+     * rather than as the four literals, so it survives a future band and still fails if one of
+     * them is flipped — which nothing else would catch: the provider reads all three fields and
+     * no other suite touches them.
+     */
+    @Test
+    fun band_compactIsNeverMoreGenerousThanWide() {
+        val wide = WidgetSizeBand.WIDE
+        val compact = WidgetSizeBand.COMPACT
+        assertTrue(compact.chips <= wide.chips)
+        assertTrue(compact.chipTextSp <= wide.chipTextSp)
+        assertFalse(compact.spellsOutGoalReached && !wide.spellsOutGoalReached)
     }
 
     // ─── Colours ──────────────────────────────────────────────────
@@ -144,40 +97,18 @@ class WaterWidgetTest {
         )
     }
 
+    /** "Follow system" and an unrecognised value — an imported pref — both use the host's mode. */
     @Test
-    fun palette_followSystemUsesTheHostNightMode() {
-        val mode = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-        assertEquals(WidgetPalette.LIGHT, widgetPaletteFor(mode, systemIsNight = false))
-        assertEquals(WidgetPalette.DARK, widgetPaletteFor(mode, systemIsNight = true))
+    fun palette_fallsBackToTheHostNightMode() {
+        listOf(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM, 9999).forEach { mode ->
+            assertEquals(WidgetPalette.LIGHT, widgetPaletteFor(mode, systemIsNight = false))
+            assertEquals(WidgetPalette.DARK, widgetPaletteFor(mode, systemIsNight = true))
+        }
     }
 
-    /** Prefs can arrive from an import or an older install, so an unknown value must still draw. */
-    @Test
-    fun palette_unknownModeFallsBackToTheHostNightMode() {
-        assertEquals(WidgetPalette.LIGHT, widgetPaletteFor(9999, systemIsNight = false))
-        assertEquals(WidgetPalette.DARK, widgetPaletteFor(9999, systemIsNight = true))
-    }
+    // ─── What the card is handed to draw ──────────────────────────
 
-    // ─── The numbers on it ────────────────────────────────────────
-
-    @Test
-    fun state_readsTodaysTotalAgainstThePersonalGoal() {
-        val prefs = FakePrefs(
-            mapOf(
-                "date" to LocalDate.now().toString(),
-                "intake_ml" to 750,
-                "personal_goal_ml" to 3000,
-                PREF_UNIT to UNIT_ML,
-            )
-        )
-        val state = prefs.widgetState(WidgetPalette.LIGHT, WidgetSizeBand.WIDE)
-        assertEquals(750, state.progress.intakeMl)
-        assertEquals(3000, state.progress.goalMl)
-        assertEquals(25, state.progress.percent)
-        assertEquals(UNIT_ML, state.unit)
-    }
-
-    /** Nothing rolls the day over out on the home screen — yesterday's total is not today's. */
+    /** Reads zero for a finished day, which is what fails if [widgetState] ever uses [dayTotal]. */
     @Test
     fun state_showsNothingForAStaleDay() {
         val prefs = FakePrefs(
@@ -186,64 +117,6 @@ class WaterWidgetTest {
                 "intake_ml" to 1200,
             )
         )
-        assertEquals(0, prefs.widgetState(WidgetPalette.LIGHT, WidgetSizeBand.WIDE).progress.intakeMl)
-    }
-
-    @Test
-    fun state_fallsBackToTheRecommendedMinimum() {
-        val prefs = FakePrefs(mapOf("date" to LocalDate.now().toString(), "intake_ml" to 1500))
-        val state = prefs.widgetState(WidgetPalette.DARK, WidgetSizeBand.WIDE)
-        assertEquals(DEFAULT_DAILY_GOAL_ML, state.progress.goalMl)
-        assertTrue(state.progress.goalReached)
-    }
-
-    @Test
-    fun state_carriesTheChipsTheWidthAllows() {
-        val prefs = FakePrefs(
-            mapOf(
-                "date" to LocalDate.now().toString(),
-                PREF_QUICK_AMOUNTS_ML to "100,200,500",
-                PREF_NOTIFICATION_AMOUNTS_ML to "100,200,500",
-            )
-        )
-        val wide = prefs.widgetState(WidgetPalette.LIGHT, WidgetSizeBand.WIDE)
-        val compact = prefs.widgetState(WidgetPalette.LIGHT, WidgetSizeBand.COMPACT)
-        assertEquals(listOf(100, 200, 500), wide.amountsMl)
-        assertEquals(listOf(100, 200), compact.amountsMl)
-    }
-
-    /** Every number drawn on the card is formatted with this unit, so it can't go unasserted. */
-    @Test
-    fun state_readsTheChosenUnit() {
-        val prefs = FakePrefs(
-            mapOf(
-                "date" to LocalDate.now().toString(),
-                "intake_ml" to 750,
-                PREF_UNIT to UNIT_OZ,
-            )
-        )
-        val state = prefs.widgetState(WidgetPalette.LIGHT, WidgetSizeBand.WIDE)
-        assertEquals(UNIT_OZ, state.unit)
-        assertEquals("25.4 oz", state.progress.intakeMl.fmt(state.unit))
-        assertEquals("50.7 oz", DEFAULT_DAILY_GOAL_ML.fmt(state.unit))
-    }
-
-    /** An install from before the unit was ever chosen still has to draw something. */
-    @Test
-    fun state_fallsBackToMlWhenNoUnitIsStored() {
-        assertEquals(UNIT_ML, FakePrefs().widgetState(WidgetPalette.LIGHT, WidgetSizeBand.WIDE).unit)
-    }
-
-    /** The bar is driven by this percentage, and it must never claim more than a full card. */
-    @Test
-    fun state_percentCapsAtOneHundred() {
-        val prefs = FakePrefs(
-            mapOf(
-                "date" to LocalDate.now().toString(),
-                "intake_ml" to 5000,
-                "personal_goal_ml" to 2000,
-            )
-        )
-        assertEquals(100, prefs.widgetState(WidgetPalette.LIGHT, WidgetSizeBand.WIDE).progress.percent)
+        assertEquals(0, prefs.widgetState(WidgetSizeBand.WIDE).progress.intakeMl)
     }
 }

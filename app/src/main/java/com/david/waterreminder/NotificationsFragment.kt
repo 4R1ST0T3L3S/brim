@@ -134,10 +134,8 @@ class NotificationsFragment : BaseMenuFragment() {
         binding.rowQuickLogActions.rowSubtitle.text =
             if (actions.isEmpty()) getString(R.string.settings_quick_log_actions_off)
             else actions.joinToString(", ") { it.fmt(unit) }
-        // Deliberately not dimmed with the rows above it, which are about the notification and
-        // are moot while notifications are off. This selection is also the home-screen widget's
-        // buttons, so gating it here would leave someone who uses only the widget with no way
-        // to reach the one control over it.
+        // Not dimmed with the rows above: this selection is also the widget's buttons, and
+        // gating it would leave a widget-only user unable to reach the one control over them.
 
         val (windowStart, windowEnd) = prefs.reminderWindow()
         binding.rowReminderWindow.rowSubtitle.text = getString(

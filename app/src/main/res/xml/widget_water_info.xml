@@ -1,26 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  4x2 by default: the smallest cell count that fits three quick-log chips beside each other with
-  the numbers still on their own line above them.
+  Sizes are in Android's cell formula, 70n - 30: 250dp is the 4 cells it is placed at, 110dp the
+  2 it resizes down to. What the card does on the way down is WidgetSizeBand's business.
 
-  Resizable down to 2 cells — 110dp in Android's cell formula, 70n - 30 — and up to whatever the
-  launcher allows. A card narrower than THREE_CHIP_MIN_WIDTH_DP drops to two chips rather than
-  letting three of them clip, and shrinks their text so the unit survives; see WidgetSizeBand.
+  Width only: the content is a fixed stack, so a taller card is dead space and a shorter one
+  clips. A launcher may honour resizeMode or ignore it — it is a request, not a lock.
 
-  Width only. The card's content is a fixed stack about 140dp tall, so a taller widget is just
-  empty space under the chips and a shorter one clips them off the bottom — neither is worth a
-  drag handle. Note that a launcher may honour this or not; it is a request, not a lock, and
-  2 rows is not a fixed dp across devices, grid settings or orientations either way.
-
-  No updatePeriodMillis shorter than the half hour Android allows: the widget is redrawn the
-  moment anything changes it (updateWaterWidgets), so the period is only the backstop that
-  catches the day rolling over past midnight with nothing else running.
+  updatePeriodMillis is the floor Android allows, and only a backstop: updateWaterWidgets redraws
+  the moment anything changes, so this catches nothing but midnight passing unattended.
 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
     android:initialLayout="@layout/widget_water"
     android:minHeight="110dp"
-    android:minResizeHeight="110dp"
     android:minResizeWidth="110dp"
     android:minWidth="250dp"
     android:previewImage="@mipmap/ic_launcher"

@@ -1,25 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Quick-log chip on the widget. One drawable for every theme, because the home screen's add
-  buttons are one colour in every theme too: quickAddBackground is set on the base theme and no
-  tinted theme overrides it (only the *remove* chips are re-tinted).
-
-  A ripple rather than a plain shape because the launcher draws it the instant the finger lands,
-  before the broadcast has even been delivered. Without it a tap on a cold-started app looks like
-  nothing happened for up to a second, and the second tap logs the amount twice.
+  Quick-log chip; one drawable for every theme, for the reason Widget.WaterReminder.WidgetChip
+  gives. A ripple rather than a flat shape: the launcher draws it before the broadcast is sent,
+  so a cold start can't look like the tap did nothing — which is how an amount gets logged twice.
 -->
 <ripple xmlns:android="http://schemas.android.com/apk/res/android"
     android:color="@color/widget_chip_ripple">
     <item android:id="@android:id/mask">
         <shape android:shape="rectangle">
             <solid android:color="@color/white" />
-            <corners android:radius="14dp" />
+            <corners android:radius="@dimen/widget_chip_radius" />
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
             <solid android:color="@color/brand_blue" />
-            <corners android:radius="14dp" />
+            <corners android:radius="@dimen/widget_chip_radius" />
         </shape>
     </item>
 </ripple>
