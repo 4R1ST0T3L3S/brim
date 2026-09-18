@@ -79,15 +79,25 @@ fun idleElapsedMinutes(nowMillis: Long, lastIntakeMillis: Long): Int {
     return (minutes - minutes % 30).toInt()
 }
 
+/** Whole hours and the minutes left over — what [durationLabel] is built from. */
+internal fun durationHoursAndMinutes(minutes: Int): Pair<Int, Int> = minutes / 60 to minutes % 60
+
 /**
- * "45 minutes", "1 hour", "90 minutes" — whole hours read as hours, everything else as minutes.
- * Shared by the picker and the card so the setting and the notification say it the same way.
+ * "45 minutes", "1 hour", "1 hour 30 minutes", "5 hours 30 minutes". Anything past an hour leads
+ * with the hours: half-hour totals are the common case here, and reporting one as "330 minutes"
+ * is arithmetic, not language. Shared by the picker and the card so the setting and the
+ * notification say it the same way.
  */
-fun Context.durationLabel(minutes: Int): String =
-    if (minutes >= 60 && minutes % 60 == 0)
-        resources.getQuantityString(R.plurals.idle_reminder_hours, minutes / 60, minutes / 60)
-    else
-        resources.getQuantityString(R.plurals.idle_reminder_minutes, minutes, minutes)
+fun Context.durationLabel(minutes: Int): String {
+    val (hours, rest) = durationHoursAndMinutes(minutes)
+    val hoursLabel = resources.getQuantityString(R.plurals.idle_reminder_hours, hours, hours)
+    val minutesLabel = resources.getQuantityString(R.plurals.idle_reminder_minutes, rest, rest)
+    return when {
+        hours == 0 -> minutesLabel
+        rest == 0 -> hoursLabel
+        else -> getString(R.string.duration_hours_minutes, hoursLabel, minutesLabel)
+    }
+}
 
 /** Index of the stored gap in [IDLE_REMINDER_CHOICES_MINUTES], falling back to Off. */
 fun idleReminderChoiceIndex(minutes: Int): Int =
@@ -251,6 +261,9 @@ class IdleReminderReceiver : BroadcastReceiver() {
         // Rearming first: no sibling alarm repairs this one.
         IdleReminderScheduler.schedule(context)
         postIdleReminderNotification(context, context.waterPrefs())
+        // Another waking alarm, so it catches a rolled-over day for the same reason
+        // [ReminderReceiver] does.
+        updateWaterWidgets(context)
     }
 }
 

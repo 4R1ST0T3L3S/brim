@@ -73,5 +73,25 @@
 
     <style name="Theme.WaterReminder.BlueLight" parent="Base.Theme.WaterReminder.BlueLight" />
 
+    <!--
+      Quick-log chip on the home-screen widget: the home screen's own add-button colours, which
+      quickAddBackground / quickAddForeground set once on the base theme and no tinted theme
+      overrides. Fixed here rather than swapped per palette for that reason.
+    -->
+    <style name="Widget.WaterReminder.WidgetChip" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">@drawable/widget_button</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
     <style name="PopupTheme" parent="ThemeOverlay.AppCompat.Light" />
 </resources>

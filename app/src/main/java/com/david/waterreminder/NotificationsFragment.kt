@@ -134,8 +134,10 @@ class NotificationsFragment : BaseMenuFragment() {
         binding.rowQuickLogActions.rowSubtitle.text =
             if (actions.isEmpty()) getString(R.string.settings_quick_log_actions_off)
             else actions.joinToString(", ") { it.fmt(unit) }
-        binding.rowQuickLogActions.root.alpha = if (enabled) 1f else 0.38f
-        binding.rowQuickLogActions.rowContainer.isEnabled = enabled
+        // Deliberately not dimmed with the rows above it, which are about the notification and
+        // are moot while notifications are off. This selection is also the home-screen widget's
+        // buttons, so gating it here would leave someone who uses only the widget with no way
+        // to reach the one control over it.
 
         val (windowStart, windowEnd) = prefs.reminderWindow()
         binding.rowReminderWindow.rowSubtitle.text = getString(
@@ -192,9 +194,10 @@ class NotificationsFragment : BaseMenuFragment() {
     // ─── Quick log buttons ───────────────────────────────────────
 
     /**
-     * Picks which quick amounts get a button on the notification. The list is the home screen's
-     * own amounts, so there is nothing new to invent here and nothing that can name an amount
-     * the user no longer has.
+     * Picks which quick amounts get a quick-log button — on the reminder notification and on the
+     * home-screen widget, which share one selection. The list is the home screen's own amounts,
+     * so there is nothing new to invent here and nothing that can name an amount the user no
+     * longer has.
      */
     private fun showQuickLogActionsDialog() {
         // One snapshot of what the home screen offers, shared by the rows, the seeded selection

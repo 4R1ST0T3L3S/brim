@@ -176,8 +176,8 @@ fun SharedPreferences.quickAmounts(): List<Int> =
 /**
  * Stores [amounts] sanitized and returns exactly what was stored, saving callers a re-read.
  *
- * A stored notification selection is re-filtered against the new list in the same commit, so a
- * deleted amount can't linger as a phantom notification button. This is tidying, not the
+ * A stored quick-log selection is re-filtered against the new list in the same commit, so a
+ * deleted amount can't linger as a phantom button on the reminder card or the widget. This is tidying, not the
  * safeguard: prefs also arrive from an import, a cloud restore or a legacy install that never
  * wrote this key at all, none of which come through here — [notificationAmounts] filters on
  * every read for that reason.
@@ -204,8 +204,10 @@ fun SharedPreferences.setQuickAmounts(amounts: List<Int>): List<Int> {
 }
 
 /**
- * Cap on how many quick amounts get a button on the reminder notification. Three is also all
- * the standard notification template will render, so the setting can't promise a fourth.
+ * Cap on how many quick amounts get a quick-log button. Three is all the standard notification
+ * template will render, so the setting can't promise a fourth — and it happens to be what the
+ * home-screen widget has room for too, which shares this selection. The two reasons are
+ * unrelated; see [WidgetSizeBand] for the widget's own.
  */
 const val NOTIFICATION_ACTIONS_MAX = 3
 
@@ -219,7 +221,8 @@ fun List<Int>.asNotificationAmounts(available: List<Int>): List<Int> =
     filter { it in available }.distinct().sorted().take(NOTIFICATION_ACTIONS_MAX)
 
 /**
- * The amounts to draw as notification buttons, given what the home screen currently offers.
+ * The amounts to draw as quick-log buttons — on the reminder card, and on the home-screen
+ * widget, which trims this list to what its width holds — given what the home screen offers.
  *
  * An absent key — nobody has opened the picker — derives the first [NOTIFICATION_ACTIONS_MAX]
  * available amounts rather than nothing: an empty default would ship the feature invisible to

@@ -20,7 +20,7 @@ import kotlin.random.Random
 
 const val REMINDER_CHANNEL_ID = "water_reminder_channel"
 
-/** Extras a quick-log button carries back to [QuickLogReceiver]. */
+/** Extras a quick-log button carries back to [QuickLogReceiver], or to [WaterWidgetProvider]. */
 const val EXTRA_LOG_ML = "log_ml"
 const val EXTRA_LOG_REMINDER_TIME = "log_reminder_time"
 

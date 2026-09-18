@@ -74,15 +74,34 @@
         <item quantity="one">%d minute</item>
         <item quantity="other">%d minutes</item>
     </plurals>
+    <!-- "1 hour" + "30 minutes" -> "1 hour 30 minutes". Separate so a language that joins them
+         differently can say so. -->
+    <string name="duration_hours_minutes">%1$s %2$s</string>
     <plurals name="idle_reminder_hours">
         <item quantity="one">%d hour</item>
         <item quantity="other">%d hours</item>
     </plurals>
     <string name="settings_quick_log_actions_off">Off</string>
     <string name="dialog_quick_log_actions_title">Quick log buttons</string>
-    <string name="dialog_quick_log_actions_hint">Buttons on the reminder notification, so you can log a drink without opening the app — including from a paired watch. Up to %1$d fit.</string>
+    <string name="dialog_quick_log_actions_hint">Buttons on the reminder notification and on the home-screen widget, so you can log a drink without opening the app — including from a paired watch. Up to %1$d fit; a widget resized narrow shows the first two.</string>
     <string name="dialog_quick_log_actions_empty">You have no quick amounts to choose from. Add one with + on the home screen first.</string>
     <string name="notification_action_add">+%1$s</string>
+
+    <!-- Home-screen widget. The total is the headline; the goal sits under the bar so the two
+         numbers don't have to share a line at the narrowest size the widget resizes to. -->
+    <string name="widget_description">Today\'s water at a glance, with buttons to log a drink</string>
+    <!-- The goal line carries the percentage at every width: beside the total it had to share
+         a line with a four-digit number that never yields. -->
+    <string name="widget_of_goal_percent">of %1$s · %2$d%%</string>
+    <string name="widget_goal_reached">Goal reached</string>
+    <string name="widget_action_add">+%1$s</string>
+    <!-- Sample values, drawn only by the widget picker's preview — nothing fills the layout
+         in there. Real ones come from WaterWidgetProvider the moment the widget is placed. -->
+    <string name="widget_preview_total">750 ml</string>
+    <string name="widget_preview_goal">of 1500 ml · 50%</string>
+    <string name="widget_preview_add_small">+100 ml</string>
+    <string name="widget_preview_add_medium">+200 ml</string>
+    <string name="widget_preview_add_large">+500 ml</string>
     <string name="notification_channel_name">Water Reminders</string>
     <string name="notification_channel_description">Daily water intake reminders</string>
     <!-- The reminder card. The numbers are the title so the collapsed row can't cut them off;

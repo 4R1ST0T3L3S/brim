@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The home-screen widget. Every colour set here is a placeholder the provider overwrites with the
+  palette for the user's theme (see WidgetPalette) — they are the light ones so this same layout
+  can serve as the picker preview, where nothing runs to fill it in. The sample text below is
+  there for the same reason.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg_light"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <!-- Tapping anything but a button opens the app. On the header rather than the root so a
+         miss between two chips doesn't launch it. -->
+    <LinearLayout
+        android:id="@+id/widget_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_water_drop" />
+
+        <!-- No weight, so it is measured at the width it wants and keeps it. The total is the
+             one thing on the card that must never be cut. -->
+        <TextView
+            android:id="@+id/widget_total"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/widget_preview_total"
+            android:textColor="@color/widget_text_light"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <!-- The goal-reached banner, and nothing else — the percentage lives on the goal line.
+             Carries the weight so it takes leftover space and gives it back when the row is
+             short: whatever has to go, goes from here rather than from the total. Hidden by
+             default, which is both the ordinary state and what the picker draws. -->
+        <TextView
+            android:id="@+id/widget_percent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:gravity="end"
+            android:maxLines="1"
+            android:text="@string/widget_goal_reached"
+            android:textColor="@color/widget_text_variant_light"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/widget_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="10dp"
+        android:layout_marginTop="10dp"
+        android:max="100"
+        android:progress="50"
+        android:progressDrawable="@drawable/widget_progress" />
+
+    <TextView
+        android:id="@+id/widget_goal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/widget_preview_goal"
+        android:textColor="@color/widget_text_variant_light"
+        android:textSize="12sp" />
+
+    <!-- One slot per widgetAmounts() entry; the provider hides the ones it doesn't fill, and
+         the whole row when there are none left on the home screen to offer. -->
+    <LinearLayout
+        android:id="@+id/widget_buttons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_button_0"
+            style="@style/Widget.WaterReminder.WidgetChip"
+            android:text="@string/widget_preview_add_small" />
+
+        <TextView
+            android:id="@+id/widget_button_1"
+            style="@style/Widget.WaterReminder.WidgetChip"
+            android:layout_marginStart="8dp"
+            android:text="@string/widget_preview_add_medium" />
+
+        <!-- Hidden by default, so two chips are what the widget picker draws: it inflates this
+             layout with nothing running behind it, at a cell too narrow for three. The provider
+             sets all three slots explicitly on every redraw, so a placed widget still shows the
+             third wherever WidgetSizeBand.WIDE applies. -->
+        <TextView
+            android:id="@+id/widget_button_2"
+            style="@style/Widget.WaterReminder.WidgetChip"
+            android:layout_marginStart="8dp"
+            android:text="@string/widget_preview_add_large"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

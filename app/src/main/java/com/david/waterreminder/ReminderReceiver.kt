@@ -50,5 +50,11 @@ class ReminderReceiver : BroadcastReceiver() {
         // A late delivery is rescheduled above like any other fire; only the notification for
         // this stale one is skipped.
         postReminderNotification(context, prefs, reminder)
+
+        // A placed widget keeps whatever it last drew, and its own update period is a
+        // non-wakeup alarm that Doze can defer well past the half hour it asks for — so a
+        // phone left alone overnight can show yesterday's total all morning. This alarm does
+        // wake the device, so it is the cheapest place to catch the day having turned over.
+        updateWaterWidgets(context)
     }
 }

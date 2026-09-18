@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget card, Light Blue theme. Selected in code by WidgetPalette: a widget is drawn by the
+     launcher and can't read the app's theme attributes, so each theme gets its own shape. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/blue_light_page_background" />
+    <corners android:radius="20dp" />
+</shape>

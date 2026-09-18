@@ -22,9 +22,10 @@ class QuickLogReceiver : BroadcastReceiver() {
 
         val prefs = context.waterPrefs()
         prefs.logIntake(ml)
-        // MainActivity's listener does this while the app is on screen, but this can land with
+        // MainActivity's listener does these while the app is on screen, but this can land with
         // the app in the background or not running at all.
         BackupManager(context).dataChanged()
+        updateWaterWidgets(context)
 
         // Crossing the goal from here is deliberately quiet: the congratulation is a dialog and
         // there is no screen to put it on. The card changing to its goal-reached wording — or

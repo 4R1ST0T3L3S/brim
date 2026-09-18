@@ -26,7 +26,19 @@ class MainActivity : AppCompatActivity() {
 
     private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
         BackupManager(this).dataChanged()
+        // Every in-app change the widget draws — the total, the goal, the unit, the quick
+        // amounts — is a write to this store, so the widget is redrawn from here rather than
+        // from each screen that can cause one.
+        //
+        // Coalesced to one redraw per frame: the listener fires once per *key*, and a single
+        // logIntake commit writes three to five of them, each of which would otherwise cost a
+        // getAppWidgetIds binder call plus a full RemoteViews rebuild per placed widget — on
+        // the UI thread, while the user is tapping.
+        binding.root.removeCallbacks(widgetRedraw)
+        binding.root.post(widgetRedraw)
     }
+
+    private val widgetRedraw = Runnable { updateWaterWidgets(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val prefs = waterPrefs()
@@ -132,6 +144,10 @@ R.id.action_help -> {
         super.onStop()
         waterPrefs()
             .unregisterOnSharedPreferenceChangeListener(prefsListener)
+        // A redraw already posted would otherwise run after the listener is gone. The widget
+        // is not left stale by dropping it: every path that can still change the day from here
+        // redraws the widget itself.
+        binding.root.removeCallbacks(widgetRedraw)
     }
 
     override fun onSupportNavigateUp(): Boolean {

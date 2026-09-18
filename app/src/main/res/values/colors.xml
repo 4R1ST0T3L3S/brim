@@ -56,4 +56,23 @@
 
     <!-- Chart marker -->
     <color name="marker_value_text">#90CAF9</color>
+
+    <!-- Home-screen widget. The launcher draws it, so it can't reach the app's theme
+         attributes: WidgetPalette names one concrete set of these per theme instead. The two
+         below are @color/page_background's day and night values written out, because a
+         values-night qualifier would follow the launcher's mode rather than the theme the user
+         picked in the app. The tinted themes point straight at their own page colours. -->
+    <color name="widget_surface_light">#FFFFFF</color>
+    <color name="widget_text_light">#1A2535</color>
+    <color name="widget_text_variant_light">#5A6B7D</color>
+
+    <color name="widget_surface_dark">#121212</color>
+    <color name="widget_text_dark">#ECF1F6</color>
+    <color name="widget_text_variant_dark">#A6B4C2</color>
+
+    <!-- Grey rather than a theme colour: one progress track for all four palettes. -->
+    <color name="widget_progress_track">#42808080</color>
+
+    <!-- Press feedback on a quick-log chip: white at low alpha, over the chip's brand blue. -->
+    <color name="widget_chip_ripple">#59FFFFFF</color>
 </resources>

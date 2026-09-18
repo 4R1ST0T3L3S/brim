@@ -19,5 +19,10 @@ class BootReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun rescheduleAll(context: Context) = rescheduleAllAlarms(context)
+    private fun rescheduleAll(context: Context) {
+        rescheduleAllAlarms(context)
+        // A placed widget keeps whatever it last drew across a reboot, and the day may have
+        // turned over in the meantime — its own update period is up to half an hour away.
+        updateWaterWidgets(context)
+    }
 }

@@ -164,6 +164,43 @@ class IdleReminderTest {
         assertEquals(150, elapsed(at(12, 35), at(10)))
     }
 
+    /**
+     * The half-hour rounding above makes 90, 150, 330, 390 the ordinary values here, so the label
+     * has to lead with hours — "330 minutes" is arithmetic, not language.
+     */
+    @Test
+    fun aDurationSplitsIntoHoursAndTheMinutesLeftOver() {
+        assertEquals(0 to 30, durationHoursAndMinutes(30))
+        assertEquals(0 to 45, durationHoursAndMinutes(45))
+        assertEquals(1 to 0, durationHoursAndMinutes(60))
+        assertEquals(1 to 30, durationHoursAndMinutes(90))
+        assertEquals(2 to 0, durationHoursAndMinutes(120))
+        assertEquals(5 to 30, durationHoursAndMinutes(330))
+        assertEquals(6 to 30, durationHoursAndMinutes(390))
+    }
+
+    /** Every gap the picker offers, so none of them can read as a pile of minutes. */
+    @Test
+    fun everyPickerChoiceLeadsWithHoursOnceItPassesOne() {
+        IDLE_REMINDER_CHOICES_MINUTES.filter { it >= 60 }.forEach { choice ->
+            assertTrue("$choice should have an hours part", durationHoursAndMinutes(choice).first > 0)
+        }
+    }
+
+    /**
+     * The elapsed rounding emits half-hour steps and nothing else, so walk the lot: past an hour
+     * every one of them must lead with hours, and the remainder can only ever be 0 or 30.
+     */
+    @Test
+    fun everyHalfHourStepUpToHalfADayLeadsWithHours() {
+        (60..720 step 30).forEach { minutes ->
+            val (hours, rest) = durationHoursAndMinutes(minutes)
+            assertEquals("$minutes should be ${minutes / 60}h", minutes / 60, hours)
+            assertTrue("$minutes left $rest minutes over", rest == 0 || rest == 30)
+            assertTrue("$minutes should have an hours part", hours > 0)
+        }
+    }
+
     /** Nothing to measure from: the card falls back to its vaguer wording. */
     @Test
     fun elapsed_isZeroWithoutALastDrink() {
