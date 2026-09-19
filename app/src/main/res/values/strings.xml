@@ -107,6 +107,8 @@
     <string name="widget_preview_goal">of 1500 ml · 50%</string>
     <string name="widget_preview_add_small">+100 ml</string>
     <string name="widget_preview_add_medium">+200 ml</string>
+    <!-- Stands in for the total until the provider draws real numbers, in widget_water_initial.xml. -->
+    <string name="widget_placeholder_total" translatable="false">—</string>
     <string name="notification_channel_name">Water Reminders</string>
     <string name="notification_channel_description">Daily water intake reminders</string>
     <!-- The reminder card. The numbers are the title so the collapsed row can't cut them off;

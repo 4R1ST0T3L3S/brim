@@ -8,10 +8,13 @@
 
   updatePeriodMillis is the floor Android allows, and only a backstop: updateWaterWidgets redraws
   the moment anything changes, so this catches nothing but midnight passing unattended.
+
+  initialLayout is not previewLayout: sample numbers sell the widget in the picker and lie on a
+  placed one.
 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
-    android:initialLayout="@layout/widget_water"
+    android:initialLayout="@layout/widget_water_initial"
     android:minHeight="110dp"
     android:minResizeWidth="110dp"
     android:minWidth="250dp"

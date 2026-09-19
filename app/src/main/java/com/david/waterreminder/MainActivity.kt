@@ -138,6 +138,9 @@ R.id.action_help -> {
         // idle alarm has no chain of its own at all. Both are idempotent — see nextIdleFireTime
         // — which is what makes onStart safe to hang them on.
         rescheduleAllAlarms(this)
+        // Same repair for the widget: an app update drops the host's cached views, and the
+        // listener below only fires on a change — so nothing else here puts the numbers back.
+        updateWaterWidgets(this)
     }
 
     override fun onStop() {
