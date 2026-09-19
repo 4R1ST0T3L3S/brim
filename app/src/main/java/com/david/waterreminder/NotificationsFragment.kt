@@ -3,6 +3,8 @@ package com.david.waterreminder
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.Ringtone
+import android.media.RingtoneManager
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -25,6 +27,9 @@ class NotificationsFragment : BaseMenuFragment() {
         requireContext().waterPrefs()
     }
     private val unit get() = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
+
+    /** The clip the picker is currently previewing, kept so the next tap can cut it off. */
+    private var previewRingtone: Ringtone? = null
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -84,6 +89,10 @@ class NotificationsFragment : BaseMenuFragment() {
             getString(R.string.settings_row_quick_log_actions)
         binding.rowQuickLogActions.rowContainer.setOnClickListener { showQuickLogActionsDialog() }
 
+        binding.rowReminderSound.rowIcon.setImageResource(R.drawable.ic_sound)
+        binding.rowReminderSound.rowTitle.text = getString(R.string.settings_row_reminder_sound)
+        binding.rowReminderSound.rowContainer.setOnClickListener { showReminderSoundDialog() }
+
         binding.rowReminderWindow.rowIcon.setImageResource(R.drawable.ic_clock)
         binding.rowReminderWindow.rowTitle.text = getString(R.string.settings_row_reminder_window)
         binding.rowReminderWindow.rowContainer.setOnClickListener { showReminderWindowDialog() }
@@ -102,8 +111,17 @@ class NotificationsFragment : BaseMenuFragment() {
         if (prefs.getBoolean("notifications_enabled", false)) rescheduleEnabledReminders()
     }
 
+    override fun onPause() {
+        super.onPause()
+        // The dialog's own dismiss covers Save, Cancel and back; this covers leaving the screen
+        // or the app with it still open, where a long "System default" ringtone would otherwise
+        // carry on playing over whatever the user went to.
+        stopPreview()
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        stopPreview()
         _binding = null
     }
 
@@ -136,6 +154,12 @@ class NotificationsFragment : BaseMenuFragment() {
             else actions.joinToString(", ") { it.fmt(unit) }
         // Not dimmed with the rows above: this selection is also the widget's buttons, and
         // gating it would leave a widget-only user unable to reach the one control over them.
+
+        binding.rowReminderSound.rowSubtitle.text = getString(prefs.reminderSound().label)
+        // Dimmed with the rows above, unlike the quick-log buttons: a sound is only ever heard
+        // on a notification, so it has nothing to say while notifications are off.
+        binding.rowReminderSound.root.alpha = if (enabled) 1f else 0.38f
+        binding.rowReminderSound.rowContainer.isEnabled = enabled
 
         val (windowStart, windowEnd) = prefs.reminderWindow()
         binding.rowReminderWindow.rowSubtitle.text = getString(
@@ -243,6 +267,67 @@ class NotificationsFragment : BaseMenuFragment() {
             }
             .setNegativeButton(getString(R.string.dialog_cancel), null)
             .show()
+    }
+
+    // ─── Reminder sound ──────────────────────────────────────────
+
+    /**
+     * Picks what a reminder sounds like. Every tap previews the clip, so unlike the other pick
+     * lists here this one waits for Save: tapping down the list to hear them all would
+     * otherwise apply and close on the first one.
+     */
+    private fun showReminderSoundDialog() {
+        val sounds = ReminderSound.values()
+        var selected = prefs.reminderSound()
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle(getString(R.string.dialog_reminder_sound_title))
+            .setSingleChoiceItems(
+                sounds.map { getString(it.label) }.toTypedArray(),
+                selected.ordinal,
+            ) { _, which ->
+                selected = sounds[which]
+                playPreview(selected)
+            }
+            .setPositiveButton(getString(R.string.dialog_save)) { _, _ ->
+                saveReminderSound(selected)
+                refreshRows()
+            }
+            .setNegativeButton(getString(R.string.dialog_cancel), null)
+            .create()
+
+        // Covers Save, Cancel and the back button alike — a clip started by the last tap must
+        // not carry on playing over the settings screen.
+        dialog.setOnDismissListener { stopPreview() }
+        dialog.show()
+    }
+
+    /**
+     * The channels are switched here rather than left to the next reminder to do, so the
+     * system's own notification settings already show the chosen sound by the time the dialog
+     * closes.
+     */
+    private fun saveReminderSound(sound: ReminderSound) {
+        prefs.setReminderSound(sound)
+        sound.selectChannel(requireContext())
+    }
+
+    /**
+     * Plays a choice the way a reminder would, down to the audio attributes: the volume being
+     * judged here has to be the notification volume it will actually arrive at.
+     */
+    private fun playPreview(sound: ReminderSound) {
+        stopPreview()
+        val uri = sound.uri(requireContext())
+        previewRingtone = RingtoneManager.getRingtone(requireContext(), uri)?.apply {
+            audioAttributes = NOTIFICATION_AUDIO_ATTRIBUTES
+            play()
+        }
+    }
+
+    private fun stopPreview() {
+        previewRingtone?.stop()
+        previewRingtone = null
     }
 
     // ─── Reminder window ─────────────────────────────────────────

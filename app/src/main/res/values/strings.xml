@@ -87,6 +87,13 @@
     <string name="dialog_quick_log_actions_empty">You have no quick amounts to choose from. Add one with + on the home screen first.</string>
     <string name="notification_action_add">+%1$s</string>
 
+    <!-- Reminder sound: the picker's three choices. -->
+    <string name="settings_row_reminder_sound">Reminder sound</string>
+    <string name="dialog_reminder_sound_title">Reminder sound</string>
+    <string name="reminder_sound_default">System default</string>
+    <string name="reminder_sound_drop">Water drop</string>
+    <string name="reminder_sound_tap">Dripping tap</string>
+
     <!-- Home-screen widget. The total is the headline; the goal sits under the bar so the two
          numbers don't have to share a line at the narrowest size the widget resizes to. -->
     <string name="widget_description">Today\'s water at a glance, with buttons to log a drink</string>

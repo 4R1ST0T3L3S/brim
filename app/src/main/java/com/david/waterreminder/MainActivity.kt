@@ -1,11 +1,8 @@
 package com.david.waterreminder
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.backup.BackupManager
 import android.content.Context
 import android.content.SharedPreferences
-import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -54,7 +51,10 @@ class MainActivity : AppCompatActivity() {
             prefs.edit().remove(PREF_LAST_REMINDER_POST_AT).apply()
         }
 
-        createNotificationChannel()
+        // Reconciles the channels with the stored choice, which a restored backup can change
+        // without ever going through the picker. Posting creates the chosen channel too — an
+        // alarm can fire into a process this Activity never ran in.
+        prefs.reminderSound().selectChannel(this)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -154,16 +154,5 @@ R.id.action_help -> {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         return navController.navigateUp(appBarConfiguration)
                 || super.onSupportNavigateUp()
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                REMINDER_CHANNEL_ID,
-                getString(R.string.notification_channel_name),
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply { description = getString(R.string.notification_channel_description) }
-            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
-        }
     }
 }

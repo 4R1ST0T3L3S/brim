@@ -22,10 +22,25 @@ FillMeUp! helps you build a healthy hydration habit by tracking your daily water
 <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/HomeScreen.png" alt="Home screen" height="400">
 <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/GoalStreak.png" alt="Goal streak" height="400">
 <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/History.png" alt="7-day chart" height="400">
+<img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/Widget.png" alt="Home screen widget" height="400">
 
 ## Contributors
 
 FillMeUp! is improved by community contributions. See [CONTRIBUTORS.md](CONTRIBUTORS.md) for acknowledgements.
+
+## Credits
+
+The reminder sounds bundled with the app come from [freesound.org](https://freesound.org):
+
+| Sound | Author | Source | Licence | File |
+| --- | --- | --- | --- | --- |
+| water drop | IRF1010N | [freesound.org/s/661630/](https://freesound.org/s/661630/) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | `res/raw/drop.ogg` |
+| Water Drop Tap 4 | AleXZavesa | [freesound.org/s/853900/](https://freesound.org/s/853900/) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | `res/raw/tap.ogg` |
+
+Both are re-encoded to Ogg Vorbis. This section is where the CC BY attribution is carried, and
+the F-Droid listing links back here — so it has to survive any rewrite of this file. Anything
+added to `res/raw/` later belongs in the table above, with its licence checked first: CC BY-NC
+and Sampling+ clips are not free licences and cannot ship.
 
 ## Installation
 <!--👨‍💻 Currenty under development.-->

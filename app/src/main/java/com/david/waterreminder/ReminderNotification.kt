@@ -1,12 +1,19 @@
 package com.david.waterreminder
 
 import android.app.Notification
+import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.media.AudioAttributes
+import android.media.AudioManager
+import android.media.RingtoneManager
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RawRes
+import androidx.annotation.StringRes
 import androidx.core.app.NotificationCompat
 import java.time.LocalDate
 import java.util.Calendar
@@ -19,6 +26,113 @@ import kotlin.random.Random
  */
 
 const val REMINDER_CHANNEL_ID = "water_reminder_channel"
+
+/**
+ * Which sound a reminder arrives with. Stores [ReminderSound.key] rather than an ordinal, so
+ * reordering the picker or dropping a clip can't silently repoint everyone's choice at a
+ * different sound.
+ */
+const val PREF_REMINDER_SOUND = "reminder_sound"
+
+/**
+ * A sound a reminder can arrive with, and the channel that carries it.
+ *
+ * There is a channel per sound because a channel's sound is fixed when it is created and can
+ * never be changed afterwards. Deleting the id and recreating it doesn't reset it either —
+ * Android remembers a deleted channel and restores its settings if the same id comes back — so
+ * the only way to offer a choice is to post to a different channel.
+ */
+enum class ReminderSound(
+    val key: String,
+    val channelId: String,
+    @RawRes val rawRes: Int?,
+    @StringRes val label: Int,
+) {
+    /** Whatever the phone uses for notifications, which is what every install had before the picker. */
+    DEFAULT("default", REMINDER_CHANNEL_ID, null, R.string.reminder_sound_default),
+    DROP("drop", "water_reminder_channel_drop", R.raw.drop, R.string.reminder_sound_drop),
+    TAP("tap", "water_reminder_channel_tap", R.raw.tap, R.string.reminder_sound_tap);
+
+    /**
+     * The clip to play, shared by the channel and the picker's preview. [DEFAULT] hands back a
+     * symbolic URI the system resolves at play time against the phone's own notification sound,
+     * so a phone set to "None" stays silent without this having to know.
+     *
+     * A clip is addressed by resource name rather than by [rawRes] itself. The numeric id is
+     * rewritten by any build that adds or removes a resource, and a channel stores the URI it
+     * was created with outside the APK — so an id baked in here would point at something else
+     * after the next update, with no way back, since a channel's sound can never be changed.
+     */
+    fun uri(context: Context): Uri {
+        if (rawRes == null) return RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        return Uri.parse("android.resource://${context.packageName}/raw/" +
+            context.resources.getResourceEntryName(rawRes))
+    }
+
+    /**
+     * The channel this sound posts to, created if it isn't there yet and returned so the builder
+     * can't be pointed at one that doesn't exist. Only ever adds, which is what makes it safe on
+     * the posting path; [selectChannel] is the half that destroys.
+     */
+    fun ensureChannel(context: Context): String {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return channelId
+
+        val channel = NotificationChannel(
+            channelId,
+            context.getString(R.string.notification_channel_name),
+            NotificationManager.IMPORTANCE_DEFAULT,
+        ).apply {
+            description = context.getString(R.string.notification_channel_description)
+            // Nothing to set for DEFAULT: a new channel already plays the phone's notification sound.
+            if (rawRes != null) setSound(uri(context), NOTIFICATION_AUDIO_ATTRIBUTES)
+        }
+        context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        return channelId
+    }
+
+    /**
+     * Makes this the only sound holding a channel, so the system's notification settings go on
+     * showing a single "Water Reminders" entry rather than one per clip.
+     *
+     * Kept off the posting path because it destroys: deleting a channel takes any card still in
+     * the shade with it, so an unanswered reminder disappears when the sound changes under it.
+     * That is what the single entry costs, and confining the deletes to here means it is only
+     * ever paid at the moment the user is in the picker changing the sound themselves.
+     */
+    fun selectChannel(context: Context): String {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = context.getSystemService(NotificationManager::class.java)
+            values().filter { it != this }
+                .forEach { manager.deleteNotificationChannel(it.channelId) }
+        }
+        return ensureChannel(context)
+    }
+}
+
+/**
+ * Marks the clip as a notification rather than media, so it follows the notification volume and
+ * doesn't duck the user's music as an alarm would. Shared with the picker's preview.
+ *
+ * Built lazily rather than eagerly: as a top-level val it would otherwise be constructed when
+ * this file's facade class loads, which happens in the JVM unit tests too — where android.jar is
+ * stubbed and building one throws.
+ */
+val NOTIFICATION_AUDIO_ATTRIBUTES: AudioAttributes by lazy {
+    AudioAttributes.Builder()
+        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+        .build()
+}
+
+/** The chosen sound, falling back to [ReminderSound.DEFAULT] for a key no version still ships. */
+fun SharedPreferences.reminderSound(): ReminderSound {
+    val key = getString(PREF_REMINDER_SOUND, null)
+    return ReminderSound.values().firstOrNull { it.key == key } ?: ReminderSound.DEFAULT
+}
+
+fun SharedPreferences.setReminderSound(sound: ReminderSound) {
+    edit().putString(PREF_REMINDER_SOUND, sound.key).apply()
+}
 
 /** Extras a quick-log button carries back to [QuickLogReceiver], or to [WaterWidgetProvider]. */
 const val EXTRA_LOG_ML = "log_ml"
@@ -240,12 +354,20 @@ private fun buildReminderNotification(
     onlyAlertOnce: Boolean,
     encouragementOverride: String? = null,
 ): Notification {
-    val builder = NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
+    val sound = prefs.reminderSound()
+    val builder = NotificationCompat.Builder(context, sound.ensureChannel(context))
         .setSmallIcon(R.drawable.ic_water_drop)
         .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setContentIntent(openAppPendingIntent(context))
         .setAutoCancel(true)
         .setOnlyAlertOnce(onlyAlertOnce)
+
+    // Pre-O there are no channels, so the sound rides on the notification itself. Without this
+    // the card arrives silent — PRIORITY_HIGH alone never made a sound, which is what every
+    // Android 7 install got before the picker existed. Ignored from O up, where the channel wins.
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        builder.setSound(sound.uri(context), AudioManager.STREAM_NOTIFICATION)
+    }
 
     val unit = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
 

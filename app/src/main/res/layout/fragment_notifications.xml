@@ -54,6 +54,13 @@
                 android:id="@+id/row_quick_log_actions"
                 layout="@layout/item_settings_row"
                 android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp" />
+
+            <include
+                android:id="@+id/row_reminder_sound"
+                layout="@layout/item_settings_row"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
             <!-- Separate section: the window edits the hourly reminder itself, so it
