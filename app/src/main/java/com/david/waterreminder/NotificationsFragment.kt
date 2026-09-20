@@ -113,9 +113,8 @@ class NotificationsFragment : BaseMenuFragment() {
 
     override fun onPause() {
         super.onPause()
-        // The dialog's own dismiss covers Save, Cancel and back; this covers leaving the screen
-        // or the app with it still open, where a long "System default" ringtone would otherwise
-        // carry on playing over whatever the user went to.
+        // The dialog's dismiss covers Save, Cancel and back; this covers leaving the screen with
+        // it open, where a long "System default" ringtone would carry on playing.
         stopPreview()
     }
 
@@ -272,9 +271,8 @@ class NotificationsFragment : BaseMenuFragment() {
     // ─── Reminder sound ──────────────────────────────────────────
 
     /**
-     * Picks what a reminder sounds like. Every tap previews the clip, so unlike the other pick
-     * lists here this one waits for Save: tapping down the list to hear them all would
-     * otherwise apply and close on the first one.
+     * Picks what a reminder sounds like. Waits for Save, unlike the other pick lists here: every
+     * tap previews, so apply-on-pick would close on the first sound tried.
      */
     private fun showReminderSoundDialog() {
         val sounds = ReminderSound.values()
@@ -302,20 +300,13 @@ class NotificationsFragment : BaseMenuFragment() {
         dialog.show()
     }
 
-    /**
-     * The channels are switched here rather than left to the next reminder to do, so the
-     * system's own notification settings already show the chosen sound by the time the dialog
-     * closes.
-     */
+    /** Switched now rather than at the next reminder, so the system's settings agree at once. */
     private fun saveReminderSound(sound: ReminderSound) {
         prefs.setReminderSound(sound)
         sound.selectChannel(requireContext())
     }
 
-    /**
-     * Plays a choice the way a reminder would, down to the audio attributes: the volume being
-     * judged here has to be the notification volume it will actually arrive at.
-     */
+    /** Plays a choice as a reminder would, so the volume judged is the one it arrives at. */
     private fun playPreview(sound: ReminderSound) {
         stopPreview()
         val uri = sound.uri(requireContext())

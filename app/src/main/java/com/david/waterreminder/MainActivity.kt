@@ -52,8 +52,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Reconciles the channels with the stored choice, which a restored backup can change
-        // without ever going through the picker. Posting creates the chosen channel too — an
-        // alarm can fire into a process this Activity never ran in.
+        // behind the picker's back. Posting creates the chosen one too, for alarm-only processes.
         prefs.reminderSound().selectChannel(this)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
