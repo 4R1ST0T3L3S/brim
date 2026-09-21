@@ -94,11 +94,9 @@
     <string name="reminder_sound_drop">Water drop</string>
     <string name="reminder_sound_tap">Dripping tap</string>
 
-    <!-- Home-screen widget. The total is the headline; the goal sits under the bar so the two
-         numbers don't have to share a line at the narrowest size the widget resizes to. -->
-    <string name="widget_description">Today\'s water at a glance, with buttons to log a drink</string>
-    <!-- The goal line carries the percentage at every width: beside the total it had to share
-         a line with a four-digit number that never yields. -->
+    <!-- Home-screen widget. -->
+    <string name="widget_description">Today\'s water at a glance</string>
+    <!-- The goal line carries the percentage at every width. -->
     <string name="widget_of_goal_percent">of %1$s · %2$d%%</string>
     <string name="widget_goal_reached">Goal reached</string>
     <string name="widget_action_add">+%1$s</string>
