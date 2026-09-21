@@ -223,6 +223,15 @@
     <string name="changelog_separator">──────────────────────────────</string>
     <string name="changelog_no_entries">No changelog available.</string>
 
+    <!-- Shown once after an update, from the current version's changelog entry. -->
+    <string name="whats_new_title">What’s new in %s</string>
+    <string name="whats_new_see_all">See all changes</string>
+    <string name="whats_new_got_it">Got it</string>
+    <plurals name="whats_new_more">
+        <item quantity="one">Plus one more change.</item>
+        <item quantity="other">Plus %d more changes.</item>
+    </plurals>
+
     <!-- First-run profile setup -->
     <string name="profile_setup_title">Welcome</string>
     <string name="profile_setup_subtitle">Let\'s get your hydration goal set up.</string>

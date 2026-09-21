@@ -36,6 +36,12 @@ const val PREF_PROFILE_SETUP_DONE = "profile_setup_done"
 const val PREF_PROFILE_AGE = "profile_age"
 const val PREF_PROFILE_WEIGHT_KG = "profile_weight_kg"
 
+/**
+ * The version the "What's new" popup was last shown for. Absent on a fresh install until
+ * onboarding finishes, which is what keeps the popup from landing on top of the welcome flow.
+ */
+const val PREF_LAST_SEEN_VERSION_CODE = "last_seen_version_code"
+
 const val PROFILE_AGE_MIN = 1
 const val PROFILE_AGE_MAX = 120
 const val PROFILE_WEIGHT_KG_MIN = 1.0

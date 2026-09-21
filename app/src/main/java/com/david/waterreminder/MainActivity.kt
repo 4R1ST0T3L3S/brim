@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.navigation.findNavController
@@ -71,6 +72,8 @@ class MainActivity : AppCompatActivity() {
             navController.navigate(R.id.ProfileSetupFragment)
         }
 
+        maybeShowWhatsNew()
+
         binding.fabReminders.setOnClickListener {
             navController.navigate(R.id.RemindersFragment)
         }
@@ -97,6 +100,42 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    /** Shows the current version's changelog highlights once, on the first launch after an update. */
+    private fun maybeShowWhatsNew() {
+        val prefs = waterPrefs()
+        val current = BuildConfig.VERSION_CODE
+        if (prefs.getInt(PREF_LAST_SEEN_VERSION_CODE, 0) == current) return
+        // A fresh install has onboarding ahead of it, which stamps the version when it finishes.
+        if (!prefs.getBoolean(PREF_PROFILE_SETUP_DONE, false)) return
+
+        val entry = loadChangelogEntries().firstOrNull { it.versionCode == current }
+        // Stamped even with nothing to show, so a release that ships without a changelog file
+        // doesn't leave the popup armed for the launch after this one.
+        prefs.edit().putInt(PREF_LAST_SEEN_VERSION_CODE, current).apply()
+        showWhatsNew(entry)
+    }
+
+    private fun showWhatsNew(entry: ChangelogEntry?) {
+        if (entry == null || entry.highlights.isBlank()) return
+
+        val message = buildString {
+            append(entry.highlights)
+            if (entry.remaining > 0) {
+                append("\n\n")
+                append(resources.getQuantityString(R.plurals.whats_new_more, entry.remaining, entry.remaining))
+            }
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.whats_new_title, entry.versionName))
+            .setMessage(message)
+            .setNegativeButton(R.string.whats_new_see_all) { _, _ ->
+                findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.ChangelogFragment)
+            }
+            .setPositiveButton(R.string.whats_new_got_it, null)
+            .show()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

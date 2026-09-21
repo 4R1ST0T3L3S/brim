@@ -130,7 +130,12 @@ class ReminderSetupFragment : Fragment() {
     }
 
     private fun finishSetup() {
-        prefs.edit().putBoolean(PREF_PROFILE_SETUP_DONE, true).apply()
+        // The version is stamped here so a fresh install doesn't get the "What's new" popup the
+        // moment it leaves onboarding — there is nothing new to it yet.
+        prefs.edit()
+            .putBoolean(PREF_PROFILE_SETUP_DONE, true)
+            .putInt(PREF_LAST_SEEN_VERSION_CODE, BuildConfig.VERSION_CODE)
+            .apply()
         findNavController().popBackStack(R.id.FirstFragment, false)
     }
 
