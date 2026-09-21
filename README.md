@@ -11,9 +11,9 @@ FillMeUp! helps you build a healthy hydration habit by tracking your daily water
 
 ## Features:
 - Log your water intake with a single tap
-- Set curtomizable reminders to drink water
+- Set customizable reminders to drink water
 - View your daily and weekly hydration history with charts
-- Reminders survive device reboots
+- Home screen widget available
 - No ads, no tracking, no internet required
 - Fully open source (AGPL-3.0)
 
