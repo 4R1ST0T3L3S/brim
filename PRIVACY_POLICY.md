@@ -1,6 +1,6 @@
 # Privacy Policy — FillMeUp!
 
-**Last updated: August 27, 2026**
+**Last updated: September 21, 2026**
 
 ---
 
@@ -27,13 +27,16 @@ The App stores the following information in your device's private app storage (A
 | Reminder schedule configuration | Trigger hydration notifications at the times you choose |
 | Reminder time window (start and end hour) | Keep repeating reminders inside your waking hours |
 | Quick-add and quick-remove amounts | Remember the shortcut buttons you configured |
-| Notification quick-log amounts | Remember which amounts appear as buttons on a reminder notification |
+| Notification quick-log amounts | Remember which amounts appear as buttons on a reminder notification and on the home-screen widget |
+| Reminder sound choice | Play the tone you picked when a reminder arrives |
 | Notification enabled/disabled flag | Respect your notification preference |
 | Pause reminders once the goal is reached | Respect your notification preference |
+| Inactivity reminder gap | Nudge you a set time after your last drink, if you turned that on |
+| Time of your last logged drink | Measure that gap. Stored apart from the rest (see sections 6 and 7) |
 | Celebration animations flag | Respect your preference for goal celebrations |
 | Theme preference | Remember your light / dark / colour choice |
 | Streak counter | Show consecutive days the daily goal was met |
-| Setup and tutorial completion flags | Avoid showing the first-launch tour and profile setup more than once |
+| Setup, tutorial, and release-notes flags | Avoid showing the first-launch tour, the profile setup, and a version's what's-new notes more than once |
 
 ### 2.2 Data we do NOT collect
 
@@ -69,17 +72,30 @@ None of these libraries collect, transmit, or process personal data. The App shi
 
 ---
 
-## 5. Notifications
+## 5. Notifications and the Home-Screen Widget
 
 If you configure reminders, the App uses Android's AlarmManager and NotificationManager to deliver local notifications at the times you set. A reminder notification may include quick-log buttons that record an amount straight from the notification shade without opening the App. All of this is generated and handled entirely on your device. No notification content or delivery data is sent to any external service.
 
+If you enable the inactivity reminder, the App records the time of your most recent logged drink so it can measure the gap; that timestamp is the only thing kept for this, and it is overwritten every time you log a drink.
+
+A reminder can play a sound: either your device's own default notification tone, or one of two short water sounds bundled inside the App itself. Nothing is streamed or downloaded to play them.
+
 You can disable all notifications at any time from within the App's Reminders screen or through your device's system notification settings.
+
+### The home-screen widget
+
+The optional home-screen widget displays today's intake, your goal, and how far through it you are, plus the same quick-log buttons. Two things follow from that, both worth stating plainly:
+
+- Because the widget sits on your home screen, those numbers are visible to anyone who can see your screen, without unlocking the App. If you would rather they weren't, simply don't add the widget, or remove it by long-pressing it.
+- The widget reads the App's own local storage directly and is drawn by Android on your device. It needs no additional permission, adds no network access, and sends nothing anywhere.
 
 ---
 
 ## 6. Data Export and Import
 
-The App lets you export everything it has stored to a backup file at a location you choose on your device, and restore it later by importing that file. The file is plain-text JSON and contains the values listed in section 2.1 — including your age and weight if you entered them. The App never uploads or transmits it; where the file goes afterwards is entirely up to you, so treat it like any other personal document if you copy it off the device or into cloud storage.
+The App lets you export what it has stored to a backup file at a location you choose on your device, and restore it later by importing that file. The file is plain-text JSON and contains the values listed in section 2.1 — including your age and weight if you entered them. The App never uploads or transmits it; where the file goes afterwards is entirely up to you, so treat it like any other personal document if you copy it off the device or into cloud storage.
+
+The time of your last logged drink is held separately from the App's other settings and is deliberately **not** written to the export file, so a backup you share or archive never reveals when you last drank.
 
 Importing a backup **replaces** the App's current data with the contents of the file.
 
@@ -95,6 +111,7 @@ Points worth being clear about:
 - The backup is stored under your own account with your backup provider and is governed by that provider's privacy policy. On current Android versions it is encrypted with your device credentials before leaving the device.
 - Devices without a backup transport (for example a de-Googled ROM) never produce such a backup.
 - The first-launch tour flag is deliberately excluded, so the guide replays after a reinstall.
+- The time of your last logged drink is also excluded; it is kept apart from the backed-up settings and never leaves the device.
 - **To opt out:** turn off backup for the App in **Device Settings → Google → Backup** (or **Settings → System → Backup**, depending on your device). Existing backups can be deleted from the same screen.
 
 ---
