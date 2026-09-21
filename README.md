@@ -22,7 +22,6 @@ FillMeUp! helps you build a healthy hydration habit by tracking your daily water
 <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/HomeScreen.png" alt="Home screen" height="400">
 <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/GoalStreak.png" alt="Goal streak" height="400">
 <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/History.png" alt="7-day chart" height="400">
-<img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/Widget.png" alt="Home screen widget" height="400">
 
 ## Contributors
 
