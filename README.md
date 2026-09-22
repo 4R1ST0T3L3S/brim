@@ -25,7 +25,8 @@ FillMeUp! helps you build a healthy hydration habit by tracking your daily water
 
 ## Contributons
 
-FillMeUp! is improved through community contributions. 
+FillMeUp! is improved through community contributions.
+
 Thank you to all the people who have contributed fixes, testing, feedback, and suggestions!
 
 ## Credits
