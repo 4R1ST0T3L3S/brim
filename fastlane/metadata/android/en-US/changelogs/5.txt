@@ -1,0 +1,8 @@
+• Added a home-screen widget
+• Added "Remind me after a gap" notification setting
+• Improved Reminder notification progress visibility
+• Added Reminder notifications custom sounds
+• The quick-log buttons available on both the notification and the widget
+• Added "What's new" popup
+• Updated Privacy Policy
+• Bug fixes
