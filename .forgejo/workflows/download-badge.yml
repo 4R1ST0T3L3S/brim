@@ -7,7 +7,7 @@ on:
     - cron: "17 3 * * *"
   workflow_dispatch:
   push:
-    brenches: [main-preview-1]
+    branches: [main-preview-1]
 jobs:
   update:
     runs-on: codeberg-tiny-lazy
