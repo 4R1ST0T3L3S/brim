@@ -2,6 +2,7 @@
 ![Platforms](https://img.shields.io/badge/platforms-Android-2ea44f)
 [![Latest release](https://img.shields.io/gitea/v/release/DavidCRicardo/FillMeUp?gitea_url=https://codeberg.org)](https://codeberg.org/DavidCRicardo/FillMeUp/releases/latest)
 [![F-Droid](https://img.shields.io/f-droid/v/com.david.waterreminder?label=F-Droid&logo=fdroid)](https://f-droid.org/pt/packages/com.david.waterreminder/)
+[![Downloads](https://img.shields.io/endpoint?url=https://codeberg.org/DavidCRicardo/FillMeUp/raw/branch/badges/downloads.json&logo=codeberg)](https://codeberg.org/DavidCRicardo/FillMeUp/releases)
 
 [<img src="./fastlane/metadata/android/en-US/images/icon.png" alt="FillMeUp! logo" height="80">](./fastlane/metadata/android/en-US/images/icon.png)
 
