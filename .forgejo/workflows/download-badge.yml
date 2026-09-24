@@ -1,0 +1,55 @@
+# Sums the download counts of every release asset and publishes them as a
+# shields.io endpoint JSON on the orphan `badges` branch, read by the README badge.
+name: Download badge
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+  push:
+    brenches: [main-preview-1]
+jobs:
+  update:
+    runs-on: codeberg-tiny-lazy
+    container:
+      image: docker.io/library/alpine:3
+    steps:
+      - name: Count downloads and publish
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SERVER: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -eu
+          apk add --no-cache curl git jq >/dev/null
+
+          total=0
+          page=1
+          while :; do
+            releases=$(curl -fsS "$SERVER/api/v1/repos/$REPO/releases?limit=50&page=$page")
+            [ "$(echo "$releases" | jq length)" -eq 0 ] && break
+            total=$((total + $(echo "$releases" | jq '[.[].assets[].download_count] | add // 0')))
+            page=$((page + 1))
+          done
+          echo "Total downloads: $total"
+
+          host=${SERVER#https://}
+          git clone --quiet "https://token:$TOKEN@$host/$REPO.git" repo
+          cd repo
+          if git ls-remote --exit-code --heads origin badges >/dev/null; then
+            git checkout --quiet badges
+          else
+            git checkout --quiet --orphan badges
+            git rm -rfq .
+          fi
+
+          jq -n --arg n "$total" \
+            '{schemaVersion: 1, label: "downloads", message: $n, color: "blue"}' > downloads.json
+          git add downloads.json
+          if git diff --cached --quiet; then
+            echo "Unchanged"
+            exit 0
+          fi
+          git -c user.name="Forgejo Actions" -c user.email="actions@noreply.codeberg.org" \
+            commit --quiet -m "Update download count: $total"
+          git push --quiet origin badges
