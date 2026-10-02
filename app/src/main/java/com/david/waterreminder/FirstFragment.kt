@@ -38,6 +38,9 @@ class FirstFragment : Fragment() {
         /** Bottles that still fit one row at full size; past this the row wraps at 24dp bottles. */
         const val BOTTLES_PER_ROW = 6
         const val BOTTLES_PER_ROW_COMPACT = 10
+
+        /** Quiet time after the last tap before the shade is synced. */
+        private const val CARD_SYNC_DELAY_MS = 400L
     }
 
     private var _binding: FragmentWaterBinding? = null
@@ -110,6 +113,7 @@ class FirstFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         prefs.unregisterOnSharedPreferenceChangeListener(intakeListener)
+        flushCardSync()
     }
 
     // ─── Day reset / load ─────────────────────────────────────────
@@ -132,6 +136,7 @@ class FirstFragment : Fragment() {
         // is started, and a resumed fragment is always inside that window.
         currentMl = result.newTotal
         onIntakeLogged(requireContext())
+        scheduleCardSync(drink = true)
 
         if (result.crossedDailyGoal) showGoalReachedPopup(result.streak)
         if (result.crossedPersonalGoal) {
@@ -139,6 +144,35 @@ class FirstFragment : Fragment() {
         }
 
         updateIntakeUI()
+    }
+
+    // ─── Keeping the shade in step ────────────────────────────────
+
+    private val pendingCardSync = PendingCardSync()
+
+    private val cardSync = Runnable { flushCardSync() }
+
+    /**
+     * Syncs the cards in the shade once the taps stop rather than on each one, waiting for
+     * [CARD_SYNC_DELAY_MS] of quiet. The system drops updates to an existing notification past
+     * roughly five a second per app, and with two cards up a quick run of taps gets there — the
+     * update lost would be the last, leaving a stale total.
+     *
+     * Only this screen is coalesced. The widget and the notification buttons sync on every tap,
+     * so a rapid burst there can still lose the last update: holding work back after a
+     * broadcast receiver returns isn't reliable, as the process is no longer protected.
+     */
+    private fun scheduleCardSync(drink: Boolean) {
+        pendingCardSync.add(drink)
+        binding.root.removeCallbacks(cardSync)
+        binding.root.postDelayed(cardSync, CARD_SYNC_DELAY_MS)
+    }
+
+    /** Runs a pending sync now. Also from onPause, so leaving the screen can't lose one. */
+    private fun flushCardSync() {
+        _binding?.root?.removeCallbacks(cardSync)
+        val drink = pendingCardSync.take() ?: return
+        context?.let { syncReminderCards(it, prefs, drink = drink) }
     }
 
     private fun showGoalReachedPopup(streak: Int) {
@@ -164,6 +198,9 @@ class FirstFragment : Fragment() {
         // Same path as adding, negated — including dropping the streak back on the way under
         // the goal. No popups: taking water off is never a celebration.
         currentMl = prefs.logIntake(-ml).newTotal
+        // Not onIntakeLogged: taking water back must not restart the idle countdown. The cards
+        // in the shade still need the new total, though.
+        scheduleCardSync(drink = false)
         updateIntakeUI()
     }
 
@@ -506,6 +543,8 @@ class FirstFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        // onPause has already flushed; this only keeps a callback from outliving the view.
+        _binding?.root?.removeCallbacks(cardSync)
         super.onDestroyView()
         bottleViews = emptyList()   // they belong to the destroyed view tree
         _binding = null
