@@ -21,8 +21,9 @@ import kotlin.random.Random
 
 /**
  * The reminder card: when it may be shown, what goes on it, and the quick-log buttons that let a
- * drink be logged without opening the app. Shared by the alarm that first posts it and the button
- * tap that rebuilds it, which is why it doesn't live in either receiver.
+ * drink be logged without opening the app. Shared by the alarm that first posts it and by every
+ * surface that changes the day's total and so rebuilds it — a button on the card, the home screen,
+ * the widget — which is why it doesn't live in any one of them.
  */
 
 const val REMINDER_CHANNEL_ID = "water_reminder_channel"
@@ -143,7 +144,8 @@ const val IDLE_REMINDER_KEY = "idle"
  * One notification per reminder time, so a rebuild after a quick-log tap replaces the card the
  * button was on rather than stacking a second one beside it.
  */
-private fun reminderNotificationId(reminderTime: String): Int = reminderTime.hashCode()
+// internal rather than private only so the tests can reach it.
+internal fun reminderNotificationId(reminderTime: String): Int = reminderTime.hashCode()
 
 /** The reminder a notification or alarm is about, or null once the user has deleted it. */
 fun SharedPreferences.reminderAt(time: String): Reminder? =
@@ -244,22 +246,35 @@ private fun idleBody(context: Context, prefs: SharedPreferences, nowMillis: Long
 }
 
 /**
- * Rebuilds the idle card after a quick-log tap, as [refreshReminderNotification] does for a
- * reminder card. The idle wording goes with the rebuild — the tap has just made it false — so
- * what is left is an ordinary card. Never re-alerts: the user is looking at it.
+ * Rebuilds the idle card once the day's total has changed, as [refreshReminderNotification] does
+ * for a reminder card. Never re-alerts: the card is already up, and the change was the user's own.
+ *
+ * [answered] is whether the change was a drink. A drink makes the idle wording false, so what is
+ * left is an ordinary card. Taking water back answers nothing, so the card is given the idle
+ * wording, measured from the last drink [logIntake] stamped — which, if that drink is the one just
+ * taken back, is how a card rebuilt plain by a tap gets its idle wording back.
  */
-fun refreshIdleReminderNotification(context: Context, prefs: SharedPreferences) {
+fun refreshIdleReminderNotification(
+    context: Context,
+    prefs: SharedPreferences,
+    answered: Boolean,
+) {
     val progress = prefs.notificationProgress()
-    // Every rule except the gap, which this very tap just answered — that is what makes this a
-    // rebuild rather than a cancel.
+    // Every rule except the gap. The card is already up, so the gap was met when it was posted;
+    // a drink has since answered it, and taking water back leaves it as it was — either way it
+    // is no reason to cancel.
     if (!idleCardAllowed(prefs, progress)) {
         cancelIdleReminderNotification(context)
         return
     }
 
+    val idleWording = if (answered) null else idleBody(context, prefs, System.currentTimeMillis())
     (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(
         reminderNotificationId(IDLE_REMINDER_KEY),
-        buildReminderNotification(context, prefs, IDLE_REMINDER_KEY, progress, onlyAlertOnce = true)
+        buildReminderNotification(
+            context, prefs, IDLE_REMINDER_KEY, progress, onlyAlertOnce = true,
+            encouragementOverride = idleWording,
+        )
     )
 }
 
@@ -270,12 +285,110 @@ fun cancelIdleReminderNotification(context: Context) {
 }
 
 /**
- * Rebuilds the card a quick-log button was on so it shows the new total and can be tapped again,
- * or takes it away when that tap is what turned it off. Never re-alerts: the user is looking at
- * the card, and on a watch a second buzz for their own tap reads like a fault.
+ * Rebuilds a reminder card already showing so it reports the new total and its buttons can be
+ * tapped again, or takes it away when the change is what turned it off — the goal reached, say.
+ * Called for a tap on the card's own button and, through [syncReminderCards], for a change made
+ * anywhere else. Never re-alerts: on a watch, a second buzz for the user's own change reads like
+ * a fault.
  */
 fun refreshReminderNotification(context: Context, prefs: SharedPreferences, reminderTime: String) {
     updateReminderNotification(context, prefs, prefs.reminderAt(reminderTime), reminderTime, onlyAlertOnce = true)
+}
+
+/**
+ * Which reminder keys have a card in the shade, given the ids of everything the app has posted.
+ * Pure so the mapping can be tested without a NotificationManager; the idle key is included when
+ * its id is up, even with no reminders. Anything unrecognised — another feature's notification,
+ * or a card whose reminder is gone — maps to nothing and is left alone.
+ */
+internal fun activeReminderKeys(
+    activeIds: Collection<Int>,
+    reminderTimes: Collection<String>,
+): List<String> {
+    val active = activeIds.toSet()
+    return (reminderTimes + IDLE_REMINDER_KEY).distinct()
+        .filter { reminderNotificationId(it) in active }
+}
+
+/** What to do with one card once the day's total has changed. */
+internal enum class CardSync { REBUILD, REBUILD_KEEP_IDLE_WORDING, TAKE_DOWN }
+
+/**
+ * Pure. A drink answers the idle card, so it comes down — unless the drink was logged from it,
+ * which is a button on the card and so a rebuild. Taking water back answers nothing, so a
+ * standing idle card is rebuilt with its wording intact. Scheduled cards are always rebuilt.
+ * [tappedKey] is rebuilt even when it isn't in [activeKeys]: its button was just pressed, so
+ * it was on screen a moment ago.
+ */
+internal fun planCardSync(
+    activeKeys: List<String>,
+    drink: Boolean,
+    tappedKey: String? = null,
+): Map<String, CardSync> =
+    (activeKeys + listOfNotNull(tappedKey)).distinct().associateWith { key ->
+        when {
+            key != IDLE_REMINDER_KEY || key == tappedKey -> CardSync.REBUILD
+            drink -> CardSync.TAKE_DOWN
+            else -> CardSync.REBUILD_KEEP_IDLE_WORDING
+        }
+    }
+
+/**
+ * Brings the reminder cards in the shade up to date with today's total, whichever surface the
+ * change came from. Only cards already showing are touched, so one the user dismissed stays
+ * dismissed, and a card that should no longer be up (goal reached, reminder switched off) is
+ * taken away by the same rules as a button tap. Never re-alerts.
+ *
+ * A card whose reminder has been deleted or moved is left alone: cards are found through the
+ * reminders in prefs, so one that no longer has a reminder maps to nothing.
+ *
+ * [drink] is whether the change added water, which decides the idle card's fate — see
+ * [planCardSync]. [tappedKey] is the card whose button was pressed, if any.
+ *
+ * The query is guarded and falls back to no active cards, so a failure costs the other cards a
+ * stale total but still rebuilds the tapped one, rather than crashing the tap that logged water.
+ */
+fun syncReminderCards(
+    context: Context,
+    prefs: SharedPreferences,
+    drink: Boolean,
+    tappedKey: String? = null,
+) {
+    val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    // Only our own tag-less ids: a tagged notification can't be one of these cards.
+    val activeIds = runCatching { manager.activeNotifications }.getOrNull().orEmpty()
+        .filter { it.tag == null }.map { it.id }
+    val times = Reminder.parseAll(prefs.getStringSet(REMINDERS_KEY, emptySet())).map { it.time }
+
+    planCardSync(activeReminderKeys(activeIds, times), drink, tappedKey).forEach { (key, action) ->
+        when (action) {
+            CardSync.TAKE_DOWN -> manager.cancel(reminderNotificationId(key))
+            CardSync.REBUILD_KEEP_IDLE_WORDING ->
+                refreshIdleReminderNotification(context, prefs, answered = false)
+            CardSync.REBUILD -> if (key == IDLE_REMINDER_KEY) {
+                refreshIdleReminderNotification(context, prefs, answered = true)
+            } else {
+                refreshReminderNotification(context, prefs, key)
+            }
+        }
+    }
+}
+
+/**
+ * What the home screen has changed since it last synced the shade, kept apart from the view so
+ * it can be tested. Whether any change was a drink is all the sync needs to know.
+ */
+internal class PendingCardSync {
+    private var pending = false
+    private var drink = false
+
+    fun add(isDrink: Boolean) {
+        pending = true
+        drink = drink || isDrink
+    }
+
+    /** Null if nothing is pending, else whether any change was a drink. Clears. */
+    fun take(): Boolean? = if (!pending) null else drink.also { pending = false; drink = false }
 }
 
 /**

@@ -2,6 +2,7 @@ package com.david.waterreminder
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
@@ -137,5 +138,129 @@ class ReminderNotificationTest {
         val progress = NotificationProgress(intakeMl = 1_800, goalMl = 1_600)
         assertEquals(100, progress.percent)
         assertEquals(0, progress.remainingMl)
+    }
+
+    @Test
+    fun activeKeys_mapsShowingCardsBackToTheirReminders() {
+        val keys = activeReminderKeys(
+            listOf(reminderNotificationId("08:00"), reminderNotificationId("12:00")),
+            listOf("08:00", "10:00", "12:00"),
+        )
+        assertEquals(listOf("08:00", "12:00"), keys)
+    }
+
+    @Test
+    fun activeKeys_neverIncludesADismissedCard() {
+        assertEquals(emptyList<String>(), activeReminderKeys(emptyList(), listOf("08:00", "10:00")))
+    }
+
+    @Test
+    fun activeKeys_includesTheIdleCardWhenItIsUp() {
+        assertEquals(
+            listOf("08:00", IDLE_REMINDER_KEY),
+            activeReminderKeys(
+                listOf(reminderNotificationId(IDLE_REMINDER_KEY), reminderNotificationId("08:00")),
+                listOf("08:00"),
+            ),
+        )
+    }
+
+    @Test
+    fun activeKeys_findsTheIdleCardWithNoRemindersAtAll() {
+        assertEquals(
+            listOf(IDLE_REMINDER_KEY),
+            activeReminderKeys(listOf(reminderNotificationId(IDLE_REMINDER_KEY)), emptyList()),
+        )
+    }
+
+    @Test
+    fun activeKeys_ignoresNotificationsThatAreNotReminderCards() {
+        assertEquals(emptyList<String>(), activeReminderKeys(listOf(42, -7), listOf("08:00")))
+    }
+
+    @Test
+    fun activeKeys_reportsADuplicatedTimeOnce() {
+        assertEquals(
+            listOf("08:00"),
+            activeReminderKeys(listOf(reminderNotificationId("08:00")), listOf("08:00", "08:00")),
+        )
+    }
+
+    @Test
+    fun plan_aDrinkTakesTheIdleCardDown() {
+        val plan = planCardSync(listOf("08:00", IDLE_REMINDER_KEY), drink = true)
+        assertEquals(CardSync.TAKE_DOWN, plan[IDLE_REMINDER_KEY])
+    }
+
+    @Test
+    fun plan_aTapOnAReminderCardRebuildsItAndTakesTheIdleCardDown() {
+        // QuickLogReceiver's own path: onIntakeLogged has just cancelled the idle card, but the
+        // cancel is async and the snapshot can still list it — it must not be rebuilt.
+        val plan = planCardSync(listOf("08:00", IDLE_REMINDER_KEY), drink = true, tappedKey = "08:00")
+        assertEquals(mapOf("08:00" to CardSync.REBUILD, IDLE_REMINDER_KEY to CardSync.TAKE_DOWN), plan)
+    }
+
+    @Test
+    fun plan_aTakeBackKeepsTheIdleWording() {
+        val plan = planCardSync(listOf(IDLE_REMINDER_KEY), drink = false)
+        assertEquals(CardSync.REBUILD_KEEP_IDLE_WORDING, plan[IDLE_REMINDER_KEY])
+    }
+
+    @Test
+    fun plan_aTappedIdleCardIsRebuiltPlain() {
+        val plan = planCardSync(listOf(IDLE_REMINDER_KEY), drink = true, tappedKey = IDLE_REMINDER_KEY)
+        assertEquals(CardSync.REBUILD, plan[IDLE_REMINDER_KEY])
+    }
+
+    @Test
+    fun plan_aTappedReminderCardIsRebuiltEvenIfNotActive() {
+        val plan = planCardSync(emptyList(), drink = true, tappedKey = "08:00")
+        assertEquals(mapOf("08:00" to CardSync.REBUILD), plan)
+    }
+
+    @Test
+    fun plan_scheduledCardsAreAlwaysRebuilt() {
+        listOf(true, false).forEach { drink ->
+            val plan = planCardSync(listOf("08:00", "12:00"), drink)
+            assertEquals(mapOf("08:00" to CardSync.REBUILD, "12:00" to CardSync.REBUILD), plan)
+        }
+    }
+
+    @Test
+    fun plan_hasNoDuplicatesWhenTheTappedKeyIsAlsoActive() {
+        val plan = planCardSync(listOf("08:00", "12:00"), drink = true, tappedKey = "08:00")
+        assertEquals(listOf("08:00", "12:00"), plan.keys.toList())
+    }
+
+    @Test
+    fun pending_isNullWhenNothingWasAdded() {
+        assertNull(PendingCardSync().take())
+    }
+
+    @Test
+    fun pending_aDrinkReportsTrue() {
+        val pending = PendingCardSync().apply { add(true) }
+        assertEquals(true, pending.take())
+    }
+
+    @Test
+    fun pending_aTakeBackAloneReportsFalse() {
+        val pending = PendingCardSync().apply { add(false) }
+        assertEquals(false, pending.take())
+    }
+
+    @Test
+    fun pending_aDrinkFollowedByATakeBackStillReportsTrue() {
+        val pending = PendingCardSync().apply { add(true); add(false) }
+        assertEquals(true, pending.take())
+    }
+
+    @Test
+    fun pending_takeClears() {
+        val pending = PendingCardSync().apply { add(true) }
+        pending.take()
+        assertNull(pending.take())
+        pending.add(false)
+        assertEquals(false, pending.take())
     }
 }

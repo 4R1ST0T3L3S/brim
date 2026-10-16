@@ -50,11 +50,13 @@ class WaterWidgetProvider : AppWidgetProvider() {
     /** On the main thread for the reason [QuickLogReceiver] is. */
     private fun logFromWidget(context: Context, ml: Int) {
         if (ml <= 0) return
-        context.waterPrefs().logIntake(ml)
+        val prefs = context.waterPrefs()
+        prefs.logIntake(ml)
         // Off-screen tap, so the app's own listener won't fire — as in [QuickLogReceiver].
         BackupManager(context).dataChanged()
         // Crossing the goal is quiet here, as from a notification button — see [QuickLogReceiver].
         onIntakeLogged(context)
+        syncReminderCards(context, prefs, drink = true)
         updateWaterWidgets(context)
     }
 }
