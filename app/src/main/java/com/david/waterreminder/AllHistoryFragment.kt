@@ -84,7 +84,7 @@ class AllHistoryFragment : Fragment() {
 
         val uri = FileProvider.getUriForFile(
             requireContext(),
-            "com.david.waterreminder.fileprovider",
+            "${BuildConfig.APPLICATION_ID}.fileprovider",
             file
         )
 
