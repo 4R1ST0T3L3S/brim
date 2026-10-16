@@ -58,6 +58,20 @@
                 android:resource="@xml/widget_water_info" />
         </receiver>
 
+        <!-- The one-row widget, a second entry in the picker. Its log buttons go back to
+             WaterWidgetProvider above; this one only draws. -->
+        <receiver
+            android:name=".WaterRowWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_water_row_info" />
+        </receiver>
+
         <receiver
             android:name=".BootReceiver"
             android:exported="true">

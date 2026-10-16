@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tells the debug app and its widget apart from the F-Droid install beside them. -->
+    <string name="app_name" translatable="false">FillMeUp! (debug)</string>
+</resources>

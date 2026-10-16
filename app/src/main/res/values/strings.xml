@@ -96,15 +96,21 @@
 
     <!-- Home-screen widget. -->
     <string name="widget_description">Today\'s water at a glance</string>
+    <string name="widget_row_description">Today\'s water in a single row</string>
     <!-- The goal line carries the percentage at every width. -->
     <string name="widget_of_goal_percent">of %1$s · %2$d%%</string>
     <string name="widget_goal_reached">Goal reached</string>
+    <!-- The one-row widget: the percentage sits in the ring, so the goal line goes without it. -->
+    <string name="widget_of_goal">of %1$s</string>
+    <string name="widget_percent">%1$d%%</string>
     <string name="widget_action_add">+%1$s</string>
     <!-- Sample values, drawn only by the widget picker. -->
     <string name="widget_preview_total">750 ml</string>
     <string name="widget_preview_goal">of 1500 ml · 50%</string>
     <string name="widget_preview_add_small">+100 ml</string>
     <string name="widget_preview_add_medium">+200 ml</string>
+    <string name="widget_preview_row_goal">of 1500 ml</string>
+    <string name="widget_preview_percent">50%</string>
     <!-- Stands in for the total until the provider draws real numbers, in widget_water_initial.xml. -->
     <string name="widget_placeholder_total" translatable="false">—</string>
     <string name="notification_channel_name">Water Reminders</string>

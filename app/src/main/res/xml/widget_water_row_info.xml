@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The one-row widget. widget_water_info.xml explains the 70n - 30 cell formula: 250dp is the 4
+  cells it is placed at, 110dp the 2 it narrows to, 40dp the single row. What it does on the way
+  down is WidgetSizeBand's ROW_* business.
+
+  Width only, as the card: one row is all the layout is for, and a taller cell only adds air
+  around the centred row.
+
+  previewImage is a capture of the placed widget at 4x1 (320 dp, light theme), corners cut
+  transparent; a pre-31 picker draws it, and previewLayout takes over from 31.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_row_description"
+    android:initialLayout="@layout/widget_water_row_initial"
+    android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minWidth="250dp"
+    android:previewImage="@drawable/widget_row_preview"
+    android:previewLayout="@layout/widget_water_row"
+    android:resizeMode="horizontal"
+    android:targetCellHeight="1"
+    android:targetCellWidth="4"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen" />
