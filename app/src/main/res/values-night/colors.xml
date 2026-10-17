@@ -2,4 +2,7 @@
 <resources>
     <!-- Page backgrounds -->
     <color name="page_background">#121212</color>
+
+    <!-- Splash screen tagline, under the icon on the default background -->
+    <color name="splash_branding_text">#A6B4C2</color>
 </resources>

@@ -8,9 +8,18 @@
         <item name="quickAddForeground">@color/white</item>
         <item name="quickRemoveBackground">@color/quick_remove_bg</item>
         <item name="quickRemoveForeground">@color/brand_blue</item>
+
+        <!-- Transparent system bars for edge-to-edge; the tinted themes inherit these too. -->
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
-    <style name="Theme.WaterReminder" parent="Base.Theme.WaterReminder" />
+    <style name="Theme.WaterReminder" parent="Base.Theme.WaterReminder">
+        <!-- Splash tagline under the icon (Android 12+; older versions ignore it). Only the
+             manifest theme reaches the splash, so the tinted themes below don't need it. -->
+        <item name="android:windowSplashScreenBrandingImage" tools:targetApi="31">@drawable/splash_branding</item>
+    </style>
 
     <!--
       Dark Blue: a dark theme whose surfaces are navy instead of neutral grey. Material's surface

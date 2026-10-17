@@ -16,6 +16,9 @@
     <color name="brand_blue_light">#90CAF9</color>
     <color name="icon_backdrop_blue">#E3F2FD</color>
 
+    <!-- Splash screen tagline, under the icon on the default background -->
+    <color name="splash_branding_text">#5A6B7D</color>
+
     <!-- Dark Blue theme surfaces (navy rather than neutral grey) -->
     <color name="blue_dark_page_background">#08213D</color>
     <color name="blue_dark_toolbar">#0F3D6B</color>
