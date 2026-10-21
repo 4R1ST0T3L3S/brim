@@ -84,6 +84,12 @@
         tools:layout="@layout/fragment_changelog" />
 
     <fragment
+        android:id="@+id/CreditsFragment"
+        android:name="com.david.waterreminder.CreditsFragment"
+        android:label="@string/credits_label"
+        tools:layout="@layout/fragment_credits" />
+
+    <fragment
         android:id="@+id/DataFragment"
         android:name="com.david.waterreminder.DataFragment"
         android:label="@string/action_data"
@@ -114,5 +120,9 @@
         <action
             android:id="@+id/action_AboutFragment_to_ChangelogFragment"
             app:destination="@id/ChangelogFragment" />
+
+        <action
+            android:id="@+id/action_AboutFragment_to_CreditsFragment"
+            app:destination="@id/CreditsFragment" />
     </fragment>
 </navigation>

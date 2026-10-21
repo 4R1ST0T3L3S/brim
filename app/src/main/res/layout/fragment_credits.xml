@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/pageBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/credits_label"
+            android:textSize="22sp"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/credits_subtitle"
+            android:textSize="12sp"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <View style="@style/Widget.WaterReminder.CreditsDivider" />
+
+        <!-- License. The text views without android:text are filled in by CreditsFragment. -->
+        <TextView
+            style="@style/Widget.WaterReminder.CreditsHeading"
+            android:text="@string/credits_heading_license"
+            android:accessibilityHeading="true"
+            tools:targetApi="p" />
+
+        <TextView
+            style="@style/Widget.WaterReminder.CreditsBody"
+            android:text="@string/credits_license_body" />
+
+        <TextView
+            android:id="@+id/text_license_links"
+            style="@style/Widget.WaterReminder.CreditsBody"
+            android:layout_marginTop="12dp" />
+
+        <View style="@style/Widget.WaterReminder.CreditsDivider" />
+
+        <!-- Sounds -->
+        <TextView
+            style="@style/Widget.WaterReminder.CreditsHeading"
+            android:text="@string/credits_heading_sounds"
+            android:accessibilityHeading="true"
+            tools:targetApi="p" />
+
+        <TextView
+            style="@style/Widget.WaterReminder.CreditsBody"
+            android:text="@string/credits_sounds_intro" />
+
+        <TextView
+            android:id="@+id/text_sounds"
+            style="@style/Widget.WaterReminder.CreditsBody"
+            android:layout_marginTop="12dp" />
+
+        <View style="@style/Widget.WaterReminder.CreditsDivider" />
+
+        <!-- Libraries -->
+        <TextView
+            style="@style/Widget.WaterReminder.CreditsHeading"
+            android:text="@string/credits_heading_libraries"
+            android:accessibilityHeading="true"
+            tools:targetApi="p" />
+
+        <TextView
+            android:id="@+id/text_libraries"
+            style="@style/Widget.WaterReminder.CreditsBody" />
+
+        <View style="@style/Widget.WaterReminder.CreditsDivider" />
+
+        <!-- Icons -->
+        <TextView
+            style="@style/Widget.WaterReminder.CreditsHeading"
+            android:text="@string/credits_heading_icons"
+            android:accessibilityHeading="true"
+            tools:targetApi="p" />
+
+        <TextView
+            style="@style/Widget.WaterReminder.CreditsBody"
+            android:text="@string/credits_icons_body" />
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

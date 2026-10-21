@@ -55,6 +55,13 @@ class AboutFragment : BaseMenuFragment() {
                 .show()
         }
 
+        binding.rowCredits.rowIcon.setImageResource(R.drawable.ic_info)
+        binding.rowCredits.rowTitle.text = getString(R.string.credits_label)
+        binding.rowCredits.rowSubtitle.text = getString(R.string.about_row_credits_subtitle)
+        binding.rowCredits.rowContainer.setOnClickListener {
+            findNavController().navigate(R.id.action_AboutFragment_to_CreditsFragment)
+        }
+
         binding.rowSupportDev.rowIcon.setImageResource(android.R.drawable.ic_menu_agenda)
         binding.rowSupportDev.rowTitle.text = getString(R.string.about_row_support_title)
         binding.rowSupportDev.rowSubtitle.text = getString(R.string.about_row_support_subtitle)

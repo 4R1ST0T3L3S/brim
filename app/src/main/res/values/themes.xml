@@ -102,5 +102,32 @@
         <item name="android:textStyle">bold</item>
     </style>
 
+    <!-- Licenses & Credits screen: a section heading and the text under it. -->
+    <style name="Widget.WaterReminder.CreditsHeading" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Widget.WaterReminder.CreditsBody" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:lineSpacingMultiplier">1.4</item>
+        <item name="android:autoLink">web</item>
+    </style>
+
+    <style name="Widget.WaterReminder.CreditsDivider" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:layout_marginTop">20dp</item>
+        <item name="android:layout_marginBottom">20dp</item>
+        <item name="android:background">?attr/colorOutlineVariant</item>
+    </style>
+
     <style name="PopupTheme" parent="ThemeOverlay.AppCompat.Light" />
 </resources>
