@@ -284,6 +284,9 @@
     <string name="reminder_setup_back_action">Back</string>
     <string name="reminder_setup_done_action">Finish setup</string>
 
+    <!-- Shown under the Privacy Policy title. Keep it the same as the "Last updated" line at the
+         end of privacy_policy_text and at the top of PRIVACY_POLICY.md. -->
+    <string name="privacy_policy_last_updated">Last updated: October 22, 2026</string>
     <string name="privacy_policy_text">
 1. Overview\n\n
 FillMeUp! is a free, offline hydration-tracking application for Android. This Privacy Policy explains what information the App collects, how it is used, and your rights as a user.\n\n
@@ -319,6 +322,7 @@ About age and weight: these are the only body-related values the App stores, the
 ──────────────────────────────\n\n
 3. Internet and Network Access\n\n
 The App does not request the INTERNET permission. It cannot open a network connection, and it has no server, cloud service or third-party endpoint to talk to. It is entirely offline by design.\n\n
+Some screens contain links to outside websites: the source code and licenses, the bug-report page, the sources behind the goal formula and the donation page. Tapping one opens your web browser, which loads the page itself; the App sends nothing along with it. Once you are on that site, its own privacy policy applies.\n\n
 ──────────────────────────────\n\n
 4. Third-Party Libraries\n\n
 The App uses open-source libraries that operate strictly on-device:\n\n
@@ -369,7 +373,7 @@ The App is not directed at children and collects no personally identifiable info
 11. Changes to This Policy\n\n
 If a future version of the App introduces features that change these data practices, this policy will be updated and the user will be notified.\n\n
 ──────────────────────────────\n\n
-Last updated: September 21, 2026\n
+Last updated: October 22, 2026\n
 David Ricardo\n
     </string>
 
@@ -391,7 +395,8 @@ David Ricardo\n
     <!-- %1$s library name, %2$s author -->
     <string name="credits_library">%1$s, by %2$s</string>
     <string name="credits_heading_icons">Icons</string>
-    <string name="credits_icons_body">Most interface icons are Material Icons by Google, licensed under the Apache License 2.0. The app icon and the bottle and glass icons were drawn for FillMeUp!.</string>
+    <!-- %1$s the author's name -->
+    <string name="credits_icons_body">Most interface icons are Material Icons by Google, licensed under the Apache License 2.0. The app icon and the bottle and glass icons were drawn for FillMeUp! by %1$s.</string>
     <!-- A label introducing the link on the next line, e.g. "Source code:". -->
     <string name="credits_link_label">%1$s:</string>
     <!-- One bulleted line in a list. -->

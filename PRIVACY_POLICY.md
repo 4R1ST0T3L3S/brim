@@ -1,6 +1,6 @@
 # Privacy Policy — FillMeUp!
 
-**Last updated: September 21, 2026**
+**Last updated: October 22, 2026**
 
 ---
 
@@ -55,6 +55,8 @@ The App stores the following information in your device's private app storage (A
 ## 3. Internet and Network Access
 
 The App **does not request the `INTERNET` permission**. It cannot open a network connection, and it has no server, cloud service, or third-party endpoint to talk to. It is entirely offline-capable by design.
+
+Some screens contain links to outside websites: the source code and licenses, the bug-report page, the sources behind the goal formula and the donation page. Tapping one opens your web browser, which loads the page itself; the App sends nothing along with it. Once you are on that site, its own privacy policy applies.
 
 ---
 

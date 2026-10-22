@@ -86,8 +86,8 @@
             tools:targetApi="p" />
 
         <TextView
-            style="@style/Widget.WaterReminder.CreditsBody"
-            android:text="@string/credits_icons_body" />
+            android:id="@+id/text_icons"
+            style="@style/Widget.WaterReminder.CreditsBody" />
 
     </LinearLayout>
 

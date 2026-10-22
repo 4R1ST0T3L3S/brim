@@ -48,6 +48,8 @@ class CreditsFragment : Fragment() {
                     link(license.name, license.url))
             }
         )
+
+        binding.textIcons.text = getString(R.string.credits_icons_body, ICONS_AUTHOR)
     }
 
     private fun link(label: String, url: String) = lines(getString(R.string.credits_link_label, label), url)
@@ -107,5 +109,8 @@ class CreditsFragment : Fragment() {
             Library("Kotlin Standard Library and kotlinx libraries", "JetBrains", APACHE),
             Library("Desugared JDK libraries", "Google", GPL_CE),
         )
+
+        // Drew the app icon and the bottle and glass icons.
+        const val ICONS_AUTHOR = "David Ricardo"
     }
 }
