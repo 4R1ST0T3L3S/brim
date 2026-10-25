@@ -1,5 +1,6 @@
 package com.david.waterreminder
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.os.Bundle
 import android.text.InputType
@@ -7,9 +8,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.health.connect.client.PermissionController
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import kotlinx.coroutines.launch
 import com.david.waterreminder.databinding.DialogProfileAgeWeightBinding
 import com.david.waterreminder.databinding.FragmentSettingsBinding
 
@@ -22,6 +27,26 @@ class SettingsFragment : BaseMenuFragment() {
         requireContext().waterPrefs()
     }
     private val unit get() = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
+
+    /** Where the Health Connect switch lives — see [PREF_HEALTH_CONNECT_SYNC]. */
+    private val devicePrefs by lazy {
+        requireContext().transientPrefs()
+    }
+
+    /** Health Connect's permission screen; null below Android 9 (see [healthConnectPossible]). */
+    private val requestHealthConnectSync = if (!healthConnectPossible()) null else
+        registerForActivityResult(PermissionController.createRequestPermissionResultContract()) { granted ->
+            val allowed = granted.containsAll(HEALTH_CONNECT_SYNC_PERMISSIONS)
+            devicePrefs.setHealthConnectSync(allowed)
+            // Sends today's drinks; earlier days have no drink times.
+            requestHealthConnectSync(requireContext())
+            // Also shown when Health Connect stops asking after two refusals.
+            if (!allowed) {
+                Toast.makeText(requireContext(), R.string.settings_health_connect_denied, Toast.LENGTH_LONG)
+                    .show()
+            }
+            _binding?.let { refreshRows() }
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -99,6 +124,10 @@ class SettingsFragment : BaseMenuFragment() {
             findNavController().navigate(R.id.action_SettingsFragment_to_NotificationsFragment)
         }
 
+        binding.rowHealthConnect.rowIcon.setImageResource(R.drawable.ic_health)
+        binding.rowHealthConnect.rowTitle.text = getString(R.string.settings_row_health_connect)
+        binding.rowHealthConnect.rowContainer.setOnClickListener { onHealthConnectRowTapped() }
+
         binding.rowData.rowIcon.setImageResource(android.R.drawable.ic_menu_save)
         binding.rowData.rowTitle.text = getString(R.string.action_data)
         binding.rowData.rowSubtitle.text = getString(R.string.settings_row_data_subtitle)
@@ -110,6 +139,48 @@ class SettingsFragment : BaseMenuFragment() {
     override fun onResume() {
         super.onResume()
         _binding?.let { refreshRows() }
+        turnOffHealthConnectSyncIfRevoked()
+    }
+
+    // ─── Health Connect ───────────────────────────────────────────
+
+    private fun onHealthConnectRowTapped() {
+        when (healthConnectAvailability(requireContext())) {
+            HealthConnectAvailability.AVAILABLE -> {
+                if (devicePrefs.healthConnectSyncOn()) {
+                    // Already-written data stays in Health Connect.
+                    devicePrefs.setHealthConnectSync(false)
+                    refreshRows()
+                } else {
+                    requestHealthConnectSync?.launch(HEALTH_CONNECT_SYNC_PERMISSIONS)
+                }
+            }
+            HealthConnectAvailability.UPDATE_REQUIRED -> {
+                try {
+                    startActivity(healthConnectUpdateIntent(requireContext()))
+                } catch (_: ActivityNotFoundException) {
+                    // No Play Store, e.g. a de-Googled phone.
+                    Toast.makeText(requireContext(), R.string.settings_health_connect_no_store, Toast.LENGTH_LONG)
+                        .show()
+                }
+            }
+            // Health Connect went away while Settings was open.
+            HealthConnectAvailability.UNAVAILABLE -> refreshRows()
+        }
+    }
+
+    /** Turns sync off if the permission was revoked in Health Connect. */
+    private fun turnOffHealthConnectSyncIfRevoked() {
+        if (!devicePrefs.healthConnectSyncOn()) return
+        val client = healthConnectClientOrNull(requireContext())
+        viewLifecycleOwner.lifecycleScope.launch {
+            // A failed check (e.g. mid-update) isn't a refusal; only "not granted" or gone turns it off.
+            val stillAllowed = client != null &&
+                runCatching { client.hasPermissions(HEALTH_CONNECT_SYNC_PERMISSIONS) }.getOrDefault(true)
+            if (stillAllowed) return@launch
+            devicePrefs.setHealthConnectSync(false)
+            _binding?.let { refreshRows() }
+        }
     }
 
     override fun onDestroyView() {
@@ -286,6 +357,31 @@ class SettingsFragment : BaseMenuFragment() {
         binding.rowCelebrations.rowSubtitle.text =
             if (celebrations) getString(R.string.settings_celebrations_enabled)
             else getString(R.string.settings_celebrations_disabled)
+
+        refreshHealthConnectRow()
+    }
+
+    /** Switch when ready, Play Store link when outdated, hidden otherwise. */
+    private fun refreshHealthConnectRow() {
+        val availability = healthConnectAvailability(requireContext())
+        val shown = availability != HealthConnectAvailability.UNAVAILABLE
+        binding.textSectionHealthConnect.visibility = if (shown) View.VISIBLE else View.GONE
+        binding.rowHealthConnect.root.visibility = if (shown) View.VISIBLE else View.GONE
+
+        val row = binding.rowHealthConnect
+        if (availability == HealthConnectAvailability.AVAILABLE) {
+            val on = devicePrefs.healthConnectSyncOn()
+            row.rowChevron.visibility = View.GONE
+            row.rowSwitch.visibility = View.VISIBLE
+            row.rowSwitch.isChecked = on
+            row.rowSubtitle.text =
+                if (on) getString(R.string.settings_health_connect_enabled)
+                else getString(R.string.settings_health_connect_disabled)
+        } else {
+            row.rowSwitch.visibility = View.GONE
+            row.rowChevron.visibility = View.VISIBLE
+            row.rowSubtitle.text = getString(R.string.settings_health_connect_update)
+        }
     }
 
     // ─── Helpers ─────────────────────────────────────────────────

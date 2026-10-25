@@ -67,6 +67,7 @@ open class WaterWidgetProvider : AppWidgetProvider() {
         onIntakeLogged(context)
         syncReminderCards(context, prefs, drink = true)
         updateWaterWidgets(context)
+        requestHealthConnectSync(context)
     }
 }
 

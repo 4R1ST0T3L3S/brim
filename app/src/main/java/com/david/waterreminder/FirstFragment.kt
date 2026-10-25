@@ -161,6 +161,7 @@ class FirstFragment : Fragment() {
         currentMl = result.newTotal
         onIntakeLogged(requireContext())
         scheduleCardSync(drink = true)
+        requestHealthConnectSync(requireContext())
 
         if (result.crossedDailyGoal) showGoalReachedPopup(result.streak)
         if (result.crossedPersonalGoal) {
@@ -225,6 +226,8 @@ class FirstFragment : Fragment() {
         // Not onIntakeLogged: taking water back must not restart the idle countdown. The cards
         // in the shade still need the new total, though.
         scheduleCardSync(drink = false)
+        // The drink taken back comes out of Health Connect too.
+        requestHealthConnectSync(requireContext())
         updateIntakeUI()
     }
 

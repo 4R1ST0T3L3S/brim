@@ -194,6 +194,13 @@
     <string name="fab_reminders_description">Reminders</string>
     <string name="settings_section_notifications">Notifications</string>
     <string name="settings_row_notifications_subtitle">Manage reminder notifications</string>
+    <string name="settings_section_health_connect">Health Connect</string>
+    <string name="settings_row_health_connect">Sync with Health Connect</string>
+    <string name="settings_health_connect_enabled">On — drinks and times shared</string>
+    <string name="settings_health_connect_disabled">Off — nothing is shared</string>
+    <string name="settings_health_connect_update">Update Health Connect to use it</string>
+    <string name="settings_health_connect_denied">Health Connect access wasn\'t allowed</string>
+    <string name="settings_health_connect_no_store">Couldn\'t open the Play Store to update Health Connect</string>
     <string name="settings_row_enable_notifications">Enable notifications</string>
     <string name="settings_notifications_subtitle">Reminders at the times you set</string>
     <string name="settings_section_reminder_schedule">Reminder schedule</string>
@@ -297,11 +304,11 @@
 
     <!-- Shown under the Privacy Policy title. Keep it the same as the "Last updated" line at the
          end of privacy_policy_text and at the top of PRIVACY_POLICY.md. -->
-    <string name="privacy_policy_last_updated">Last updated: October 24, 2026</string>
+    <string name="privacy_policy_last_updated">Last updated: October 25, 2026</string>
     <string name="privacy_policy_text">
 1. Overview\n\n
 FillMeUp! is a free, offline hydration-tracking application for Android. This Privacy Policy explains what information the App collects, how it is used, and your rights as a user.\n\n
-The App has no servers, no accounts and no analytics. Everything you enter stays in the App\'s private storage on this device. The only way any of it leaves the device is if you export a backup file yourself (section 6), or if you have Android\'s own system backup switched on (section 7) — both are under your control.\n\n
+The App has no servers, no accounts and no analytics. Everything you enter stays in the App\'s private storage on this device. The only way any of it leaves the App\'s storage is if you export a backup file yourself (section 6), if you have Android\'s own system backup switched on (section 7), or if you turn on Health Connect sync (section 8) — all three are under your control.\n\n
 ──────────────────────────────\n\n
 2. Information We Collect\n\n
 2.1 Data stored locally on your device\n\n
@@ -318,6 +325,7 @@ The App stores the following information in your device\'s private app storage:\
 • Notification preferences — on/off, and whether to pause reminders upon reaching the goal\n
 • Inactivity reminder — the gap you chose, and when you last logged a drink so that gap can be measured (that timestamp is kept apart from the rest — see 6 and 7)\n
 • Today\'s drinks and the time each was logged — show your last drink on the home screen, and the list of today\'s drinks it opens; kept apart from the rest and for the current day only, so times from an earlier day are erased the next time you open the App or log a drink (see 6 and 7)\n
+• Health Connect sync on/off, and a note of the drinks last sent to it — remember your choice, and know which entries to update or remove when a drink is taken back; kept apart from the rest (see 6, 7 and 8)\n
 • Celebration animations preference — respect your choice for goal celebrations\n
 • Theme preference — remember your light / dark / colour choice\n
 • Streak counter — show consecutive days the goal was met\n
@@ -340,7 +348,9 @@ Some screens contain links to outside websites: the source code and licenses, th
 The App uses open-source libraries that operate strictly on-device:\n\n
 • MPAndroidChart — renders the intake bar chart\n
 • TapTargetView — displays the interactive first-launch tutorial\n
-• AndroidX / Material Components — standard UI components\n\n
+• AndroidX / Material Components — standard UI components\n
+• Health Connect client (AndroidX) — talks to Health Connect on your device, only if you turn on sync (section 8)\n
+• WorkManager (AndroidX) — sends drinks to Health Connect in the background, and retries if it is busy\n\n
 None of these libraries collect, transmit or process personal data. The App ships no advertising, attribution or analytics SDK of any kind.\n\n
 ──────────────────────────────\n\n
 5. Notifications and the Home-Screen Widget\n\n
@@ -355,7 +365,7 @@ The optional widget shows today\'s intake, your goal and how far through it you 
 6. Data Export and Import\n\n
 The App allows you to export what it has stored to a backup file at a location you choose on your device, and to restore it later by importing that file. The file is plain-text JSON and contains the values listed in 2.1, including your age and weight if you entered them. The App never uploads or transmits it — where the file goes afterwards is up to you, so treat it like any other personal document if you copy it off the device or into cloud storage.\n\n
 The time of your last logged drink is held separately from the App\'s other settings and is deliberately not written to the export file, so a backup you share or archive never reveals when you last drank. Files exported by earlier versions of the App may still contain it; importing one does not bring it back into future exports.\n\n
-Today\'s drinks and their times are kept apart from the App\'s other settings and are not written to the export file.\n\n
+Today\'s drinks and their times are kept apart from the App\'s other settings and are not written to the export file. Neither is whether Health Connect sync is on, nor the note of what was last sent to it; importing a backup never sends anything to Health Connect.\n\n
 Importing a backup replaces the App\'s current data with the contents of the file.\n\n
 ──────────────────────────────\n\n
 7. Android System Backup\n\n
@@ -366,28 +376,38 @@ The App participates in Android\'s built-in backup mechanism. If system backup i
 • The first-launch tour flag is deliberately excluded, so the guide replays after a reinstall.\n
 • The time of your last logged drink is also excluded; it is kept apart from the backed-up settings and never leaves the device. Backups made by earlier versions of the App included it; it is left out of the next backup Android makes.\n
 • Today\'s drinks and their times are excluded as well, and never leave the device.\n
+• Whether Health Connect sync is on is excluded too, so a backup restored on another device starts with sync off and asks again. What is stored in Health Connect is not part of the App\'s backup.\n
 • To opt out: turn off backup for the App in Device Settings → Google → Backup (or Settings → System → Backup). Existing backups can be deleted from the same screen.\n\n
 ──────────────────────────────\n\n
-8. Permissions\n\n
+8. Health Connect\n\n
+Health Connect is Android\'s on-device store for health and fitness data, shared between the apps you allow. It is built into Android 14 and later; on Android 9 to 13 it is the separate Health Connect app. The App works fully without it, and uses it only in the one way below, which is off until you turn it on. It needs a permission you grant in Health Connect\'s own screen, and you can take it back there at any time.\n\n
+Sync with Health Connect (Settings → Health Connect; permission: write hydration). While it is on, each drink you log is written to Health Connect as a Hydration entry: the amount and the time it was logged. Taking water back removes or shrinks the matching entry. When you turn it on, today\'s drinks so far are sent; earlier days are not. If you correct a past day in the History editor while sync is on, that day\'s entries from the App are replaced by one entry for the day\'s new total, and clearing the day removes them. Turning sync off stops new writes and leaves what was already written in Health Connect.\n\n
+The App reads nothing from Health Connect — not other apps\' hydration, not your weight, not any other kind of data — and writes nothing but the Hydration entries above.\n\n
+Data in Health Connect is kept on your device by Health Connect, which is part of Android and handles it under its own terms. Other apps you have allowed to read hydration in Health Connect can see the entries the App writes; that is what sharing through Health Connect is for. The App itself still has no server and sends nothing anywhere.\n\n
+To remove what the App wrote, open Health Connect → App permissions → FillMeUp! and delete its data there; you can also take back its permissions on the same screen.\n\n
+──────────────────────────────\n\n
+9. Permissions\n\n
 • Display hydration reminder notifications (Android 13+)\n
 • Reschedule reminders after a device reboot\n
-• Deliver reminders at the exact times you configured (Android 12+)\n\n
-The App also reschedules reminders when the device leaves airplane mode or after an app update; neither requires an additional permission. No other permissions are requested or used.\n\n
+• Deliver reminders at the exact times you configured (Android 12+)\n
+• Write your drinks to Health Connect, only if you turn on sync (section 8)\n
+• Keep the device awake briefly, see whether a network is up, and run a foreground service — declared by the WorkManager library that runs the Health Connect sync. The App never uses a network, and still has no INTERNET permission\n\n
+The App also reschedules reminders when the device leaves airplane mode or after an app update; neither requires an additional permission. The Health Connect permission is not granted by installing the App; you grant it in Health Connect when you turn sync on. No other permissions are requested or used.\n\n
 ──────────────────────────────\n\n
-9. Data Retention and Deletion\n\n
+10. Data Retention and Deletion\n\n
 All data is stored locally in your device\'s private storage and accessible only to the App. To delete it:\n\n
 • Clear your age and weight only: Settings → Profile inside the App\n
 • Clear everything: Device Settings → Apps → FillMeUp! → Storage → Clear Data\n
 • Or simply uninstall the App.\n\n
-These actions do not touch copies outside the App\'s own storage: any backup file you exported yourself, and any Android system backup, must be deleted separately (sections 6 and 7).\n\n
+These actions do not touch copies outside the App\'s own storage: any backup file you exported yourself, any Android system backup, and anything the App wrote to Health Connect must be deleted separately (sections 6, 7 and 8).\n\n
 ──────────────────────────────\n\n
-10. Children\'s Privacy\n\n
+11. Children\'s Privacy\n\n
 The App is not directed at children and collects no personally identifiable information from anyone. If an age under 18 is entered, it is used only to select a fixed recommended minimum instead of the adult weight-based estimate, and it is stored locally exactly like every other setting.\n\n
 ──────────────────────────────\n\n
-11. Changes to This Policy\n\n
+12. Changes to This Policy\n\n
 If a future version of the App introduces features that change these data practices, this policy will be updated and the user will be notified.\n\n
 ──────────────────────────────\n\n
-Last updated: October 24, 2026\n
+Last updated: October 25, 2026\n
 David Ricardo\n
     </string>
 

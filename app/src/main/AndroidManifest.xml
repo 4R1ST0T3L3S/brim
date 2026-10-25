@@ -7,6 +7,17 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
+    <!-- Health Connect's library wants Android 8; the app runs from 7 and skips it below 9. -->
+    <uses-sdk tools:overrideLibrary="androidx.health.connect.client" />
+
+    <!-- Health Connect sync (opt-in): each drink is written as Hydration. Granted in Health Connect. -->
+    <uses-permission android:name="android.permission.health.WRITE_HYDRATION" />
+
+    <!-- Lets the library find the Health Connect app on Android 13 and lower. -->
+    <queries>
+        <package android:name="com.google.android.apps.healthdata" />
+    </queries>
+
     <application
         android:allowBackup="true"
         android:backupAgent=".WaterBackupAgent"
@@ -27,6 +38,29 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Privacy policy for Health Connect's permission screen. Exported, but it only shows text. -->
+        <activity
+            android:name=".HealthConnectPrivacyActivity"
+            android:exported="true"
+            android:label="@string/second_fragment_label">
+            <!-- Android 13 and lower. -->
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
+
+        <!-- Android 14 and up. Only the system holds START_VIEW_PERMISSION_USAGE. -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE"
+            android:targetActivity=".HealthConnectPrivacyActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
 
         <!-- All three are fired only by PendingIntents this app created (an alarm, a notification
              button), which run with our identity against an explicit component — so neither

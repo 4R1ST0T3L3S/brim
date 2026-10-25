@@ -26,6 +26,7 @@ class QuickLogReceiver : BroadcastReceiver() {
         // the app in the background or not running at all.
         BackupManager(context).dataChanged()
         updateWaterWidgets(context)
+        requestHealthConnectSync(context)
 
         // Crossing the goal from here is deliberately quiet: the congratulation is a dialog and
         // there is no screen to put it on. The card changing to its goal-reached wording — or

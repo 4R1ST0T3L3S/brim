@@ -169,6 +169,7 @@ class AnalyticsFragment : Fragment() {
                 )
             } else {
                 prefs.writeDayTotal(date, ml)
+                requestHealthConnectDaySync(requireContext(), date, ml)
                 afterDayEdit(getString(
                     R.string.analytics_day_saved, date.format(fullDayFormatter), ml.fmt(unit)
                 ))
@@ -180,6 +181,7 @@ class AnalyticsFragment : Fragment() {
 
     private fun clearDay(date: LocalDate) {
         prefs.removeDayTotal(date)
+        requestHealthConnectDaySync(requireContext(), date, ml = null)
         afterDayEdit(getString(R.string.analytics_day_cleared, date.format(fullDayFormatter)))
     }
 

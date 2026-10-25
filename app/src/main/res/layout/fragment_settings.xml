@@ -122,6 +122,25 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
+            <!-- Section: Health Connect. Hidden, heading and all, on a phone without it. -->
+            <TextView
+                android:id="@+id/text_section_health_connect"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/settings_section_health_connect"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="12sp"
+                android:textAllCaps="true"
+                android:letterSpacing="0.08" />
+
+            <include
+                android:id="@+id/row_health_connect"
+                layout="@layout/item_settings_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
             <!-- Section: Data -->
             <TextView
                 android:layout_width="match_parent"

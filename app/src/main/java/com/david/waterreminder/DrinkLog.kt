@@ -9,6 +9,7 @@ import java.time.LocalDate
  *
  * Today only, on purpose: the day's total already lives in the main store, and keeping a time for
  * every drink of every day would be a record of someone's routine that nothing in the app needs.
+ * With Health Connect sync on, each drink and its time is also kept there ([HealthConnectSync.kt]).
  * The log is filed under the day it belongs to, so a log from an earlier day reads as empty and is
  * replaced by the next drink — nothing has to remember to clear it at midnight.
  *

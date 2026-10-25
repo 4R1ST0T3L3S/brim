@@ -19,6 +19,7 @@ android {
 
     defaultConfig {
         applicationId = "com.david.waterreminder"
+        // Health Connect's library wants 26; overridden in the manifest, and kept off below Android 9.
         minSdk = 24
         targetSdk = 36
         versionCode = 5
@@ -77,6 +78,8 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
+    implementation(libs.androidx.health.connect.client)
+    implementation(libs.androidx.work.runtime)
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     implementation("com.getkeepsafe.taptargetview:taptargetview:1.13.3")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")

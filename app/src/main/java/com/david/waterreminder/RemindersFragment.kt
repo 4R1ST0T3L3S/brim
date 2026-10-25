@@ -3,7 +3,6 @@ package com.david.waterreminder
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.drawable.GradientDrawable
-import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -285,10 +284,8 @@ class RemindersFragment : Fragment() {
             .setView(timePicker)
             // "Next" rather than "Add": choosing how often it repeats comes second.
             .setPositiveButton("Next") { _, _ ->
-                val hour = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                    timePicker.hour else @Suppress("DEPRECATION") timePicker.currentHour
-                val minute = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                    timePicker.minute else @Suppress("DEPRECATION") timePicker.currentMinute
+                val hour = timePicker.hour
+                val minute = timePicker.minute
                 val label = String.format("%02d:%02d", hour, minute)
 
                 if (reminders.none { it.time == label }) {
@@ -361,23 +358,16 @@ class RemindersFragment : Fragment() {
     private fun showEditTimePickerDialog(reminder: Reminder) {
         val timePicker = TimePicker(requireContext()).apply {
             setIs24HourView(true)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                hour = reminder.hour
-                minute = reminder.minute
-            } else {
-                @Suppress("DEPRECATION") currentHour = reminder.hour
-                @Suppress("DEPRECATION") currentMinute = reminder.minute
-            }
+            hour = reminder.hour
+            minute = reminder.minute
         }
 
         AlertDialog.Builder(requireContext())
             .setTitle("Edit reminder time")
             .setView(timePicker)
             .setPositiveButton("Save") { _, _ ->
-                val hour = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                    timePicker.hour else @Suppress("DEPRECATION") timePicker.currentHour
-                val minute = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                    timePicker.minute else @Suppress("DEPRECATION") timePicker.currentMinute
+                val hour = timePicker.hour
+                val minute = timePicker.minute
                 val label = String.format("%02d:%02d", hour, minute)
 
                 // Don't allow duplicate times (excluding self)

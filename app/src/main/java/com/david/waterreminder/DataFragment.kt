@@ -103,8 +103,11 @@ class DataFragment : BaseMenuFragment() {
             editor.apply()
             // Today's drinks would no longer add up to the restored total, and an import replaces
             // what the app holds. The log is never in the file, so there's nothing to restore it from.
+            // Forget what Health Connect was sent too, or the next undo would delete those drinks there.
             requireContext().transientPrefs().edit()
-                .remove(PREF_DRINK_LOG).remove(PREF_DRINK_LOG_DATE).apply()
+                .remove(PREF_DRINK_LOG).remove(PREF_DRINK_LOG_DATE)
+                .remove(PREF_HEALTH_CONNECT_SYNCED).remove(PREF_HEALTH_CONNECT_SYNCED_DATE)
+                .apply()
 
             IdleReminderScheduler.schedule(requireContext())
 

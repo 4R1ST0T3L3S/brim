@@ -31,7 +31,8 @@ const val PREF_IDLE_REMINDER_MINUTES = "idle_reminder_minutes"
 const val PREF_LAST_REMINDER_POST_AT = "last_reminder_post_at"
 
 /**
- * What stays on this device: bookkeeping about this moment, and when the user drank. A separate
+ * What stays on this device: bookkeeping about this moment, when the user drank, and whether this
+ * phone syncs to Health Connect ([PREF_HEALTH_CONNECT_SYNC]). A separate
  * file so [buildBackupJson], which serialises the main store wholesale, can't see it, and excluded
  * from system backup.
  *
