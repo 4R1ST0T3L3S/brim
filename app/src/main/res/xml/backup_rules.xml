@@ -8,4 +8,6 @@
 <full-backup-content>
     <!-- Exclude tour flag so reinstalling always shows the guide tour again -->
     <exclude domain="sharedpref" path="tour_prefs.xml"/>
+    <!-- Device bookkeeping and today's drink times: never meant to leave the device -->
+    <exclude domain="sharedpref" path="transient_prefs.xml"/>
 </full-backup-content>

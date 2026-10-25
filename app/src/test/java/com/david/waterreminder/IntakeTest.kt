@@ -95,29 +95,32 @@ class IntakeTest {
     @Test
     fun logIntake_addsToTheStoredTotal() {
         val prefs = prefsOnDay("intake_ml" to 300)
-        assertEquals(500, prefs.logIntake(200, today).newTotal)
+        assertEquals(500, prefs.logIntake(200, today, transientStore = FakePrefs()).newTotal)
         assertEquals(500, prefs.getInt("intake_ml", 0))
     }
 
     @Test
     fun logIntake_mirrorsTodayUnderItsDatedKey() {
         val prefs = prefsOnDay("intake_ml" to 300)
-        prefs.logIntake(200, today)
+        prefs.logIntake(200, today, transientStore = FakePrefs())
         assertEquals(500, prefs.getInt(historyKey(today), 0))
     }
 
     @Test
     fun logIntake_negativeTakesWaterBack() {
         val prefs = prefsOnDay("intake_ml" to 500)
-        assertEquals(300, prefs.logIntake(-200, today).newTotal)
+        assertEquals(300, prefs.logIntake(-200, today, transientStore = FakePrefs()).newTotal)
         assertEquals(300, prefs.getInt(historyKey(today), 0))
     }
 
     @Test
     fun logIntake_stampsWhenTheDrinkHappened() {
         val prefs = prefsOnDay("intake_ml" to 300)
-        prefs.logIntake(200, today, nowMillis = 1_700_000_000_000L)
-        assertEquals(1_700_000_000_000L, prefs.getLong(PREF_LAST_INTAKE_AT, 0L))
+        val transient = FakePrefs()
+        prefs.logIntake(200, today, nowMillis = 1_700_000_000_000L, transientStore = transient)
+        assertEquals(1_700_000_000_000L, transient.getLong(PREF_LAST_INTAKE_AT, 0L))
+        // Never in the main store, which is what gets exported and backed up.
+        assertFalse(prefs.contains(PREF_LAST_INTAKE_AT))
     }
 
     /**
@@ -126,9 +129,10 @@ class IntakeTest {
      */
     @Test
     fun logIntake_negativeLeavesTheLastDrinkAlone() {
-        val prefs = prefsOnDay("intake_ml" to 500, PREF_LAST_INTAKE_AT to 1_700_000_000_000L)
-        prefs.logIntake(-200, today, nowMillis = 1_700_009_999_999L)
-        assertEquals(1_700_000_000_000L, prefs.getLong(PREF_LAST_INTAKE_AT, 0L))
+        val prefs = prefsOnDay("intake_ml" to 500)
+        val transient = FakePrefs(mapOf(PREF_LAST_INTAKE_AT to 1_700_000_000_000L))
+        prefs.logIntake(-200, today, nowMillis = 1_700_009_999_999L, transientStore = transient)
+        assertEquals(1_700_000_000_000L, transient.getLong(PREF_LAST_INTAKE_AT, 0L))
     }
 
     @Test
@@ -139,7 +143,7 @@ class IntakeTest {
             "streak" to 3,
         )
         // Already over the line — a top-up must not touch either key.
-        prefs.logIntake(200, today)
+        prefs.logIntake(200, today, transientStore = FakePrefs())
         assertEquals(3, prefs.getInt("streak", 0))
         assertTrue(prefs.getBoolean("goal_met", false))
     }
@@ -147,7 +151,7 @@ class IntakeTest {
     @Test
     fun logIntake_crossingGoal_banksTheDay() {
         val prefs = prefsOnDay("intake_ml" to DEFAULT_DAILY_GOAL_ML - 100, "streak" to 3)
-        prefs.logIntake(100, today)
+        prefs.logIntake(100, today, transientStore = FakePrefs())
         assertEquals(4, prefs.getInt("streak", 0))
         assertTrue(prefs.getBoolean("goal_met", false))
     }
@@ -159,7 +163,7 @@ class IntakeTest {
             "goal_met" to true,
             "streak" to 4,
         )
-        prefs.logIntake(-100, today)
+        prefs.logIntake(-100, today, transientStore = FakePrefs())
         assertEquals(3, prefs.getInt("streak", 0))
         assertFalse(prefs.getBoolean("goal_met", true))
     }
@@ -179,7 +183,7 @@ class IntakeTest {
             )
         )
 
-        assertEquals(200, prefs.logIntake(200, today).newTotal)
+        assertEquals(200, prefs.logIntake(200, today, transientStore = FakePrefs()).newTotal)
 
         assertEquals(1_600, prefs.getInt(historyKey(yesterday), 0))
         assertEquals(200, prefs.getInt("intake_ml", 0))
@@ -200,7 +204,7 @@ class IntakeTest {
                 "streak" to 3,
             )
         )
-        prefs.logIntake(200, today)
+        prefs.logIntake(200, today, transientStore = FakePrefs())
         assertEquals(0, prefs.getInt("streak", 0))
     }
 }

@@ -21,7 +21,7 @@ class QuickLogReceiver : BroadcastReceiver() {
         val reminderTime = intent.getStringExtra(EXTRA_LOG_REMINDER_TIME) ?: return
 
         val prefs = context.waterPrefs()
-        prefs.logIntake(ml)
+        prefs.logIntake(ml, transientStore = context.transientPrefs())
         // MainActivity's listener does these while the app is on screen, but this can land with
         // the app in the background or not running at all.
         BackupManager(context).dataChanged()

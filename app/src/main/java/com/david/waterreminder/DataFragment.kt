@@ -76,6 +76,9 @@ class DataFragment : BaseMenuFragment() {
 
     private fun writeBackup(uri: Uri) {
         try {
+            // Moves a last-drink stamp still in the main store out of it before that store is
+            // written to the file — see [transientPrefs].
+            requireContext().transientPrefs()
             val json = buildBackupJson(prefs.all, tourPrefs.getBoolean(TOUR_DONE_KEY, false))
 
             requireContext().contentResolver.openOutputStream(uri)?.use { stream ->
@@ -98,6 +101,10 @@ class DataFragment : BaseMenuFragment() {
                 tourPrefs.edit().putBoolean(TOUR_DONE_KEY, done).apply()
             }
             editor.apply()
+            // Today's drinks would no longer add up to the restored total, and an import replaces
+            // what the app holds. The log is never in the file, so there's nothing to restore it from.
+            requireContext().transientPrefs().edit()
+                .remove(PREF_DRINK_LOG).remove(PREF_DRINK_LOG_DATE).apply()
 
             IdleReminderScheduler.schedule(requireContext())
 

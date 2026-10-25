@@ -177,9 +177,11 @@ fun intakeAfter(
  * counter of its own: whoever writes last still adds to the real number instead of overwriting
  * it with a stale one.
  *
- * A positive [ml] also stamps [PREF_LAST_INTAKE_AT], which is what the idle reminder counts
- * from. The rescheduling that has to follow needs a Context and so stays with the callers —
- * see [onIntakeLogged].
+ * Two things go to [transientStore] — [transientPrefs], which keeps them out of exports and
+ * backups — rather than to this store: the amount, for the home screen's list of today's
+ * drinks, and for a positive [ml] the [PREF_LAST_INTAKE_AT] stamp the idle reminder counts from.
+ * Required rather than optional so no caller can leave its drinks out of either. The rescheduling
+ * that has to follow needs a Context and so stays with the callers — see [onIntakeLogged].
  *
  * [rollOverDayIfNeeded] runs first, so an amount logged after midnight starts a fresh day
  * instead of being added to yesterday's total — which also fixes the case of a screen left
@@ -189,25 +191,33 @@ fun SharedPreferences.logIntake(
     ml: Int,
     now: LocalDate = LocalDate.now(),
     nowMillis: Long = System.currentTimeMillis(),
+    transientStore: SharedPreferences,
 ): IntakeResult {
     rollOverDayIfNeeded(now)
 
+    val currentMl = getInt("intake_ml", 0).asDayIntake()
     val result = intakeAfter(
-        currentMl = getInt("intake_ml", 0).asDayIntake(),
+        currentMl = currentMl,
         deltaMl = ml,
         personalGoalMl = getInt("personal_goal_ml", 0),
         streak = getInt("streak", 0),
     )
+
+    // Both written before the main store: the home screen redraws from its listener on that write,
+    // and reads the log to do it.
+    // What the total actually moved by, so a removal at 0 or an add past the ceiling isn't logged
+    // and a removal undoes no more than it took off.
+    transientStore.recordDrink(result.newTotal - currentMl, now, nowMillis)
+    // Only adding water counts as a drink. Taking some back is undoing a mistaken tap, and letting
+    // that restart the idle countdown would push the reminder away from the user who most needs
+    // it. See [IdleReminderScheduler].
+    if (ml > 0) transientStore.edit().putLong(PREF_LAST_INTAKE_AT, nowMillis).apply()
 
     edit()
         .putInt("intake_ml", result.newTotal)
         // Always mirrored under the dated key so the day survives a reinstall or a restore.
         .putInt(historyKey(now), result.newTotal)
         .apply {
-            // Only adding water counts as a drink. Taking some back is undoing a mistaken tap,
-            // and letting that restart the idle countdown would push the reminder away from the
-            // user who most needs it. See [IdleReminderScheduler].
-            if (ml > 0) putLong(PREF_LAST_INTAKE_AT, nowMillis)
             // Left alone unless the goal line was actually crossed, so a plain top-up can
             // never rewrite a streak it has nothing to say about.
             if (result.crossedDailyGoal || result.fellBelowDailyGoal) {

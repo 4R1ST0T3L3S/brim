@@ -18,7 +18,10 @@ import kotlin.math.ceil
 
 // ─── Preferences ──────────────────────────────────────────────────
 
-/** When the user last *added* water, in epoch millis. 0 means never. */
+/**
+ * When the user last *added* water, in epoch millis. 0 means never. Lives in [transientPrefs]: it
+ * says when someone drank, which is theirs to keep, so it stays out of exports and backups.
+ */
 const val PREF_LAST_INTAKE_AT = "last_intake_at"
 
 /** How long a gap earns a nudge, in minutes. 0 is off, and the default. */
@@ -28,11 +31,32 @@ const val PREF_IDLE_REMINDER_MINUTES = "idle_reminder_minutes"
 const val PREF_LAST_REMINDER_POST_AT = "last_reminder_post_at"
 
 /**
- * Bookkeeping about this device and this moment, never the user's data — a separate file so
- * [buildBackupJson], which serialises the main store wholesale, can't see it.
+ * What stays on this device: bookkeeping about this moment, and when the user drank. A separate
+ * file so [buildBackupJson], which serialises the main store wholesale, can't see it, and excluded
+ * from system backup.
+ *
+ * Moves [PREF_LAST_INTAKE_AT] over from the main store on the way — here rather than once at
+ * launch, because the key can arrive there at any time: from a backup file or a system restore
+ * made before it moved, and in a process an alarm or the widget started, with no activity to run
+ * a migration in. Once it's gone this is one map lookup.
  */
 fun Context.transientPrefs(): SharedPreferences =
-    getSharedPreferences("transient_prefs", Context.MODE_PRIVATE)
+    getSharedPreferences("transient_prefs", Context.MODE_PRIVATE).also {
+        moveLastIntakeAt(from = waterPrefs(), to = it)
+    }
+
+/**
+ * Takes [PREF_LAST_INTAKE_AT] out of [from], keeping it in [to] unless [to] already holds a later
+ * one — a copy restored from an old backup is never newer than the drink logged since.
+ */
+internal fun moveLastIntakeAt(from: SharedPreferences, to: SharedPreferences) {
+    if (!from.contains(PREF_LAST_INTAKE_AT)) return
+    val moved = from.getLong(PREF_LAST_INTAKE_AT, 0L)
+    if (moved > to.getLong(PREF_LAST_INTAKE_AT, 0L)) {
+        to.edit().putLong(PREF_LAST_INTAKE_AT, moved).apply()
+    }
+    from.edit().remove(PREF_LAST_INTAKE_AT).apply()
+}
 
 /** A time in the future reads as 0: the clock was set back. */
 fun SharedPreferences.lastReminderPostAt(nowMillis: Long = System.currentTimeMillis()): Long =
@@ -183,6 +207,7 @@ internal fun idleCardAllowed(
 /**
  * Every reason not to put the idle card on screen.
  *
+ * [lastIntakeAt] is [SharedPreferences.lastIntakeAt] read from [transientPrefs], 0 for never.
  * [lastReminderPostAt] is when a reminder card was really posted, not when one was scheduled — a
  * reminder due but never delivered must not silence the nudge that covers exactly that.
  */
@@ -191,6 +216,7 @@ internal fun shouldShowIdleReminder(
     prefs: SharedPreferences,
     progress: NotificationProgress,
     now: Calendar = Calendar.getInstance(),
+    lastIntakeAt: Long = 0L,
     lastReminderPostAt: Long = 0L,
 ): Boolean {
     if (!idleCardAllowed(prefs, progress, now)) return false
@@ -198,7 +224,7 @@ internal fun shouldShowIdleReminder(
     // Nothing logged today: the countdown has not started, so there is no gap to report. Also
     // catches a drink logged between the alarm being set and delivered, which answers the card
     // before it appears.
-    val anchor = idleCountdownAnchor(now, prefs.lastIntakeAt(now.timeInMillis)) ?: return false
+    val anchor = idleCountdownAnchor(now, lastIntakeAt) ?: return false
     if (now.timeInMillis - anchor < prefs.idleReminderMinutes() * 60_000L) return false
 
     // A reminder card has just said the same thing, and it takes precedence.
@@ -219,7 +245,7 @@ object IdleReminderScheduler {
             val (windowStart, windowEnd) = prefs.reminderWindow()
             nextIdleFireTime(
                 now = Calendar.getInstance(),
-                lastIntakeMillis = prefs.lastIntakeAt(),
+                lastIntakeMillis = context.transientPrefs().lastIntakeAt(),
                 idleMinutes = prefs.idleReminderMinutes(),
                 windowStartHour = windowStart,
                 windowEndHour = windowEnd,

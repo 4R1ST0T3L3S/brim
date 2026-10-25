@@ -1,6 +1,6 @@
 # Privacy Policy — FillMeUp!
 
-**Last updated: October 22, 2026**
+**Last updated: October 24, 2026**
 
 ---
 
@@ -33,6 +33,7 @@ The App stores the following information in your device's private app storage (A
 | Pause reminders once the goal is reached | Respect your notification preference |
 | Inactivity reminder gap | Nudge you a set time after your last drink, if you turned that on |
 | Time of your last logged drink | Measure that gap. Stored apart from the rest (see sections 6 and 7) |
+| Today's drinks and the time each was logged | Show your last drink on the home screen, and the list of today's drinks it opens. Stored apart from the rest and kept for the current day only: times from an earlier day are erased the next time you open the App or log a drink (see sections 6 and 7) |
 | Celebration animations flag | Respect your preference for goal celebrations |
 | Theme preference | Remember your light / dark / colour choice |
 | Streak counter | Show consecutive days the daily goal was met |
@@ -78,7 +79,7 @@ None of these libraries collect, transmit, or process personal data. The App shi
 
 If you configure reminders, the App uses Android's AlarmManager and NotificationManager to deliver local notifications at the times you set. A reminder notification may include quick-log buttons that record an amount straight from the notification shade without opening the App. All of this is generated and handled entirely on your device. No notification content or delivery data is sent to any external service.
 
-If you enable the inactivity reminder, the App records the time of your most recent logged drink so it can measure the gap; that timestamp is the only thing kept for this, and it is overwritten every time you log a drink.
+The App records the time of your most recent logged drink so the inactivity reminder can measure the gap; that timestamp is the only thing kept for this, it is overwritten every time you log a drink, and it stays on this device (see sections 6 and 7).
 
 A reminder can play a sound: either your device's own default notification tone, or one of two short water sounds bundled inside the App itself. Nothing is streamed or downloaded to play them.
 
@@ -97,7 +98,9 @@ The optional home-screen widget displays today's intake, your goal, and how far 
 
 The App lets you export what it has stored to a backup file at a location you choose on your device, and restore it later by importing that file. The file is plain-text JSON and contains the values listed in section 2.1 — including your age and weight if you entered them. The App never uploads or transmits it; where the file goes afterwards is entirely up to you, so treat it like any other personal document if you copy it off the device or into cloud storage.
 
-The time of your last logged drink is held separately from the App's other settings and is deliberately **not** written to the export file, so a backup you share or archive never reveals when you last drank.
+The time of your last logged drink is held separately from the App's other settings and is deliberately **not** written to the export file, so a backup you share or archive never reveals when you last drank. Files exported by earlier versions of the App may still contain it; importing one does not bring it back into future exports.
+
+Today's drinks and their times are kept apart from the App's other settings and are **not** written to the export file.
 
 Importing a backup **replaces** the App's current data with the contents of the file.
 
@@ -113,7 +116,8 @@ Points worth being clear about:
 - The backup is stored under your own account with your backup provider and is governed by that provider's privacy policy. On current Android versions it is encrypted with your device credentials before leaving the device.
 - Devices without a backup transport (for example a de-Googled ROM) never produce such a backup.
 - The first-launch tour flag is deliberately excluded, so the guide replays after a reinstall.
-- The time of your last logged drink is also excluded; it is kept apart from the backed-up settings and never leaves the device.
+- The time of your last logged drink is also excluded; it is kept apart from the backed-up settings and never leaves the device. Backups made by earlier versions of the App included it; it is left out of the next backup Android makes.
+- Today's drinks and their times are excluded as well, and never leave the device.
 - **To opt out:** turn off backup for the App in **Device Settings → Google → Backup** (or **Settings → System → Backup**, depending on your device). Existing backups can be deleted from the same screen.
 
 ---

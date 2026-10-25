@@ -215,15 +215,17 @@ class IdleReminderTest {
             "notifications_enabled" to true,
             PREF_IDLE_REMINDER_MINUTES to 60,
             "date" to LocalDate.now().toString(),
-            PREF_LAST_INTAKE_AT to at(9).timeInMillis,
             *entries,
         )
     )
 
-    private fun FakePrefs.shows(now: Calendar = at(12), lastReminderPost: Calendar? = null) =
-        shouldShowIdleReminder(
-            this, notificationProgress(), now, lastReminderPost?.timeInMillis ?: 0L
-        )
+    private fun FakePrefs.shows(
+        now: Calendar = at(12),
+        lastIntake: Calendar = at(9),
+        lastReminderPost: Calendar? = null,
+    ) = shouldShowIdleReminder(
+        this, notificationProgress(), now, lastIntake.timeInMillis, lastReminderPost?.timeInMillis ?: 0L
+    )
 
 
     @Test
@@ -256,18 +258,18 @@ class IdleReminderTest {
     /** The drink landed between the alarm being set and it being delivered. */
     @Test
     fun hidden_whenADrinkAnsweredItFirst() {
-        assertFalse(prefs(PREF_LAST_INTAKE_AT to at(11, 30).timeInMillis).shows())
+        assertFalse(prefs().shows(lastIntake = at(11, 30)))
     }
 
     /** The clock has not started, so there is no gap to report. */
     @Test
     fun hidden_whenNothingHasBeenLoggedToday() {
-        assertFalse(prefs(PREF_LAST_INTAKE_AT to at(21, dayOffset = -1).timeInMillis).shows())
+        assertFalse(prefs().shows(lastIntake = at(21, dayOffset = -1)))
     }
 
     @Test
     fun shown_whenTheGapHasElapsedExactly() {
-        assertTrue(prefs(PREF_LAST_INTAKE_AT to at(11).timeInMillis).shows())
+        assertTrue(prefs().shows(lastIntake = at(11)))
     }
 
     // ─── the reminder the user configured wins ────────────────────
@@ -303,6 +305,35 @@ class IdleReminderTest {
         assertTrue(prefs.shows())
     }
 
+    // ─── the stamp moving out of the main store ───────────────────
+
+    /** An install from before the move: the stamp leaves the main store and keeps counting. */
+    @Test
+    fun moveLastIntakeAt_carriesTheStampOver() {
+        val main = FakePrefs(mapOf(PREF_LAST_INTAKE_AT to at(9).timeInMillis))
+        val transient = FakePrefs()
+        moveLastIntakeAt(from = main, to = transient)
+        assertFalse(main.contains(PREF_LAST_INTAKE_AT))
+        assertEquals(at(9).timeInMillis, transient.lastIntakeAt(nowMillis = at(12).timeInMillis))
+    }
+
+    /** An old backup brings back an old stamp; the drink logged since is the one that counts. */
+    @Test
+    fun moveLastIntakeAt_neverOverwritesALaterDrink() {
+        val main = FakePrefs(mapOf(PREF_LAST_INTAKE_AT to at(9).timeInMillis))
+        val transient = FakePrefs(mapOf(PREF_LAST_INTAKE_AT to at(11).timeInMillis))
+        moveLastIntakeAt(from = main, to = transient)
+        assertFalse(main.contains(PREF_LAST_INTAKE_AT))
+        assertEquals(at(11).timeInMillis, transient.lastIntakeAt(nowMillis = at(12).timeInMillis))
+    }
+
+    @Test
+    fun moveLastIntakeAt_doesNothingOnceMoved() {
+        val transient = FakePrefs(mapOf(PREF_LAST_INTAKE_AT to at(11).timeInMillis))
+        moveLastIntakeAt(from = FakePrefs(), to = transient)
+        assertEquals(at(11).timeInMillis, transient.lastIntakeAt(nowMillis = at(12).timeInMillis))
+    }
+
     /** A post stamped in the future — the clock was set back — is not a reason to go quiet. */
     @Test
     fun aReminderPostInTheFuture_isIgnored() {
@@ -315,10 +346,13 @@ class IdleReminderTest {
     private fun FakePrefs.allows(now: Calendar = at(12)) =
         idleCardAllowed(this, notificationProgress(), now)
 
-    /** The gap is not asked, so a drink a moment ago still leaves the card welcome. */
+    /**
+     * The gap is not asked — [idleCardAllowed] isn't even given the last drink — so a drink a
+     * moment ago still leaves the card welcome.
+     */
     @Test
-    fun rebuild_isAllowedEvenThoughTheGapWasJustAnswered() {
-        assertTrue(prefs(PREF_LAST_INTAKE_AT to at(11, 59).timeInMillis).allows())
+    fun rebuild_isAllowedWithoutAskingAboutTheGap() {
+        assertTrue(prefs().allows())
     }
 
     /** But a card tapped long past bedtime goes, exactly as a reminder card would. */

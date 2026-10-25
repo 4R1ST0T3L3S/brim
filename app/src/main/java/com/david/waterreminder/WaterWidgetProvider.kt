@@ -60,7 +60,7 @@ open class WaterWidgetProvider : AppWidgetProvider() {
     private fun logFromWidget(context: Context, ml: Int) {
         if (ml <= 0) return
         val prefs = context.waterPrefs()
-        prefs.logIntake(ml)
+        prefs.logIntake(ml, transientStore = context.transientPrefs())
         // Off-screen tap, so the app's own listener won't fire — as in [QuickLogReceiver].
         BackupManager(context).dataChanged()
         // Crossing the goal is quiet here, as from a notification button — see [QuickLogReceiver].

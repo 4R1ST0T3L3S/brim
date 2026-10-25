@@ -64,17 +64,44 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/container_bottles" />
 
+        <!-- Shares the total's row, so it costs no height. Gone until today has a drink; tapping
+             it slides up the rest of today's drinks (TodayDrinksSheet). Drawn as a link — blue
+             and bold like History's "View all history →", with a chevron pointing the way the
+             sheet comes — because plain grey text gives no hint that it can be tapped. -->
+        <TextView
+            android:id="@+id/text_last_drink"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:drawableStart="@drawable/ic_clock_small"
+            android:drawableEnd="@drawable/ic_chevron_up_small"
+            android:drawablePadding="4dp"
+            android:drawableTint="@color/brand_blue"
+            android:gravity="center_vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:textColor="@color/brand_blue"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintBaseline_toBaselineOf="@id/text_intake_amount"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:text="Last drink 14:32"
+            tools:visibility="visible" />
+
         <TextView
             android:id="@+id/text_intake_amount"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:gravity="end"
             android:text="@string/home_intake_amount"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintStart_toEndOf="@id/text_last_drink"
+            app:layout_goneMarginStart="0dp"
             app:layout_constraintTop_toBottomOf="@id/progress_water" />
 
         <!-- Quick Add label -->

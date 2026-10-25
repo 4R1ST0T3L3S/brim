@@ -4,6 +4,7 @@ Features:
 • Log your water intake with a single tap
 • Set customizable reminders to drink water
 • View your daily and weekly hydration history with charts
+• See what time you had each drink today, kept on your device and only until the end of the day
 • Reminders survive device reboots
 • No ads, no tracking, no internet required
 • Fully open source (AGPL-3.0)

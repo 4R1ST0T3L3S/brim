@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.text.InputType
+import android.text.format.DateFormat
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -16,6 +17,8 @@ import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import com.david.waterreminder.databinding.FragmentWaterBinding
@@ -24,6 +27,7 @@ import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
 import com.google.android.material.color.MaterialColors
+import java.util.Date
 
 class FirstFragment : Fragment() {
 
@@ -60,7 +64,13 @@ class FirstFragment : Fragment() {
     private val tourPrefs by lazy {
         requireContext().getSharedPreferences("tour_prefs", Context.MODE_PRIVATE)
     }
+    /** Today's drinks — see [todaysDrinks]. */
+    private val drinkLog by lazy {
+        requireContext().transientPrefs()
+    }
     private val unit get() = prefs.getString(PREF_UNIT, UNIT_ML) ?: UNIT_ML
+    /** Today's drinks, opened from the "Last drink" line; null until first opened. */
+    private var todaySheet: TodayDrinksSheet? = null
 
     /**
      * Water logged from a notification button lands in prefs behind this screen's back, so the
@@ -81,6 +91,7 @@ class FirstFragment : Fragment() {
             if (key != "intake_ml" || _binding == null) return@OnSharedPreferenceChangeListener
             currentMl = prefs.getInt("intake_ml", 0).asDayIntake()
             updateIntakeUI()
+            todaySheet?.refreshIfShowing()
         }
 
     override fun onCreateView(
@@ -99,6 +110,18 @@ class FirstFragment : Fragment() {
         if (!tourPrefs.getBoolean("tour_done", false)) {
             view.doOnPreDraw { maybeShowGuideTour() }
         }
+
+        binding.textLastDrink.setOnClickListener {
+            val sheet = todaySheet ?: TodayDrinksSheet(requireContext(), drinkLog) { unit }
+            todaySheet = sheet
+            sheet.show()
+        }
+        ViewCompat.replaceAccessibilityAction(
+            binding.textLastDrink,
+            AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_CLICK,
+            getString(R.string.home_last_drink_action),
+            null
+        )
     }
 
     override fun onResume() {
@@ -122,6 +145,7 @@ class FirstFragment : Fragment() {
         // The rollover itself lives in Units.kt, so the History screen's day editor can lean on the
         // same "which day is intake_ml about" rule before it touches today's number.
         prefs.rollOverDayIfNeeded()
+        drinkLog.clearStaleDrinkLog()
         // Clamped on the way in too: prefs can arrive from a backup restore or an imported file.
         currentMl = prefs.getInt("intake_ml", 0).asDayIntake()
     }
@@ -131,7 +155,7 @@ class FirstFragment : Fragment() {
     private fun addWater(ml: Int) {
         // The arithmetic and the writes live in Intake.kt, shared with the notification
         // buttons — this side is only the celebrating, which needs a fragment to do.
-        val result = prefs.logIntake(ml)
+        val result = prefs.logIntake(ml, transientStore = drinkLog)
         // No BackupManager call: MainActivity keeps a listener on water_prefs for as long as it
         // is started, and a resumed fragment is always inside that window.
         currentMl = result.newTotal
@@ -197,7 +221,7 @@ class FirstFragment : Fragment() {
     private fun removeWater(ml: Int) {
         // Same path as adding, negated — including dropping the streak back on the way under
         // the goal. No popups: taking water off is never a celebration.
-        currentMl = prefs.logIntake(-ml).newTotal
+        currentMl = prefs.logIntake(-ml, transientStore = drinkLog).newTotal
         // Not onIntakeLogged: taking water back must not restart the idle countdown. The cards
         // in the shade still need the new total, though.
         scheduleCardSync(drink = false)
@@ -216,7 +240,18 @@ class FirstFragment : Fragment() {
         // Congratulations banner is tied to the fixed daily goal
         binding.textGoalReached.visibility = if (currentMl >= goalMl) View.VISIBLE else View.GONE
 
+        updateLastDrinkUI()
         updateBottlesUI(activeGoal)
+    }
+
+    /** Read from the log, which also covers drinks logged from a notification or the widget. */
+    private fun updateLastDrinkUI() {
+        val last = drinkLog.todaysDrinks().lastOrNull()
+        binding.textLastDrink.visibility = if (last == null) View.GONE else View.VISIBLE
+        if (last != null) {
+            val time = DateFormat.getTimeFormat(requireContext()).format(Date(last.atMillis))
+            binding.textLastDrink.text = getString(R.string.home_last_drink, time)
+        }
     }
 
     /**
@@ -545,6 +580,9 @@ class FirstFragment : Fragment() {
     override fun onDestroyView() {
         // onPause has already flushed; this only keeps a callback from outliving the view.
         _binding?.root?.removeCallbacks(cardSync)
+        // A dialog outliving its window leaks it; the sheet is rebuilt on the next tap.
+        todaySheet?.dismiss()
+        todaySheet = null
         super.onDestroyView()
         bottleViews = emptyList()   // they belong to the destroyed view tree
         _binding = null

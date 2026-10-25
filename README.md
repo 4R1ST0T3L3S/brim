@@ -14,6 +14,7 @@ FillMeUp! helps you build a healthy hydration habit by tracking your daily water
 - Log your water intake with a single tap
 - Set customizable reminders to drink water
 - View your daily and weekly hydration history with charts
+- See what time you had each drink today, kept on your device and only until the end of the day
 - Home screen widget available
 - No ads, no tracking, no internet required
 - Fully open source (AGPL-3.0)
@@ -21,6 +22,7 @@ FillMeUp! helps you build a healthy hydration habit by tracking your daily water
 ## Screenshots
 
 <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/HomeScreen.png" alt="Home screen" height="400">
+<img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/DailyTimestampHistory.png" alt="Today's drinks with their times" height="400">
 <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/GoalStreak.png" alt="Goal streak" height="400">
 <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/History.png" alt="7-day chart" height="400">
 

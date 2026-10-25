@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One of today's drinks in the sheet the home screen's "Last drink" line opens. Laid out like
+     History's day picker rows (item_pick_day) so the app's lists read as one family: icon, then
+     what, then how much. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="10dp">
+
+    <!-- The quick-add buttons' icon for the amount: a glass for the small sips, a drop otherwise. -->
+    <ImageView
+        android:id="@+id/icon_drink"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/ic_water_drop"
+        android:tint="@color/brand_blue"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/text_drink_time"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="14dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="16sp"
+        tools:text="14:32" />
+
+    <TextView
+        android:id="@+id/text_drink_amount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        tools:text="250 ml" />
+
+</LinearLayout>

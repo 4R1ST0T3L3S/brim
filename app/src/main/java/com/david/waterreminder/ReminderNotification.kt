@@ -215,8 +215,10 @@ fun postIdleReminderNotification(context: Context, prefs: SharedPreferences): Bo
     // One clock reading for the decision and for the number on the card, so they can't disagree.
     val now = Calendar.getInstance()
 
-    val lastReminderPost = context.transientPrefs().lastReminderPostAt(now.timeInMillis)
-    if (!shouldShowIdleReminder(prefs, progress, now, lastReminderPost)) {
+    val transient = context.transientPrefs()
+    val lastIntake = transient.lastIntakeAt(now.timeInMillis)
+    val lastReminderPost = transient.lastReminderPostAt(now.timeInMillis)
+    if (!shouldShowIdleReminder(prefs, progress, now, lastIntake, lastReminderPost)) {
         cancelIdleReminderNotification(context)
         return false
     }
@@ -225,7 +227,7 @@ fun postIdleReminderNotification(context: Context, prefs: SharedPreferences): Bo
         reminderNotificationId(IDLE_REMINDER_KEY),
         buildReminderNotification(
             context, prefs, IDLE_REMINDER_KEY, progress, onlyAlertOnce = false,
-            encouragementOverride = idleBody(context, prefs, now.timeInMillis),
+            encouragementOverride = idleBody(context, now.timeInMillis),
         )
     )
     return true
@@ -236,8 +238,8 @@ fun postIdleReminderNotification(context: Context, prefs: SharedPreferences): Bo
  * battery management makes it longer. Falls back to the vaguer wording when there is no last
  * drink to measure from, which is the first idle card of a day that started with nothing logged.
  */
-private fun idleBody(context: Context, prefs: SharedPreferences, nowMillis: Long): String {
-    val elapsed = idleElapsedMinutes(nowMillis, prefs.lastIntakeAt(nowMillis))
+private fun idleBody(context: Context, nowMillis: Long): String {
+    val elapsed = idleElapsedMinutes(nowMillis, context.transientPrefs().lastIntakeAt(nowMillis))
     return if (elapsed >= 5) {
         context.getString(R.string.notification_body_idle_elapsed, context.durationLabel(elapsed))
     } else {
@@ -268,7 +270,7 @@ fun refreshIdleReminderNotification(
         return
     }
 
-    val idleWording = if (answered) null else idleBody(context, prefs, System.currentTimeMillis())
+    val idleWording = if (answered) null else idleBody(context, System.currentTimeMillis())
     (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(
         reminderNotificationId(IDLE_REMINDER_KEY),
         buildReminderNotification(
