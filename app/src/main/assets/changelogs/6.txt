@@ -1,0 +1,7 @@
+• Added optional Health Connect sync for your drinks (Android 9+ only)
+• Added "Last drink" on Home: see today's drinks and their times
+• Added a one-row home-screen widget
+• Improvements on Splash screen
+• Improved About, Credits & Licenses and Privacy Policy screens
+• Fixed reminder notifications showing an old total after logging on Home or the widget
+• Updated Privacy Policy
