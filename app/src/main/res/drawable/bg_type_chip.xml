@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Reminder type chip: a neutral pill; the label says the type, so no colour coding. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#2196F3" />
-    <corners android:radius="24dp" />
+    <solid android:color="@color/surface_control" />
+    <corners android:radius="100dp" />
 </shape>

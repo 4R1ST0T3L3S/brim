@@ -1,129 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Reminders, in Vision's style. The screen title lives in the toolbar. The reminders sit in one
+  panel, one row each, with hairlines between them.
+-->
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/pageBackground">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="16dp">
-
-        <TextView
-            android:id="@+id/title_reminders"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Reminders"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:textColor="?attr/colorOnSurface"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="24dp">
 
         <!-- Shortcut to Settings → Notifications; its subtitle doubles as the
              at-a-glance state of the master toggle. -->
         <include
             android:id="@+id/row_notification_settings"
             layout="@layout/item_settings_row"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/title_reminders" />
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
-        <View
-            android:id="@+id/divider"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_marginTop="16dp"
-            android:background="?attr/colorOutlineVariant"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/row_notification_settings" />
-
-        <!-- Add reminder -->
-        <TextView
-            android:id="@+id/label_reminders"
-            android:layout_width="0dp"
+        <!-- Section label, with Reset as a small pill on the same line. -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="My reminders"
-            android:textSize="14sp"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            app:layout_constraintEnd_toStartOf="@id/button_reset_reminders"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/divider"
-            app:layout_constraintBottom_toBottomOf="@id/button_reset_reminders" />
+            android:layout_marginTop="28dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_reset_reminders"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Reset"
-            android:textSize="12sp"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            app:cornerRadius="24dp"
-            app:strokeColor="?attr/colorOutline"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/divider" />
+            <TextView
+                android:id="@+id/label_reminders"
+                style="@style/Widget.WaterReminder.SectionLabel"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="My reminders" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_reset_reminders"
+                style="@style/Widget.WaterReminder.FlatButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:text="Reset"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/button_add_reminder"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:text="+ Add reminder"
+            style="@style/Widget.WaterReminder.FlatButton"
+            android:layout_width="match_parent"
+            android:layout_marginTop="12dp"
             app:backgroundTint="@color/brand_blue"
-            app:cornerRadius="24dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/button_reset_reminders" />
+            android:text="+ Add reminder"
+            android:textColor="@color/on_brand" />
 
         <LinearLayout
             android:id="@+id/container_reminders"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="vertical"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/button_add_reminder" />
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_panel"
+            android:orientation="vertical" />
 
         <TextView
             android:id="@+id/text_no_reminders"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:gravity="center"
             android:text="No reminders yet.\nTap '+ Add reminder', or Reset to bring the default one back."
-            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textColor="@color/text_secondary"
             android:textSize="14sp"
-            android:lineSpacingMultiplier="1.4"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/container_reminders" />
+            android:lineSpacingMultiplier="1.4" />
 
         <!-- Row-interaction hints — hidden alongside the empty state. -->
         <LinearLayout
             android:id="@+id/legend_swipe"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/text_no_reminders">
+            android:visibility="gone">
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -132,12 +100,12 @@
                 android:orientation="horizontal">
 
                 <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
                     android:layout_marginEnd="8dp"
                     android:importantForAccessibility="no"
                     android:src="@drawable/ic_info"
-                    android:tint="?attr/colorOnSurfaceVariant" />
+                    android:tint="@color/text_muted" />
 
                 <TextView
                     android:id="@+id/legend_swipe_text"
@@ -145,7 +113,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:text="@string/reminders_legend_swipe"
-                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textColor="@color/text_muted"
                     android:textSize="12sp" />
 
             </LinearLayout>
@@ -155,13 +123,13 @@
                 android:id="@+id/legend_tap_type"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="8dp"
                 android:gravity="center"
                 android:text="@string/reminders_legend_tap_type"
-                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textColor="@color/text_muted"
                 android:textSize="12sp" />
 
         </LinearLayout>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 </androidx.core.widget.NestedScrollView>

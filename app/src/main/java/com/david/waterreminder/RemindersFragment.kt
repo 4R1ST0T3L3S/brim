@@ -2,7 +2,6 @@ package com.david.waterreminder
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -127,6 +126,8 @@ class RemindersFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        // Rounds off the swipe backgrounds along with the panel.
+        binding.containerReminders.clipToOutline = true
 
         binding.rowNotificationSettings.rowIcon.setImageResource(R.drawable.ic_bell)
         binding.rowNotificationSettings.rowTitle.text = getString(R.string.action_notifications)
@@ -204,6 +205,10 @@ class RemindersFragment : Fragment() {
     private fun rebuildReminderRows() {
         binding.containerReminders.removeAllViews()
         reminders.sortedBy { it.time }.forEach { addReminderRow(it) }
+        // Hairlines go between rows only; the panel's own edge closes the last one.
+        val container = binding.containerReminders
+        container.getChildAt(container.childCount - 1)
+            ?.findViewById<View>(R.id.row_divider)?.visibility = View.GONE
     }
 
     private fun addReminderRow(reminder: Reminder) {
@@ -220,8 +225,8 @@ class RemindersFragment : Fragment() {
             if (reminder.isInterval) {
                 val (windowStart, windowEnd) = prefs.reminderWindow()
                 val start = maxOf(reminder.hour, windowStart).asHourLabel()
-                "🔔  $start–${windowEnd.asHourLabel()}"
-            } else "🔔  ${reminder.time}"
+                "$start–${windowEnd.asHourLabel()}"
+            } else reminder.time
         rowBinding.switchReminderEnabled.isChecked = reminder.enabled
 
         applyTypeChip(rowBinding, reminder)
@@ -251,20 +256,9 @@ class RemindersFragment : Fragment() {
         container.addView(rowBinding.root)
     }
 
+    /** The chip is a neutral pill (bg_type_chip); its label alone tells the type apart. */
     private fun applyTypeChip(rowBinding: ItemReminderBinding, reminder: Reminder) {
         rowBinding.textReminderType.text = triggerLabel(reminder.type, reminder.intervalHours)
-        val color = when {
-            reminder.isInterval -> 0xFF9C27B0.toInt()              // purple
-            reminder.type == Reminder.TYPE_ONETIME -> 0xFFFF9800.toInt()  // orange
-            else -> 0xFF2196F3.toInt()                             // blue
-        }
-        val bg = rowBinding.textReminderType.background.mutate() as? GradientDrawable
-            ?: GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = 48f
-            }
-        bg.setColor(color)
-        rowBinding.textReminderType.background = bg
     }
 
     private fun refreshEmptyState() {

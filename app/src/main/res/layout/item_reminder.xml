@@ -1,80 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  One reminder inside the reminders panel: time as a light number, type chip, switch.
+  Swiping the foreground reveals Edit (right) or Delete (left) underneath; the panel clips both
+  to its rounded corners.
+-->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <!-- Grey edit background, revealed on right swipe -->
+    <!-- Edit background, revealed on right swipe -->
     <LinearLayout
         android:id="@+id/edit_background"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/swipe_edit_bg"
+        android:background="@color/surface_control_hover"
         android:gravity="center_vertical|start"
-        android:paddingStart="24dp"
+        android:paddingStart="20dp"
         android:orientation="horizontal"
         android:visibility="gone">
 
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_marginEnd="6dp"
-            android:src="@android:drawable/ic_menu_edit"
-            android:tint="@color/white"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/ic_edit"
+            android:tint="@color/text_primary"
             android:contentDescription="Edit" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/geist_semibold"
             android:text="Edit"
-            android:textColor="@color/white"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textColor="@color/text_primary"
+            android:textSize="14sp" />
 
     </LinearLayout>
 
-    <!-- Red delete background, revealed on left swipe -->
+    <!-- Delete background, revealed on left swipe -->
     <LinearLayout
         android:id="@+id/delete_background"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/brand_red"
         android:gravity="center_vertical|end"
-        android:paddingEnd="24dp"
+        android:paddingEnd="20dp"
         android:orientation="horizontal"
         android:visibility="gone">
 
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_marginEnd="6dp"
-            android:src="@android:drawable/ic_menu_delete"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/ic_delete"
             android:tint="@color/white"
             android:contentDescription="Delete" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/geist_semibold"
             android:text="Delete"
             android:textColor="@color/white"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textSize="14sp" />
 
     </LinearLayout>
 
-    <!-- White foreground — slides on swipe -->
+    <!-- Foreground: opaque panel colour so it hides the backgrounds until it slides. -->
     <LinearLayout
         android:id="@+id/foreground"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="?attr/pageBackground">
+        android:background="@color/surface_panel">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:paddingTop="14dp"
-            android:paddingBottom="14dp"
+            android:minHeight="72dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="12dp"
             android:orientation="horizontal">
 
             <TextView
@@ -82,27 +88,32 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textSize="17sp"
-                android:textColor="?attr/colorOnSurface"
-                android:text="🔔  10:00" />
+                android:fontFamily="@font/geist_light"
+                android:fontFeatureSettings="tnum"
+                android:letterSpacing="-0.02"
+                android:maxLines="1"
+                android:textColor="@color/text_primary"
+                android:textSize="24sp"
+                android:text="10:00" />
 
             <TextView
                 android:id="@+id/text_reminder_type"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
+                android:layout_marginEnd="10dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp"
+                android:fontFamily="@font/geist_semibold"
                 android:text="Daily"
                 android:textSize="12sp"
-                android:textColor="@color/white"
+                android:textColor="@color/text_primary"
                 android:background="@drawable/bg_type_chip"
                 android:clickable="true"
                 android:focusable="true" />
 
-            <com.google.android.material.switchmaterial.SwitchMaterial
+            <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/switch_reminder_enabled"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
@@ -113,7 +124,9 @@
             android:id="@+id/row_divider"
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="?attr/colorOutlineVariant" />
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:background="@color/hairline" />
 
     </LinearLayout>
 
