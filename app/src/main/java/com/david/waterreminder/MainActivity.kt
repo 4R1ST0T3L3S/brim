@@ -4,6 +4,7 @@ import android.app.backup.BackupManager
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.text.format.DateUtils
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -74,30 +75,22 @@ class MainActivity : AppCompatActivity() {
 
         maybeShowWhatsNew()
 
-        binding.fabReminders.setOnClickListener {
-            navController.navigate(R.id.RemindersFragment)
-        }
-
-        // Show FABs only on the water reminder screen
         navController.addOnDestinationChangedListener { _, destination, _ ->
             // Deferred to the next frame so this settles together with the fragment
             // transaction's own layout pass, instead of a frame ahead of it — otherwise
-            // the toolbar/FABs can flash into view while the outgoing screen is still visible,
+            // the toolbar can flash into view while the outgoing screen is still visible,
             // visibly pushing its content down before the new screen actually swaps in.
             binding.root.post {
-                val onWaterScreen = destination.id == R.id.FirstFragment
-                val fabVisibility = if (onWaterScreen) View.VISIBLE else View.GONE
-                binding.fabReminders.visibility = fabVisibility
-                binding.fabAnalytics.visibility = fabVisibility
                 // Full-screen onboarding: no toolbar/menu until setup is finished.
                 val onboarding = destination.id == R.id.ProfileSetupFragment || destination.id == R.id.ReminderSetupFragment
                 binding.toolbar.visibility = if (onboarding) View.GONE else View.VISIBLE
-                if (onWaterScreen) {
-                    binding.fabAnalytics.setImageResource(R.drawable.ic_chart)
-                    binding.fabAnalytics.setOnClickListener {
-                        navController.navigate(R.id.AnalyticsFragment)
-                    }
-                }
+                // Home is titled "Today"; the date under it says which day that is.
+                supportActionBar?.subtitle = if (destination.id == R.id.FirstFragment) {
+                    DateUtils.formatDateTime(
+                        this, System.currentTimeMillis(),
+                        DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_WEEKDAY or DateUtils.FORMAT_NO_YEAR
+                    )
+                } else null
             }
         }
     }

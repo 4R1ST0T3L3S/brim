@@ -3,21 +3,38 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- Toolbar -->
-    <color name="toolbar_background">#1A2535</color>
+    <!--
+      Vision palette. Depth comes from small steps in lightness, not from shadows or lines:
+      page < panel < control. values-night holds the true-black (OLED) twin of each colour.
+    -->
+    <color name="surface_page">#F2F2F4</color>
+    <color name="surface_panel">#F9F9FA</color>
+    <color name="surface_card">#E8E8EB</color>
+    <color name="surface_control">#EAEAEA</color>
+    <color name="surface_control_hover">#DEDEE1</color>
+    <color name="text_primary">#111113</color>
+    <color name="text_secondary">#505057</color>
+    <color name="text_muted">#68686F</color>
+    <color name="hairline">#14000000</color>
+    <!-- Text and icons drawn on a brand_blue fill -->
+    <color name="on_brand">#FFFFFF</color>
+
+    <!-- Toolbar: no bar of its own, it sits on the page -->
+    <color name="toolbar_background">@color/surface_page</color>
 
     <!-- Page backgrounds -->
-    <color name="page_background">#FFFFFF</color>
+    <color name="page_background">@color/surface_page</color>
 
-    <!-- Brand / accent -->
-    <color name="brand_blue">#2196F3</color>
+    <!-- Brand / accent: sky. Darker in light mode so text and links keep their contrast. -->
+    <color name="brand_blue">#0284C7</color>
     <color name="brand_orange">#FF6F00</color>
     <color name="brand_red">#F44336</color>
     <color name="brand_blue_light">#90CAF9</color>
-    <color name="icon_backdrop_blue">#E3F2FD</color>
+    <color name="icon_backdrop_blue">@color/surface_panel</color>
 
-    <!-- Splash screen tagline, under the icon on the default background -->
-    <color name="splash_branding_text">#5A6B7D</color>
+    <!-- Splash screen: always OLED black like the icon, whatever the system theme -->
+    <color name="splash_background">#000000</color>
+    <color name="splash_branding_text">#83838C</color>
 
     <!-- Dark Blue theme surfaces (navy rather than neutral grey) -->
     <color name="blue_dark_page_background">#08213D</color>
@@ -52,7 +69,7 @@
     <color name="blue_light_quick_remove_fg">#0A4D8C</color>
 
     <!-- Quick remove chips (the add chips use brand_blue on white) -->
-    <color name="quick_remove_bg">#E3F2FD</color>
+    <color name="quick_remove_bg">@color/surface_control</color>
 
     <!-- Swipe-action backgrounds -->
     <color name="swipe_edit_bg">#888888</color>

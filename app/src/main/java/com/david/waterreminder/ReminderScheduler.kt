@@ -32,6 +32,18 @@ object ReminderScheduler {
             .forEach { schedule(context, it) }
     }
 
+    /**
+     * When the soonest enabled reminder fires next, for the home screen's card; null while
+     * reminders are switched off or none is enabled. Same rules as [rescheduleAll].
+     */
+    fun nextReminderAt(context: Context): Calendar? {
+        val prefs = context.waterPrefs()
+        if (!prefs.getBoolean("notifications_enabled", false)) return null
+        return Reminder.parseAll(prefs.getStringSet(REMINDERS_KEY, emptySet()))
+            .filter { it.enabled }
+            .minOfOrNull { nextFireTime(context, it) }
+    }
+
     fun cancel(context: Context, reminder: Reminder) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         alarmManager.cancel(buildPendingIntent(context, reminder))

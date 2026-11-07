@@ -1,7 +1,7 @@
 <resources>
-    <string name="app_name">FillMeUp!</string>
-    <string name="share_weekly_progress_text">💧 My weekly hydration progress! #FillMeUp #StayHydrated</string>
-    <string name="share_all_history_text">💧 My full hydration history! #FillMeUp #StayHydrated</string>
+    <string name="app_name">Brim</string>
+    <string name="share_weekly_progress_text">💧 My weekly hydration progress! #Brim #StayHydrated</string>
+    <string name="share_all_history_text">💧 My full hydration history! #Brim #StayHydrated</string>
     <string name="share_chooser_title">Share your progress</string>
     <string name="action_about">About</string>
     <string name="action_settings">Settings</string>
@@ -11,7 +11,7 @@
     <string name="action_help">Help</string>
     <string name="settings_version">v%s</string>
     <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">FillMeUp!</string>
+    <string name="first_fragment_label">Today</string>
     <string name="second_fragment_label">Privacy Policy</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>
@@ -32,11 +32,18 @@
     <string name="import_success">Data imported — restart the app to see all changes</string>
     <string name="import_failed">Import failed — invalid backup file</string>
 
-    <string name="home_title">FillMeUp! 💧</string>
-    <string name="home_intake_label">Today\'s intake</string>
-    <string name="home_intake_amount">0 ml / 1500 ml</string>
-    <string name="home_quick_add_label">Quick add</string>
-    <string name="home_quick_remove_label">Quick remove</string>
+    <!-- Under the big total: the goal it counts towards, and how far along it is. -->
+    <string name="home_intake_of_goal">of %1$s · %2$d%%</string>
+    <string name="home_mode_add">Add</string>
+    <string name="home_mode_remove">Remove</string>
+    <string name="home_history_label">History</string>
+    <string name="home_history_avg">Avg %1$s</string>
+    <string name="home_history_empty">No days yet</string>
+    <string name="home_reminder_label">Next reminder</string>
+    <string name="home_reminder_today">Today</string>
+    <string name="home_reminder_tomorrow">Tomorrow</string>
+    <string name="home_reminder_off_value">Off</string>
+    <string name="home_reminder_off_detail">Tap to set up</string>
     <string name="home_last_drink">Last drink %1$s</string>
     <string name="home_last_drink_action">See today\'s drinks</string>
     <string name="today_drinks_title">Today\'s drinks</string>
@@ -149,6 +156,21 @@
 
     <!-- History — edit a past day of the week -->
     <string name="analytics_edit_day_action">Edit a day</string>
+    <string name="analytics_last_7_days">Last 7 days</string>
+    <string name="analytics_share">Share</string>
+    <string name="analytics_all_history">All history</string>
+    <string name="analytics_stat_avg">Daily average</string>
+    <string name="analytics_stat_best">Best day</string>
+    <string name="analytics_stat_goal_days">Minimum reached</string>
+    <string name="analytics_stat_personal_days">Personal goal</string>
+    <plurals name="analytics_days_unit">
+        <item quantity="one">day</item>
+        <item quantity="other">days</item>
+    </plurals>
+    <string name="analytics_chart_minimum">Minimum</string>
+    <string name="analytics_chart_personal">Your goal</string>
+    <string name="analytics_chart_today">Today</string>
+    <string name="analytics_all_time">All time</string>
     <string name="analytics_pick_day_title">Pick a day to edit</string>
     <string name="analytics_pick_day_hint">Tap a day to correct its total. Today is tracked on the home screen.</string>
     <string name="analytics_pick_day_row_description">%1$s, %2$s</string>
@@ -307,7 +329,7 @@
     <string name="privacy_policy_last_updated">Last updated: October 25, 2026</string>
     <string name="privacy_policy_text">
 1. Overview\n\n
-FillMeUp! is a free, offline hydration-tracking application for Android. This Privacy Policy explains what information the App collects, how it is used, and your rights as a user.\n\n
+Brim is a free, offline hydration-tracking application for Android. This Privacy Policy explains what information the App collects, how it is used, and your rights as a user.\n\n
 The App has no servers, no accounts and no analytics. Everything you enter stays in the App\'s private storage on this device. The only way any of it leaves the App\'s storage is if you export a backup file yourself (section 6), if you have Android\'s own system backup switched on (section 7), or if you turn on Health Connect sync (section 8) — all three are under your control.\n\n
 ──────────────────────────────\n\n
 2. Information We Collect\n\n
@@ -384,7 +406,7 @@ Health Connect is Android\'s on-device store for health and fitness data, shared
 Sync with Health Connect (Settings → Health Connect; permission: write hydration). While it is on, each drink you log is written to Health Connect as a Hydration entry: the amount and the time it was logged. Taking water back removes or shrinks the matching entry. When you turn it on, today\'s drinks so far are sent; earlier days are not. If you correct a past day in the History editor while sync is on, that day\'s entries from the App are replaced by one entry for the day\'s new total, and clearing the day removes them. Turning sync off stops new writes and leaves what was already written in Health Connect.\n\n
 The App reads nothing from Health Connect — not other apps\' hydration, not your weight, not any other kind of data — and writes nothing but the Hydration entries above.\n\n
 Data in Health Connect is kept on your device by Health Connect, which is part of Android and handles it under its own terms. Other apps you have allowed to read hydration in Health Connect can see the entries the App writes; that is what sharing through Health Connect is for. The App itself still has no server and sends nothing anywhere.\n\n
-To remove what the App wrote, open Health Connect → App permissions → FillMeUp! and delete its data there; you can also take back its permissions on the same screen.\n\n
+To remove what the App wrote, open Health Connect → App permissions → Brim and delete its data there; you can also take back its permissions on the same screen.\n\n
 ──────────────────────────────\n\n
 9. Permissions\n\n
 • Display hydration reminder notifications (Android 13+)\n
@@ -397,7 +419,7 @@ The App also reschedules reminders when the device leaves airplane mode or after
 10. Data Retention and Deletion\n\n
 All data is stored locally in your device\'s private storage and accessible only to the App. To delete it:\n\n
 • Clear your age and weight only: Settings → Profile inside the App\n
-• Clear everything: Device Settings → Apps → FillMeUp! → Storage → Clear Data\n
+• Clear everything: Device Settings → Apps → Brim → Storage → Clear Data\n
 • Or simply uninstall the App.\n\n
 These actions do not touch copies outside the App\'s own storage: any backup file you exported yourself, any Android system backup, and anything the App wrote to Health Connect must be deleted separately (sections 6, 7 and 8).\n\n
 ──────────────────────────────\n\n
@@ -414,9 +436,9 @@ David Ricardo\n
     <!-- Licenses & Credits screen. Only the sentences live here; the names, licence names and
          links they mention are not translated and live in CreditsFragment. -->
     <string name="credits_label">Licenses &amp; Credits</string>
-    <string name="credits_subtitle">FillMeUp! is free and open-source software</string>
+    <string name="credits_subtitle">Brim is free and open-source software</string>
     <string name="credits_heading_license">License</string>
-    <string name="credits_license_body">FillMeUp! is © 2026 David Ricardo and contributors, released under the GNU Affero General Public License v3.0 (AGPL-3.0). You are free to use, study, share and modify it under the terms of that license. It comes with no warranty.</string>
+    <string name="credits_license_body">Brim is a modified version of FillMeUp!, © 2026 David Ricardo and contributors, released under the GNU Affero General Public License v3.0 (AGPL-3.0), and Brim is released under the same license. You are free to use, study, share and modify it under the terms of that license. It comes with no warranty.</string>
     <string name="credits_source_code">Source code</string>
     <string name="credits_full_license">Full license text</string>
     <string name="credits_heading_sounds">Sounds</string>

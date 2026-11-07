@@ -3,30 +3,33 @@ package com.david.waterreminder
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.res.ColorStateList
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.InputType
 import android.text.format.DateFormat
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.Space
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.david.waterreminder.databinding.FragmentWaterBinding
 import com.getkeepsafe.taptargetview.TapTarget
 import com.getkeepsafe.taptargetview.TapTargetSequence
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
 import com.google.android.material.color.MaterialColors
+import java.time.LocalDate
+import java.util.Calendar
 import java.util.Date
 
 class FirstFragment : Fragment() {
@@ -39,9 +42,11 @@ class FirstFragment : Fragment() {
         )
         const val TAG_ADD_SLOT = "add_slot"
 
-        /** Bottles that still fit one row at full size; past this the row wraps at 24dp bottles. */
-        const val BOTTLES_PER_ROW = 6
-        const val BOTTLES_PER_ROW_COMPACT = 10
+        /** Amount buttons per row of the home grid. */
+        private const val QUICK_COLUMNS = 2
+
+        /** Days in the History card's mini chart, today included. */
+        private const val HISTORY_CARD_DAYS = 7
 
         /** Quiet time after the last tap before the shade is synced. */
         private const val CARD_SYNC_DELAY_MS = 400L
@@ -52,10 +57,10 @@ class FirstFragment : Fragment() {
 
     private var currentMl = 0
     private val goalMl = DEFAULT_DAILY_GOAL_ML
-    /** The amounts both quick rows are built from; empty is a valid state (all buttons removed). */
+    /** The amounts the grid is built from; empty is a valid state (all buttons removed). */
     private var quickAmounts: List<Int> = DEFAULT_QUICK_AMOUNTS_ML
-    /** The bottle icons currently in the row; rebuilt only when the goal changes their number. */
-    private var bottleViews: List<ImageView> = emptyList()
+    /** The Add / Remove switch: the same grid adds or subtracts its amounts. */
+    private var removeMode = false
 
     private val prefs by lazy {
         requireContext().waterPrefs()
@@ -122,6 +127,15 @@ class FirstFragment : Fragment() {
             getString(R.string.home_last_drink_action),
             null
         )
+
+        binding.btnModeAdd.setOnClickListener { setRemoveMode(false) }
+        binding.btnModeRemove.setOnClickListener { setRemoveMode(true) }
+
+        // The ripple would otherwise spill past the rounded corners.
+        binding.cardHistory.clipToOutline = true
+        binding.cardReminders.clipToOutline = true
+        binding.cardHistory.setOnClickListener { findNavController().navigate(R.id.AnalyticsFragment) }
+        binding.cardReminders.setOnClickListener { findNavController().navigate(R.id.RemindersFragment) }
     }
 
     override fun onResume() {
@@ -130,6 +144,7 @@ class FirstFragment : Fragment() {
         updateIntakeUI()
         quickAmounts = prefs.quickAmounts()
         rebuildQuickButtons()   // refresh if the unit or the amounts changed elsewhere
+        updateReminderCard()    // reminders may have changed on their own screen
         prefs.registerOnSharedPreferenceChangeListener(intakeListener)
     }
 
@@ -236,85 +251,84 @@ class FirstFragment : Fragment() {
         // Falls back to the highest goal once everything is reached.
         val personalGoal = prefs.getInt("personal_goal_ml", 0)
         val activeGoal = if (personalGoal > 0) personalGoal else goalMl
+        val percent = (currentMl * 100) / activeGoal
 
-        binding.progressWater.progress = ((currentMl * 100) / activeGoal).coerceAtMost(100)
-        binding.textIntakeAmount.text = "${currentMl.fmt(unit)} / ${activeGoal.fmt(unit)}"
+        binding.textIntakeValue.text = currentMl.toDisplay(unit)
+        binding.textIntakeUnit.text = unit
+        binding.textIntakeAmount.text =
+            getString(R.string.home_intake_of_goal, activeGoal.fmt(unit), percent)
+        binding.progressWater.setProgressCompat(percent.coerceAtMost(100), true)
 
         // Congratulations banner is tied to the fixed daily goal
         binding.textGoalReached.visibility = if (currentMl >= goalMl) View.VISIBLE else View.GONE
 
         updateLastDrinkUI()
-        updateBottlesUI(activeGoal)
+        updateHistoryCard()
     }
 
     /** Read from the log, which also covers drinks logged from a notification or the widget. */
     private fun updateLastDrinkUI() {
         val last = drinkLog.todaysDrinks().lastOrNull()
-        binding.textLastDrink.visibility = if (last == null) View.GONE else View.VISIBLE
+        // Invisible rather than gone: the first drink of the day must not push the grid down
+        // under the finger that is about to tap again.
+        binding.textLastDrink.visibility = if (last == null) View.INVISIBLE else View.VISIBLE
         if (last != null) {
             val time = DateFormat.getTimeFormat(requireContext()).format(Date(last.atMillis))
             binding.textLastDrink.text = getString(R.string.home_last_drink, time)
         }
     }
 
+    // ─── Cards ────────────────────────────────────────────────────
+
     /**
-     * A bottle per 500 ml of the active goal, so a bigger goal simply gets more bottles and the
-     * whole row reads full once the goal is reached. Beyond [BOTTLES_PER_ROW] the row wraps and the
-     * bottles shrink, which keeps even a 20-bottle goal on screen.
+     * The last [HISTORY_CARD_DAYS] days as bars scaled to the best of them, today last and dimmed
+     * because it is still filling. The average leaves today out for the same reason.
      */
-    private fun updateBottlesUI(activeGoal: Int) {
-        val fillSteps = bottleFillSteps(currentMl, activeGoal)
-        if (bottleViews.size != fillSteps.size) rebuildBottles(fillSteps.size)
-        bottleViews.forEachIndexed { index, imageView ->
-            imageView.setImageResource(bottleIcon(fillSteps[index]))
+    private fun updateHistoryCard() {
+        val today = LocalDate.now()
+        val totals = (HISTORY_CARD_DAYS - 1 downTo 0).map { back ->
+            if (back == 0) currentMl else prefs.dayTotal(today.minusDays(back.toLong()))
         }
-    }
+        val past = totals.dropLast(1).filter { it > 0 }
+        binding.textHistoryAvg.text = if (past.isEmpty()) getString(R.string.home_history_empty)
+            else getString(R.string.home_history_avg, (past.sum() / past.size).fmt(unit))
 
-    private fun rebuildBottles(count: Int) {
         val dp = resources.displayMetrics.density
-        val compact = count > BOTTLES_PER_ROW
-        val sizePx = ((if (compact) 24f else 36f) * dp).toInt()
-        val gapPx  = ((if (compact) 6f else 12f) * dp).toInt()
-        // Balance the rows (13 bottles → 7 + 6, not 10 + 3) rather than filling each to the brim.
-        val rows = (count + BOTTLES_PER_ROW_COMPACT - 1) / BOTTLES_PER_ROW_COMPACT
-        val perRow = (count + rows - 1) / rows
-
-        val tint = ColorStateList.valueOf(
-            ContextCompat.getColor(requireContext(), R.color.brand_blue)
-        )
-        val views = List(count) { index ->
-            ImageView(requireContext()).apply {
-                layoutParams = LinearLayout.LayoutParams(sizePx, sizePx).apply {
-                    if (index % perRow > 0) marginStart = gapPx
+        val container = binding.containerMiniBars
+        val chartHeight = (34 * dp).toInt()
+        val scale = maxOf(totals.max(), goalMl)
+        val accent = ContextCompat.getColor(requireContext(), R.color.brand_blue)
+        val dim = ContextCompat.getColor(requireContext(), R.color.surface_control_hover)
+        container.removeAllViews()
+        totals.forEachIndexed { index, ml ->
+            val isToday = index == totals.lastIndex
+            container.addView(View(requireContext()).apply {
+                // Even an empty day keeps a sliver, so the week still reads as seven days.
+                val height = maxOf((chartHeight * ml / scale), (3 * dp).toInt())
+                layoutParams = LinearLayout.LayoutParams(0, height, 1f).apply {
+                    if (index > 0) marginStart = (4 * dp).toInt()
                 }
-                imageTintList = tint
-                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-            }
+                background = GradientDrawable().apply {
+                    cornerRadius = 3 * dp
+                    setColor(if (isToday || ml == 0) dim else accent)
+                }
+            })
         }
-
-        binding.containerBottles.removeAllViews()
-        views.chunked(perRow).forEachIndexed { rowIndex, rowViews ->
-            val row = LinearLayout(requireContext()).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { if (rowIndex > 0) topMargin = gapPx }
-            }
-            rowViews.forEach(row::addView)
-            binding.containerBottles.addView(row)
-        }
-        bottleViews = views
     }
 
-    private fun bottleIcon(fillStep: Int): Int = when (fillStep) {
-        0    -> R.drawable.ic_bottle_empty
-        1    -> R.drawable.ic_bottle_quarter
-        2    -> R.drawable.ic_bottle_half
-        3    -> R.drawable.ic_bottle_three_quarters
-        4    -> R.drawable.ic_bottle_almost_full
-        else -> R.drawable.ic_bottle_full
+    /** The soonest enabled reminder, or "Off" with a nudge to set one up. */
+    private fun updateReminderCard() {
+        val next = ReminderScheduler.nextReminderAt(requireContext())
+        if (next == null) {
+            binding.textNextReminder.text = getString(R.string.home_reminder_off_value)
+            binding.textReminderDetail.text = getString(R.string.home_reminder_off_detail)
+            return
+        }
+        binding.textNextReminder.text = DateFormat.getTimeFormat(requireContext()).format(next.time)
+        val isToday = next.get(Calendar.DAY_OF_YEAR) == Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+        binding.textReminderDetail.text = getString(
+            if (isToday) R.string.home_reminder_today else R.string.home_reminder_tomorrow
+        )
     }
 
     // ─── Quick amounts ────────────────────────────────────────────
@@ -335,100 +349,113 @@ class FirstFragment : Fragment() {
 
     private fun rebuildQuickButtons() {
         val dp = resources.displayMetrics.density
+        val bg = themeColor(if (removeMode) R.attr.quickRemoveBackground else R.attr.quickAddBackground)
+        val fg = themeColor(if (removeMode) R.attr.quickRemoveForeground else R.attr.quickAddForeground)
+        val unit = unit   // a prefs read per button otherwise
+        val sign = if (removeMode) "−" else "+"
 
-        val addBg = themeColor(R.attr.quickAddBackground)
-        val addFg = themeColor(R.attr.quickAddForeground)
-
-        fillAmountRow(binding.containerQuickAdd, dp, "+", addBg, addFg,
-            onClick = ::addWater, onLongClick = { ml -> showAmountDialog(existingMl = ml) })
-        // The "+" slot always trails the amounts, so it stays put as they are edited. Once the
-        // row is full it disappears until an amount is removed.
-        if (quickAmounts.size < QUICK_AMOUNTS_MAX) {
-            binding.containerQuickAdd.addView(makeAddSlotButton(dp, addBg, addFg))
-        }
-
-        fillAmountRow(
-            binding.containerQuickRemove, dp, "-",
-            themeColor(R.attr.quickRemoveBackground), themeColor(R.attr.quickRemoveForeground),
-            onClick = ::removeWater
+        val cells = quickAmounts.map { ml ->
+            makeAmountButton("$sign${ml.toDisplay(unit)}", bg, fg, dp,
+                onClick = { if (removeMode) removeWater(ml) else addWater(ml) },
+                // Editing belongs to the add side; in Remove mode a long press does nothing.
+                onLongClick = if (removeMode) null else { { showAmountDialog(existingMl = ml) } }
+            ).apply {
+                tag = ml
+                contentDescription = "$sign${ml.fmt(unit)}"
+            }
+        } + listOfNotNull(
+            // The "+" cell trails the amounts, so it stays put as they are edited. It is gone once
+            // the grid is full, and in Remove mode, where it would mean nothing.
+            if (!removeMode && quickAmounts.size < QUICK_AMOUNTS_MAX) makeAddSlotButton(dp) else null
         )
 
-        // Nothing to subtract with once every amount is gone — hide the section rather than
-        // leaving a labelled empty row behind.
-        val removeVisibility = if (quickAmounts.isEmpty()) View.GONE else View.VISIBLE
-        binding.textQuickRemoveLabel.visibility = removeVisibility
-        binding.containerQuickRemove.visibility = removeVisibility
+        val container = binding.containerQuick
+        container.removeAllViews()
+        val gap = (10 * dp).toInt()
+        val cellHeight = (56 * dp).toInt()
+        cells.chunked(QUICK_COLUMNS).forEachIndexed { rowIndex, rowCells ->
+            val row = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { if (rowIndex > 0) topMargin = gap }
+            }
+            rowCells.forEachIndexed { index, cell ->
+                row.addView(cell, LinearLayout.LayoutParams(0, cellHeight, 1f).apply {
+                    if (index > 0) marginStart = gap
+                })
+            }
+            // A lone last cell keeps its column's width instead of stretching across the row.
+            repeat(QUICK_COLUMNS - rowCells.size) {
+                row.addView(Space(requireContext()), LinearLayout.LayoutParams(0, 0, 1f).apply {
+                    marginStart = gap
+                })
+            }
+            container.addView(row)
+        }
+
+        // Nothing to subtract with once every amount is gone.
+        binding.btnModeRemove.isEnabled = quickAmounts.isNotEmpty()
+        binding.btnModeRemove.alpha = if (quickAmounts.isEmpty()) 0.4f else 1f
+        if (quickAmounts.isEmpty() && removeMode) setRemoveMode(false)
+    }
+
+    /** Flips the switch and redraws the grid with the other sign. */
+    private fun setRemoveMode(remove: Boolean) {
+        removeMode = remove
+        val on = ContextCompat.getColor(requireContext(), R.color.on_brand)
+        val off = ContextCompat.getColor(requireContext(), R.color.text_secondary)
+        binding.btnModeAdd.apply {
+            setBackgroundResource(if (remove) 0 else R.drawable.bg_segment_on)
+            setTextColor(if (remove) off else on)
+            isSelected = !remove
+        }
+        binding.btnModeRemove.apply {
+            setBackgroundResource(if (remove) R.drawable.bg_segment_on else 0)
+            setTextColor(if (remove) on else off)
+            isSelected = remove
+        }
+        rebuildQuickButtons()
     }
 
     /** Resolves a theme color attribute against the current view's theme. */
     @ColorInt
     private fun themeColor(@AttrRes attr: Int): Int = MaterialColors.getColor(requireView(), attr)
 
-    /** Refills [container] with one button per amount, each tagged with its ml value. */
-    private fun fillAmountRow(
-        container: ViewGroup, dp: Float, prefix: String, @ColorInt bg: Int, @ColorInt fg: Int,
-        onClick: (Int) -> Unit, onLongClick: ((Int) -> Unit)? = null
-    ) {
-        val unit = unit   // a prefs read per button otherwise, and this runs twice per rebuild
-        container.removeAllViews()
-        quickAmounts.forEach { ml ->
-            container.addView(
-                makeAmountButton("$prefix${ml.fmt(unit)}", bg, fg, dp,
-                    iconRes = AMOUNT_ICONS[ml] ?: R.drawable.ic_water_drop,
-                    onClick = { onClick(ml) },
-                    onLongClick = onLongClick?.let { handler -> { handler(ml) } }
-                ).apply { tag = ml }
-            )
-        }
-    }
-
-    /** Button for a specific ml amount — used in both add and remove rows. */
+    /** One cell of the grid: a flat control-coloured button, no outline, no icon. */
     private fun makeAmountButton(
         label: String, @ColorInt bg: Int, @ColorInt fg: Int, dp: Float,
-        iconRes: Int = R.drawable.ic_water_drop,
         onClick: () -> Unit, onLongClick: (() -> Unit)? = null
     ) = MaterialButton(requireContext()).apply {
         text = label
         setTextColor(fg)
         backgroundTintList = ColorStateList.valueOf(bg)
-        cornerRadius = (24 * dp).toInt()
+        cornerRadius = (18 * dp).toInt()
         insetTop = 0; insetBottom = 0
-        textSize = 11f
+        textSize = 15f
+        typeface = ResourcesCompat.getFont(requireContext(), R.font.geist_semibold)
+        fontFeatureSettings = "tnum"
         isSingleLine = true
-        setPadding((8 * dp).toInt(), 0, (8 * dp).toInt(), 0)
-        setIconResource(iconRes)
-        iconTint = ColorStateList.valueOf(fg)
-        iconPadding = (2 * dp).toInt()
-        iconSize = (12 * dp).toInt()
-        iconGravity = ICON_GRAVITY_TEXT_START
-        layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply { marginEnd = (8 * dp).toInt(); bottomMargin = (8 * dp).toInt() }
+        stateListAnimator = null
+        elevation = 0f
         setOnClickListener { onClick() }
         onLongClick?.let { lc -> setOnLongClickListener { lc(); true } }
     }
 
-    /** The circular "+" closing the add row; opens the dialog that adds a new amount. */
-    private fun makeAddSlotButton(dp: Float, @ColorInt bg: Int, @ColorInt fg: Int): MaterialButton {
-        val size = (40 * dp).toInt()
-        return MaterialButton(requireContext()).apply {
-            text = "+"
-            tag = TAG_ADD_SLOT
-            contentDescription = getString(R.string.dialog_add_amount_title)
-            setTextColor(fg)
-            backgroundTintList = ColorStateList.valueOf(bg)
-            cornerRadius = size / 2
-            insetTop = 0; insetBottom = 0
-            textSize = 16f
-            isSingleLine = true
-            setPadding(0, 0, 0, 0)
-            iconSize = 0
-            layoutParams = LinearLayout.LayoutParams(size, size)
-                .apply { marginEnd = (8 * dp).toInt(); bottomMargin = (8 * dp).toInt() }
-            setOnClickListener { showAmountDialog(existingMl = null) }
-            setOnLongClickListener { showAmountDialog(existingMl = null); true }
-        }
+    /** The "+" closing the grid; opens the dialog that adds a new amount. */
+    private fun makeAddSlotButton(dp: Float) = MaterialButton(requireContext()).apply {
+        text = "+"
+        tag = TAG_ADD_SLOT
+        contentDescription = getString(R.string.dialog_add_amount_title)
+        setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
+        backgroundTintList =
+            ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.surface_card))
+        cornerRadius = (18 * dp).toInt()
+        insetTop = 0; insetBottom = 0
+        textSize = 20f
+        stateListAnimator = null
+        elevation = 0f
+        setOnClickListener { showAmountDialog(existingMl = null) }
     }
 
     /**
@@ -500,37 +527,35 @@ class FirstFragment : Fragment() {
                 .cancelable(true)
                 .tintTarget(tint)
 
-            // Find a quick-add child by its tag (set in rebuildQuickButtons).
-            fun findQuickAdd(tag: Any): View? =
-                (0 until binding.containerQuickAdd.childCount)
-                    .map(binding.containerQuickAdd::getChildAt)
-                    .firstOrNull { it.tag == tag }
+            // Grid cells, row by row (rebuildQuickButtons nests them in one row per pair).
+            fun quickCells(): List<View> =
+                (0 until binding.containerQuick.childCount)
+                    .mapNotNull { binding.containerQuick.getChildAt(it) as? ViewGroup }
+                    .flatMap { row -> (0 until row.childCount).map(row::getChildAt) }
+                    .filterIsInstance<MaterialButton>()
 
             val steps: List<() -> TapTarget?> = listOf(
                 {
                     TapTarget.forView(
-                        binding.containerBottles,
+                        binding.textIntakeValue,
                         "Daily progress",
-                        "Each bottle represents 500 ml, and together they add up to your daily goal. " +
-                            "Watch them fill up as you log your intake throughout the day."
+                        "Your total for today, and the goal it counts towards. " +
+                            "The bar fills as you log your intake throughout the day."
                     ).style(radius = 110)
                 },
                 {
-                    // The row's first button, whatever it happens to be — pointing at a specific
-                    // amount would break once the user removes it. It has to be a single button:
-                    // a target wide enough to hold the whole row leaves the pulse ring drawn
-                    // inside the transparent hole, i.e. underneath the buttons.
-                    binding.containerQuickAdd.getChildAt(0)?.let {
+                    // The grid's first amount, whatever it happens to be — pointing at a specific
+                    // amount would break once the user removes it.
+                    quickCells().firstOrNull { it.tag != TAG_ADD_SLOT }?.let {
                         TapTarget.forView(
                             it, "Log a drink",
-                            "Tap an amount to log it instantly — a glass icon is a small sip, a " +
-                                "drop is a bigger drink. Long-press any button to change its " +
-                                "value or remove it from the row."
+                            "Tap an amount to log it instantly. Long-press any button to change " +
+                                "its value or remove it from the grid."
                         ).style()
                     }
                 },
                 {
-                    findQuickAdd(TAG_ADD_SLOT)?.let {
+                    quickCells().firstOrNull { it.tag == TAG_ADD_SLOT }?.let {
                         TapTarget.forView(
                             it, "Your own amounts",
                             "Tap + to add an amount of your own, up to $QUICK_AMOUNTS_MAX in total. " +
@@ -539,29 +564,25 @@ class FirstFragment : Fragment() {
                     }
                 },
                 {
-                    // Null once every amount has been removed — the row is empty and hidden then.
-                    binding.containerQuickRemove.getChildAt(0)?.let {
+                    // Nothing to remove with once every amount has been deleted.
+                    binding.btnModeRemove.takeIf { quickAmounts.isNotEmpty() }?.let {
                         TapTarget.forView(
                             it, "Made a mistake?",
-                            "Use Quick remove to subtract water you logged by accident."
+                            "Switch to Remove to subtract water you logged by accident."
                         ).style()
                     }
                 },
                 {
-                    activity.findViewById<View>(R.id.fab_analytics)?.let {
-                        TapTarget.forView(
-                            it, "Your history",
-                            "Open the chart to see your daily intake and streaks over time."
-                        ).style(tint = false)
-                    }
+                    TapTarget.forView(
+                        binding.cardHistory, "Your history",
+                        "Open the chart to see your daily intake and streaks over time."
+                    ).style(radius = 70, tint = false)
                 },
                 {
-                    activity.findViewById<View>(R.id.fab_reminders)?.let {
-                        TapTarget.forView(
-                            it, "Reminders",
-                            "Tap the bell to set up reminder times."
-                        ).style(tint = false)
-                    }
+                    TapTarget.forView(
+                        binding.cardReminders, "Reminders",
+                        "Tap here to set up reminder times."
+                    ).style(radius = 70, tint = false)
                 },
             )
 
@@ -587,7 +608,6 @@ class FirstFragment : Fragment() {
         todaySheet?.dismiss()
         todaySheet = null
         super.onDestroyView()
-        bottleViews = emptyList()   // they belong to the destroyed view tree
         _binding = null
     }
 }

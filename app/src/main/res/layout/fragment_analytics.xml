@@ -1,173 +1,156 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The FAB sits outside the scroll view on purpose: analytics_content is the view rendered into
-     the shared PNG, and the button has no business being in the picture. Its margins mirror the
-     home screen's + FAB in activity_main.xml, so the two land on the same spot. -->
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+  History, in Vision's style. The screen title lives in the toolbar. analytics_content is the view
+  rendered into the shared PNG, so the two buttons under it (All history, Edit a day) sit outside
+  it and never end up in the picture.
+-->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/analytics_scroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/pageBackground">
 
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/analytics_scroll"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="?attr/pageBackground"
-        android:clipToPadding="false"
-        android:paddingBottom="72dp">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="24dp">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:id="@+id/analytics_content"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="16dp">
+            android:layout_height="wrap_content"
+            android:background="?attr/pageBackground"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="4dp">
 
-            <TextView
-                android:id="@+id/title_analytics"
-                android:layout_width="0dp"
+            <!-- Section label, with sharing as a round button on the same line. -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="History"
-                android:textSize="28sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface"
-                app:layout_constraintEnd_toStartOf="@+id/btn_share"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <ImageButton
-                android:id="@+id/btn_share"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@drawable/ic_share_nodes"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Share"
-                android:tint="?attr/colorOnSurface"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="@+id/title_analytics" />
+                <TextView
+                    android:id="@+id/label_last_7"
+                    style="@style/Widget.WaterReminder.SectionLabel"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:text="@string/analytics_last_7_days" />
 
-            <TextView
-                android:id="@+id/label_last_7"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Last 7 days"
-                android:textSize="14sp"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/title_analytics" />
+                <ImageButton
+                    android:id="@+id/btn_share"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_round_control"
+                    android:contentDescription="@string/analytics_share"
+                    android:padding="10dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_share_nodes"
+                    app:tint="@color/text_primary" />
+            </LinearLayout>
 
-            <com.github.mikephil.charting.charts.BarChart
-                android:id="@+id/bar_chart"
-                android:layout_width="0dp"
-                android:layout_height="260dp"
-                android:layout_marginTop="24dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/label_last_7" />
-
-            <View
-                android:id="@+id/divider_stats"
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_marginTop="24dp"
-                android:background="?attr/colorOutlineVariant"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/bar_chart" />
-
-            <TextView
-                android:id="@+id/label_stats"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Stats"
-                android:textSize="14sp"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/divider_stats" />
-
-            <TextView
-                android:id="@+id/text_avg"
-                android:layout_width="0dp"
+            <!-- The week, in a panel: rounded bars, no axis clutter, the goal as one quiet line. -->
+            <FrameLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:textSize="16sp"
-                android:textColor="?attr/colorOnSurface"
-                android:text="Avg daily intake:  — ml"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/label_stats" />
+                android:background="@drawable/bg_panel"
+                android:paddingStart="12dp"
+                android:paddingTop="16dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="12dp">
 
-            <TextView
-                android:id="@+id/text_best"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textSize="16sp"
-                android:textColor="?attr/colorOnSurface"
-                android:text="Best day:  — ml"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/text_avg" />
+                <com.github.mikephil.charting.charts.BarChart
+                    android:id="@+id/bar_chart"
+                    android:layout_width="match_parent"
+                    android:layout_height="220dp" />
+            </FrameLayout>
 
+            <!-- Stats as metric cards over the whole history: tiny label, big light number, small muted unit. -->
             <TextView
-                android:id="@+id/text_goal_days"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textSize="16sp"
-                android:textColor="?attr/colorOnSurface"
-                android:text="Goal reached:  — days"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/text_best" />
-
-            <TextView
-                android:id="@+id/text_personal_goal_days"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textSize="16sp"
-                android:textColor="?attr/colorOnSurface"
-                android:text="Personal goal reached:  — days"
-                android:visibility="gone"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/text_goal_days" />
-
-            <TextView
-                android:id="@+id/text_view_all_history"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                style="@style/Widget.WaterReminder.SectionLabel"
                 android:layout_marginTop="24dp"
-                android:layout_marginBottom="8dp"
-                android:text="View all history →"
-                android:textSize="14sp"
-                android:textColor="@color/brand_blue"
-                android:textStyle="bold"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackground"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/text_personal_goal_days" />
+                android:text="@string/analytics_all_time" />
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </androidx.core.widget.NestedScrollView>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_edit_day"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="@dimen/fab_margin"
-        android:layout_marginBottom="16dp"
-        android:contentDescription="@string/analytics_edit_day_action"
-        app:srcCompat="@drawable/ic_edit"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+                <include
+                    android:id="@+id/stat_avg"
+                    layout="@layout/item_stat_card"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+                <include
+                    android:id="@+id/stat_best"
+                    layout="@layout/item_stat_card"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <include
+                    android:id="@+id/stat_goal_days"
+                    layout="@layout/item_stat_card"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <!-- Only when a personal goal is set; the card beside it then spans the row. -->
+                <include
+                    android:id="@+id/stat_personal_goal_days"
+                    layout="@layout/item_stat_card"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Flat buttons instead of a link and a floating button. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/text_view_all_history"
+                style="@style/Widget.WaterReminder.FlatButton"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="@string/analytics_all_history" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/fab_edit_day"
+                style="@style/Widget.WaterReminder.FlatButton"
+                android:layout_width="0dp"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:text="@string/analytics_edit_day_action" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

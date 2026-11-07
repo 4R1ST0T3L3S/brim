@@ -18,33 +18,12 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-            app:popupTheme="@style/PopupTheme" />
+            app:popupTheme="@style/PopupTheme"
+            app:subtitleTextAppearance="@style/TextAppearance.WaterReminder.ToolbarSubtitle"
+            app:titleTextAppearance="@style/TextAppearance.WaterReminder.ToolbarTitle" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
     <include layout="@layout/content_main" />
-
-    <!-- Reminders FAB — bottom-right. Straight to the screen it opens: it used to be
-         a "+" that expanded into a single bell, which was one tap too many. -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_reminders"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="@dimen/fab_margin"
-        android:layout_marginBottom="16dp"
-        android:contentDescription="@string/fab_reminders_description"
-        app:srcCompat="@drawable/ic_bell" />
-
-    <!-- Analytics FAB — bottom-left, always visible -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_analytics"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|start"
-        android:layout_marginStart="@dimen/fab_margin"
-        android:layout_marginBottom="16dp"
-        app:srcCompat="@drawable/ic_chart" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

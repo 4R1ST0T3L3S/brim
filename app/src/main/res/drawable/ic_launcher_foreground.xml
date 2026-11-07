@@ -1,48 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Brim's mark: a flat drop filled almost to the top ("to the brim"), sky blue below the level and
+  dark grey above it, like the progress bar on Today. Kept inside the 66dp safe zone of the 108dp
+  adaptive canvas; the splash screen uses this same drawable as its icon.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="64dp"
-    android:height="64dp"
+    android:width="108dp"
+    android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-
-    <!-- Drop body -->
-    <path android:pathData="
-        M54,12
-        C46,22 28,52 28,72
-        A26,26 0 0,0 80,72
-        C80,52 62,22 54,12 Z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:type="linear"
-                android:startX="54" android:startY="12"
-                android:endX="54" android:endY="98">
-                <item android:offset="0.0" android:color="#90CAF9"/>
-                <item android:offset="1.0" android:color="#1565C0"/>
-            </gradient>
-        </aapt:attr>
-    </path>
-
-    <!-- Reflection clipped to drop boundary, radial gradient for soft natural look -->
     <group>
-        <clip-path android:pathData="
-            M54,12
-            C46,22 28,52 28,72
-            A26,26 0 0,0 80,72
-            C80,52 42,22 54,12 Z" />
-        <path android:pathData="M47,20 C42,18 36,28 39,40 C41,47 50,46 53,35 C55,27 51,19 47,20 Z">
-            <aapt:attr name="android:fillColor">
-                <gradient
-                    android:type="radial"
-                    android:centerX="45"
-                    android:centerY="32"
-                    android:gradientRadius="14">
-                    <item android:offset="0.0" android:color="#C8FFFFFF"/>
-                    <item android:offset="0.6" android:color="#60FFFFFF"/>
-                    <item android:offset="1.0" android:color="#00FFFFFF"/>
-                </gradient>
-            </aapt:attr>
-        </path>
+        <clip-path android:pathData="M54,29 C49,36 38,50 38,64 A16,16 0 0,0 70,64 C70,50 59,36 54,29 Z" />
+        <path
+            android:fillColor="#2C2C31"
+            android:pathData="M0,0 H108 V46 H0 Z" />
+        <path
+            android:fillColor="#38BDF8"
+            android:pathData="M0,46 H108 V108 H0 Z" />
     </group>
-
 </vector>

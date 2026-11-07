@@ -140,17 +140,17 @@ class ThemeModeTest {
     // ─── Fresh-install default ───
 
     @Test
-    fun defaultThemeMode_isLight() {
-        assertEquals(AppCompatDelegate.MODE_NIGHT_NO, DEFAULT_THEME_MODE)
+    fun defaultThemeMode_isDark() {
+        assertEquals(AppCompatDelegate.MODE_NIGHT_YES, DEFAULT_THEME_MODE)
     }
 
     @Test
-    fun defaultThemeMode_labelIsLight() {
-        assertEquals(R.string.theme_light, themeModeLabelRes(DEFAULT_THEME_MODE))
+    fun defaultThemeMode_labelIsDark() {
+        assertEquals(R.string.theme_dark, themeModeLabelRes(DEFAULT_THEME_MODE))
     }
 
     @Test
-    fun defaultThemeMode_dialogSelectsLight() {
-        assertEquals(1, themeModeDialogIndex(DEFAULT_THEME_MODE))
+    fun defaultThemeMode_dialogSelectsDark() {
+        assertEquals(2, themeModeDialogIndex(DEFAULT_THEME_MODE))
     }
 }

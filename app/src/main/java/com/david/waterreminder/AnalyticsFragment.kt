@@ -5,7 +5,8 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.ColorUtils
 import android.os.Bundle
 import android.text.InputType
 import android.view.LayoutInflater
@@ -22,6 +23,7 @@ import java.io.FileOutputStream
 import com.david.waterreminder.databinding.DialogPickListBinding
 import com.david.waterreminder.databinding.FragmentAnalyticsBinding
 import com.david.waterreminder.databinding.ItemPickDayBinding
+import com.david.waterreminder.databinding.ItemStatCardBinding
 import com.google.android.material.color.MaterialColors
 import com.github.mikephil.charting.components.LimitLine
 import com.github.mikephil.charting.components.XAxis
@@ -40,6 +42,7 @@ class AnalyticsFragment : Fragment() {
 
     private val goalMl = DEFAULT_DAILY_GOAL_ML
     private val dayFormatter = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH)
+    private val weekdayFormatter = DateTimeFormatter.ofPattern("EEE", Locale.ENGLISH)
     private val fullDayFormatter = DateTimeFormatter.ofPattern("EEE, MMM d", Locale.ENGLISH)
     private val prefs by lazy {
         requireContext().waterPrefs()
@@ -231,68 +234,69 @@ class AnalyticsFragment : Fragment() {
 
     // ─── Chart ────────────────────────────────────────────────────
 
+    /**
+     * The week as rounded bars on a bare panel: full accent for a day that reached the minimum, a
+     * faint accent for one that didn't, no value axis or grid, the goals as quiet dashed lines.
+     */
     private fun setupChart(history: List<Pair<LocalDate, Int>>, personalGoal: Int, animate: Boolean) {
-        val onSurface = MaterialColors.getColor(requireView(), com.google.android.material.R.attr.colorOnSurface)
-        val chartGridColor = MaterialColors.getColor(requireView(), com.google.android.material.R.attr.colorOutlineVariant)
+        val ctx = requireContext()
+        val accent = ctx.getColor(R.color.brand_blue)
+        val partial = ColorUtils.setAlphaComponent(accent, 0x59)
+        val muted = ctx.getColor(R.color.text_muted)
+        val secondary = ctx.getColor(R.color.text_secondary)
+        val geist = ResourcesCompat.getFont(ctx, R.font.geist_regular)
+        val geistBold = ResourcesCompat.getFont(ctx, R.font.geist_bold)
+        val density = resources.displayMetrics.density
 
         val entries = history.mapIndexed { index, (_, ml) ->
             BarEntry(index.toFloat(), ml.toFloat())
         }
 
         val dataSet = BarDataSet(entries, "Water intake ($unit)").apply {
-            colors = history.map { (_, ml) ->
-                if (ml >= goalMl) Color.parseColor("#2196F3") else Color.parseColor("#90CAF9")
-            }
+            colors = history.map { (_, ml) -> if (ml >= goalMl) accent else partial }
             valueTextSize = 10f
-            valueTextColor = onSurface
+            valueTextColor = secondary
+            valueTypeface = geist
             valueFormatter = object : ValueFormatter() {
                 override fun getFormattedValue(value: Float) =
-                    if (value > 0f) value.toInt().fmt(unit) else ""
+                    if (value > 0f) value.toInt().toDisplay(unit) else ""
             }
         }
 
+        fun goalLine(ml: Int, label: String) = LimitLine(ml.toFloat(), label).apply {
+            lineColor = ColorUtils.setAlphaComponent(muted, 0x80)
+            lineWidth = 1f
+            textColor = muted
+            textSize = 9f
+            typeface = geistBold
+            enableDashedLine(6f * density, 4f * density, 0f)
+        }
+
         binding.barChart.apply {
-            data = BarData(dataSet).apply { barWidth = 0.6f }
+            renderer = RoundedBarChartRenderer(this, animator, viewPortHandler, 8f * density)
+            data = BarData(dataSet).apply { barWidth = 0.55f }
             description.isEnabled = false
             legend.isEnabled = false
             setTouchEnabled(false)
             setDrawGridBackground(false)
+            setDrawBorders(false)
             setNoDataText("No data yet")
-
-            // Daily goal line (red)
-            val goalLine = LimitLine(goalMl.toFloat(), "Recommended Minimum").apply {
-                lineColor = Color.parseColor("#F44336")
-                lineWidth = 1.5f
-                textColor = Color.parseColor("#F44336")
-                textSize = 10f
-                enableDashedLine(10f, 5f, 0f)
-            }
-
-            // Personal goal line (orange) — only when set
-            val personalGoalLine = if (personalGoal > 0) {
-                LimitLine(personalGoal.toFloat(), "Personal").apply {
-                    lineColor = Color.parseColor("#FF6F00")
-                    lineWidth = 1.5f
-                    textColor = Color.parseColor("#FF6F00")
-                    textSize = 10f
-                    enableDashedLine(6f, 4f, 0f)
-                }
-            } else null
+            setNoDataTextColor(muted)
+            extraBottomOffset = 6f
 
             val maxIntake = history.maxOfOrNull { it.second } ?: 0
-            val axisMax = maxOf(goalMl, personalGoal, maxIntake) * 1.2f
-
             axisLeft.apply {
                 removeAllLimitLines()   // render() runs again after an edit
-                addLimitLine(goalLine)
-                personalGoalLine?.let { addLimitLine(it) }
-                axisMinimum = 0f
-                axisMaximum = axisMax
-                gridColor = chartGridColor
-                textColor = Color.parseColor("#888888")
-                valueFormatter = object : ValueFormatter() {
-                    override fun getFormattedValue(value: Float) = value.toInt().fmt(unit)
+                addLimitLine(goalLine(goalMl, getString(R.string.analytics_chart_minimum)))
+                if (personalGoal > 0) {
+                    addLimitLine(goalLine(personalGoal, getString(R.string.analytics_chart_personal)))
                 }
+                setDrawLimitLinesBehindData(true)
+                axisMinimum = 0f
+                axisMaximum = maxOf(goalMl, personalGoal, maxIntake) * 1.2f
+                setDrawLabels(false)
+                setDrawGridLines(false)
+                setDrawAxisLine(false)
             }
             axisRight.isEnabled = false
 
@@ -300,11 +304,16 @@ class AnalyticsFragment : Fragment() {
                 position = XAxis.XAxisPosition.BOTTOM
                 granularity = 1f
                 setDrawGridLines(false)
-                textColor = Color.parseColor("#888888")
+                setDrawAxisLine(false)
+                textColor = muted
+                textSize = 11f
+                typeface = geist
+                yOffset = 8f
                 valueFormatter = object : ValueFormatter() {
                     override fun getFormattedValue(value: Float): String {
                         val idx = value.toInt().coerceIn(0, history.size - 1)
-                        return history[idx].first.format(dayFormatter)
+                        return if (idx == history.lastIndex) getString(R.string.analytics_chart_today)
+                        else history[idx].first.format(weekdayFormatter)
                     }
                 }
             }
@@ -316,24 +325,34 @@ class AnalyticsFragment : Fragment() {
 
     // ─── Stats ────────────────────────────────────────────────────
 
+    /** Whole-history numbers, one card each: average of tracked days, best day, days at goal. */
     private fun setupStats(history: List<Pair<LocalDate, Int>>, personalGoal: Int) {
         val nonZero = history.filter { it.second > 0 }
         val avg = if (nonZero.isNotEmpty()) nonZero.sumOf { it.second } / nonZero.size else 0
         val best = history.maxOfOrNull { it.second } ?: 0
         val goalDays = history.count { it.second >= goalMl }
 
-        binding.textAvg.text = "Avg daily intake:  ${avg.fmt(unit)}"
-        binding.textBest.text = "Best day:  ${best.fmt(unit)}"
-        binding.textGoalDays.text = "Goal reached:  ${goalDays.days()}"
+        bindStat(binding.statAvg, R.string.analytics_stat_avg, avg.toDisplay(unit), unit)
+        bindStat(binding.statBest, R.string.analytics_stat_best, best.toDisplay(unit), unit)
+        bindStat(binding.statGoalDays, R.string.analytics_stat_goal_days, goalDays.toString(), daysUnit(goalDays))
 
+        binding.statPersonalGoalDays.root.visibility = if (personalGoal > 0) View.VISIBLE else View.GONE
         if (personalGoal > 0) {
             val personalDays = history.count { it.second >= personalGoal }
-            binding.textPersonalGoalDays.text = "Personal goal reached:  ${personalDays.days()}"
-            binding.textPersonalGoalDays.visibility = View.VISIBLE
-        } else {
-            binding.textPersonalGoalDays.visibility = View.GONE
+            bindStat(
+                binding.statPersonalGoalDays, R.string.analytics_stat_personal_days,
+                personalDays.toString(), daysUnit(personalDays)
+            )
         }
     }
+
+    private fun bindStat(card: ItemStatCardBinding, labelRes: Int, value: String, unitText: String) {
+        card.statLabel.text = getString(labelRes)
+        card.statValue.text = value
+        card.statUnit.text = unitText
+    }
+
+    private fun daysUnit(count: Int) = resources.getQuantityString(R.plurals.analytics_days_unit, count)
 
     override fun onDestroyView() {
         super.onDestroyView()

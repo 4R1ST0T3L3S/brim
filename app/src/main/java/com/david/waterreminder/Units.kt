@@ -30,7 +30,8 @@ fun isImperial(unit: String): Boolean = unit == UNIT_OZ
 fun isDecimalUnit(unit: String): Boolean = unit == UNIT_CL || unit == UNIT_OZ
 
 const val PREF_THEME_MODE = "theme_mode"
-val DEFAULT_THEME_MODE = AppCompatDelegate.MODE_NIGHT_NO
+/** Fresh installs start on the true-black (OLED) dark theme. */
+val DEFAULT_THEME_MODE = AppCompatDelegate.MODE_NIGHT_YES
 
 const val PREF_PROFILE_SETUP_DONE = "profile_setup_done"
 const val PREF_PROFILE_AGE = "profile_age"
@@ -121,8 +122,6 @@ fun Int.toDisplay(unit: String): String = when (unit) {
 
 /** ml → display string with unit suffix (e.g. "0.5 cl", "250 ml", "8.5 oz"). */
 fun Int.fmt(unit: String): String = "${toDisplay(unit)} $unit"
-
-fun Int.days(): String = if (this == 1) "1 day" else "$this days"
 
 /** User-entered display string → ml. Accepts "0.5" / "0,5" for cl/oz. Null if invalid or out of range. */
 fun String.toMl(unit: String): Int? {
